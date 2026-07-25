@@ -29,6 +29,26 @@ function mostrarStatusExportar(mensagem, tipo) {
 }
 
 /** Cartão postal do "Nosso mapa" — um card por lugar, com foto (se já tiver sido adicionada) + nome + texto. */
+/**
+ * Calcula quantas colunas usar e qual tamanho de foto cabe, pra QUALQUER
+ * quantidade de itens caber dentro do espaço disponível sem cortar nada
+ * nem espremer demais. Isso resolve de vez o problema de "funciona hoje,
+ * quebra se eu adicionar mais lugares/marcos depois".
+ */
+function calcularGradeParaCaber(quantidade, larguraDisponivel, alturaDisponivel, tamanhoMaximoFoto, tamanhoMinimoFoto) {
+    quantidade = Math.max(1, quantidade);
+    let melhor = null;
+    for (let colunas = 1; colunas <= quantidade; colunas++) {
+        const linhas = Math.ceil(quantidade / colunas);
+        const larguraPorItem = larguraDisponivel / colunas;
+        const alturaPorItem = alturaDisponivel / linhas;
+        const tamanhoFoto = Math.min(larguraPorItem, alturaPorItem, tamanhoMaximoFoto);
+        if (!melhor || tamanhoFoto > melhor.tamanhoFoto) melhor = { colunas, linhas, tamanhoFoto };
+    }
+    melhor.tamanhoFoto = Math.max(tamanhoMinimoFoto, melhor.tamanhoFoto);
+    return melhor;
+}
+
 async function gerarCartaoPostal() {
     if (typeof html2canvas !== 'function') { mostrarStatusExportar('Não foi possível carregar o exportador de imagem. Verifique sua conexão.', 'err'); return; }
     mostrarStatusExportar('Gerando o cartão postal do mapa...', 'pending');
@@ -36,15 +56,26 @@ async function gerarCartaoPostal() {
     try {
         const lista = document.getElementById('cartaoPostalLista');
         lista.innerHTML = '';
+
+        // Área útil dentro do papel, descontando título, respiro e os
+        // próprios girassóis decorativos do rodapé.
+        const larguraUtil = IMPRIMIVEL_LARGURA_PX - 112;
+        const alturaUtil = IMPRIMIVEL_ALTURA_PX - 340;
+        const { colunas, tamanhoFoto } = calcularGradeParaCaber(MAPA_LUGARES.length, larguraUtil, alturaUtil, 240, 70);
+        lista.style.gridTemplateColumns = `repeat(${colunas}, 1fr)`;
+
+        const fonteNome = Math.max(18, Math.min(30, tamanhoFoto * 0.16));
+        const fonteCidade = Math.max(13, fonteNome * 0.6);
+
         for (const lugar of MAPA_LUGARES) {
             const card = document.createElement('div');
             card.className = 'cartao-postal-item';
             const fotoSrc = await resolverFotoPlaceholder(lugar.foto); // já cai num SVG "adicione esta foto" se o arquivo ainda não existir
             card.innerHTML = `
-                <img src="${fotoSrc}" alt="${lugar.nome}">
+                <img src="${fotoSrc}" alt="${lugar.nome}" style="width:${tamanhoFoto}px; height:${tamanhoFoto}px;">
                 <div class="cartao-postal-item-texto">
-                    <p class="cartao-postal-nome">${lugar.nome}</p>
-                    <p class="cartao-postal-cidade">${lugar.cidade || ''}</p>
+                    <p class="cartao-postal-nome" style="font-size:${fonteNome}px;">${lugar.nome}</p>
+                    <p class="cartao-postal-cidade" style="font-size:${fonteCidade}px;">${lugar.cidade || ''}</p>
                 </div>`;
             lista.appendChild(card);
         }
@@ -60,31 +91,37 @@ async function gerarCartaoPostal() {
     }
 }
 
-/** Constelação pra imprimir — reaproveita TIMELINE_MARCOS, em versão clara ou escura. */
-async function gerarConstelacao(modo) {
+/** Constelação pra imprimir — reaproveita TIMELINE_MARCOS, sempre no visual escuro/estrelado. */
+async function gerarConstelacao() {
     if (typeof html2canvas !== 'function') { mostrarStatusExportar('Não foi possível carregar o exportador de imagem. Verifique sua conexão.', 'err'); return; }
     mostrarStatusExportar('Gerando a constelação...', 'pending');
 
     try {
         const el = document.getElementById('constelacaoExportavel');
-        el.classList.toggle('constelacao-clara', modo === 'clara');
-        el.classList.toggle('constelacao-escura', modo === 'escura');
 
         const lista = document.getElementById('constelacaoLista');
         lista.innerHTML = '';
+
+        const larguraUtil = IMPRIMIVEL_LARGURA_PX - 140;
+        const alturaUtil = IMPRIMIVEL_ALTURA_PX - 360;
+        const { colunas, tamanhoFoto } = calcularGradeParaCaber(TIMELINE_MARCOS.length, larguraUtil, alturaUtil, 220, 64);
+        lista.style.gridTemplateColumns = `repeat(${colunas}, 1fr)`;
+
+        const fonteData = Math.max(14, Math.min(22, tamanhoFoto * 0.13));
+
         for (const marco of TIMELINE_MARCOS) {
             const item = document.createElement('div');
             item.className = 'constelacao-item' + (marco.ehPedido ? ' constelacao-item-pedido' : '');
             const fotoSrc = await resolverFotoPlaceholderOuAsset(marco.foto);
+            const tamanhoEsteItem = marco.ehPedido ? tamanhoFoto * 1.18 : tamanhoFoto;
             item.innerHTML = `
-                <img src="${fotoSrc}" alt="${marco.ehPedido ? 'Hoje' : marco.data}">
-                <p class="constelacao-item-data">${marco.ehPedido ? 'Hoje' : (marco.data || '')}</p>`;
+                <img src="${fotoSrc}" alt="${marco.ehPedido ? 'Hoje' : marco.data}" style="width:${tamanhoEsteItem}px; height:${tamanhoEsteItem}px;">
+                <p class="constelacao-item-data" style="font-size:${fonteData}px;">${marco.ehPedido ? 'Hoje' : (marco.data || '')}</p>`;
             lista.appendChild(item);
         }
 
-        const corFundo = modo === 'clara' ? '#FBF7F0' : '#0f0810';
-        const canvas = await html2canvas(el, { backgroundColor: corFundo, width: IMPRIMIVEL_LARGURA_PX, height: IMPRIMIVEL_ALTURA_PX, scale: 1 });
-        await baixarCanvasComoPng(canvas, `nosso-ceu-${modo}.png`);
+        const canvas = await html2canvas(el, { backgroundColor: '#0f0810', width: IMPRIMIVEL_LARGURA_PX, height: IMPRIMIVEL_ALTURA_PX, scale: 1 });
+        await baixarCanvasComoPng(canvas, 'nosso-ceu.png');
         mostrarStatusExportar('Constelação exportada com sucesso. Pode imprimir no tamanho 10x15cm.', 'ok');
     } catch (err) {
         console.error('Falha ao exportar a constelação', err);
@@ -135,14 +172,49 @@ async function gerarCartaFisica() {
         }
 
         const canvas = await html2canvas(document.getElementById('cartaFisicaExportavel'), { backgroundColor: '#FBF7F0', scale: 2 });
-        const imgData = canvas.toDataURL('image/png');
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-        const larguraA4 = 210, alturaA4 = 297, margem = 20;
-        const larguraDisponivel = larguraA4 - margem * 2;
-        const alturaImagem = larguraDisponivel * (canvas.height / canvas.width);
-        const yInicial = Math.max(margem, (alturaA4 - alturaImagem) / 2);
-        pdf.addImage(imgData, 'PNG', margem, yInicial, larguraDisponivel, alturaImagem);
+        const larguraA4 = 210, alturaA4 = 297, margem = 15;
+        const larguraImagemMM = larguraA4 - margem * 2;
+        const alturaImagemMM = larguraImagemMM * (canvas.height / canvas.width);
+        const alturaPaginaMM = alturaA4 - margem * 2;
+
+        // CORREÇÃO: antes a imagem inteira (com todos os parágrafos da
+        // carta) era colocada numa altura fixa, e se o texto fosse
+        // comprido o suficiente, a parte de baixo simplesmente ficava fora
+        // da folha A4 — cortada, sem aviso nenhum. Agora, se a carta
+        // couber numa página só, ela é centralizada certinho (sem sobrar
+        // borda em excesso); se for mais comprida que uma página A4,
+        // divide automaticamente em quantas páginas forem necessárias,
+        // sem cortar nada do texto.
+        if (alturaImagemMM <= alturaPaginaMM) {
+            const yInicial = margem + (alturaPaginaMM - alturaImagemMM) / 2;
+            pdf.addImage(canvas.toDataURL('image/png'), 'PNG', margem, yInicial, larguraImagemMM, alturaImagemMM);
+        } else {
+            const pxPorMM = canvas.width / larguraImagemMM;
+            const alturaPaginaPX = Math.floor(alturaPaginaMM * pxPorMM);
+            let yAtualPX = 0;
+            let primeiraPagina = true;
+
+            while (yAtualPX < canvas.height) {
+                const alturaFatiaPX = Math.min(alturaPaginaPX, canvas.height - yAtualPX);
+                const canvasFatia = document.createElement('canvas');
+                canvasFatia.width = canvas.width;
+                canvasFatia.height = alturaFatiaPX;
+                const ctx = canvasFatia.getContext('2d');
+                ctx.fillStyle = '#FBF7F0';
+                ctx.fillRect(0, 0, canvasFatia.width, canvasFatia.height);
+                ctx.drawImage(canvas, 0, yAtualPX, canvas.width, alturaFatiaPX, 0, 0, canvas.width, alturaFatiaPX);
+
+                const alturaFatiaMM = alturaFatiaPX / pxPorMM;
+                if (!primeiraPagina) pdf.addPage();
+                pdf.addImage(canvasFatia.toDataURL('image/png'), 'PNG', margem, margem, larguraImagemMM, alturaFatiaMM);
+
+                yAtualPX += alturaFatiaPX;
+                primeiraPagina = false;
+            }
+        }
+
         const blobPdf = pdf.output('blob'); // pdf.save() sozinho não faz nada no Safari do iPhone, mesmo bug do PNG
         await salvarOuCompartilharArquivo(blobPdf, 'nossa-carta.pdf', 'application/pdf');
         mostrarStatusExportar('Carta física exportada com sucesso. Pode imprimir em papel A4.', 'ok');
@@ -624,8 +696,7 @@ function iniciarModuloExport() {
     maisOpcoesOverlay.addEventListener('click', (evt) => { if (evt.target === maisOpcoesOverlay) maisOpcoesOverlay.classList.add('d-none'); });
 
     document.getElementById('btnExportarCartaoPostal').addEventListener('click', gerarCartaoPostal);
-    document.getElementById('btnExportarConstelacaoClara').addEventListener('click', () => gerarConstelacao('clara'));
-    document.getElementById('btnExportarConstelacaoEscura').addEventListener('click', () => gerarConstelacao('escura'));
+    document.getElementById('btnExportarConstelacao').addEventListener('click', () => gerarConstelacao());
     document.getElementById('btnExportarCartaFisica').addEventListener('click', gerarCartaFisica);
 
     // Novo fluxo da Polaroid: o clique abre a câmera em vez de gerar direto.

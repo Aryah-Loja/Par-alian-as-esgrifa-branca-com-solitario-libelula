@@ -358,39 +358,78 @@ const PERGUNTAS_SUSPENSE = [
 ];
 
 /* ----------------------------------------------------------------------
-   MINI QUIZ — "O quanto você me conhece?"
+   QUIZ DO CASAL
    ----------------------------------------------------------------------
-   Edite as opções e o índice de "certa" (começando em 0) com as respostas
-   reais de vocês dois. As mensagens de reação já usam detalhes pessoais.
+   CORREÇÃO: a versão antiga se chamava "o quanto você me conhece?" mas
+   as perguntas eram só sobre ELA (flor favorita dela, bichos dela...) —
+   não fazia sentido pedir pra ela "provar" que conhece a própria vida.
+   Agora é um quiz do casal de verdade: fatos e histórias dos dois juntos.
+   Edite as opções e o índice de "certa" (começando em 0) se quiser
+   ajustar algo.
    ---------------------------------------------------------------------- */
 const QUIZ_PERGUNTAS = [
     {
-        pergunta: 'Qual é a flor favorita da Poloni?',
+        pergunta: 'Qual foi o dia do nosso primeiro "eu te amo"?',
+        opcoes: ['30 de maio', '14 de junho', '20 de julho', '8 de agosto'],
+        certa: 1,
+        certoMsg: 'Isso mesmo, 14 de junho, no carro depois de sair da Brooks 💛',
+        erradoMsg: 'Foi 14 de junho, no carro, depois de sair da Brooks. Nossa data oficial.'
+    },
+    {
+        pergunta: 'Eu te amo, tal qual...?',
+        opcoes: ['o Chaves ama sanduíche de presunto', 'o gato ama um cochilo', 'a novela ama final feliz', 'ninguém ama nada'],
+        certa: 0,
+        certoMsg: 'Isso, sempre foi assim e sempre vai ser 😄',
+        erradoMsg: 'Tal qual o Chaves ama sanduíche de presunto. Nosso código, não esquece mais!'
+    },
+    {
+        pergunta: 'Qual é o nosso restaurante preferido?',
+        opcoes: ['O Grill, pelo hambúrguer com picles', 'Um rodízio qualquer', 'Uma pizzaria genérica', 'Lanchonete de posto'],
+        certa: 0,
+        certoMsg: 'O Grill! Com picles, sem picles não tem graça 🍔',
+        erradoMsg: 'É o Grill, por causa do hambúrguer com picles. Clássico nosso.'
+    },
+    {
+        pergunta: 'Quando o carro atolou naquela estrada de terra, o que eu tentei usar pra tirar o carro do buraco?',
+        opcoes: ['O triângulo do carro', 'Uma pá', 'Só os braços mesmo', 'Chamamos o guincho direto'],
+        certa: 0,
+        certoMsg: 'Isso mesmo, o triângulo, que nem serviu pra muita coisa 😂',
+        erradoMsg: 'Tentei com o triângulo do carro, que praticamente não ajudou em nada, mas rimos muito.'
+    },
+    {
+        pergunta: 'Quem é a pessoa mais carinhosa da relação?',
+        opcoes: ['Ana', 'Gabriel', 'Os dois empatados', 'Nenhum dos dois'],
+        certa: 0,
+        certoMsg: 'Você, com certeza, e eu aprendendo todo dia um pouco mais 💛',
+        erradoMsg: 'É você. Longe disso ser uma competição, mas se fosse, você ganhava fácil.'
+    },
+    {
+        pergunta: 'Quem é a pessoa mais gastadora da relação?',
+        opcoes: ['Gabriel', 'Ana', 'Os dois igual', 'Nenhum, somos super econômicos'],
+        certa: 0,
+        certoMsg: 'Eu, assumo com orgulho 😅',
+        erradoMsg: 'Sou eu, e olha que nem tento negar.'
+    },
+    {
+        pergunta: 'Qual foi a história que eu contei que te conquistou?',
+        opcoes: ['A do maquinista que morreu nos trilhos do trem', 'A do cachorro que virou herói', 'A de uma viagem pra praia', 'Nenhuma, foi só o meu cabelo'],
+        certa: 0,
+        certoMsg: 'Essa mesma, a do maquinista. Quem diria que ia funcionar tão bem 😄',
+        erradoMsg: 'Foi a história do maquinista que morreu nos trilhos do trem. Guardo até hoje o efeito que ela teve.'
+    },
+    {
+        pergunta: 'Qual é a flor favorita da Ana, de verdade, sem ser força de expressão?',
         opcoes: ['Rosa', 'Girassol', 'Orquídea', 'Lírio'],
         certa: 1,
-        certoMsg: 'Óbvio que você ia acertar essa 🌻',
+        certoMsg: 'Óbvio que a gente ia acertar essa 🌻',
         erradoMsg: 'Girassol! Ainda vou plantar um jardim inteiro deles pra você 🌻'
     },
     {
-        pergunta: 'Qual dessas dupla(s) sertaneja(s) a Poloni realmente ama?',
-        opcoes: ['Jorge & Mateus e Zé Neto & Cristiano', 'Henrique & Juliano', 'Marília Mendonça (só)', 'Nenhuma das anteriores'],
-        certa: 0,
-        certoMsg: 'Isso mesmo! Já sei até cantar junto 🎶',
-        erradoMsg: 'Jorge & Mateus e Zé Neto & Cristiano, já tá tocando na nossa cabeça, né?'
-    },
-    {
-        pergunta: 'Qual cachorro está com a gente hoje, esperando carinho?',
-        opcoes: ['Slinky', 'Kovu', 'Thor', 'Mel'],
-        certa: 1,
-        certoMsg: 'O Kovu agradece o carinho 🐾',
-        erradoMsg: 'É o Kovu! O Slinky mora no coração da gente para sempre 🐾'
-    },
-    {
-        pergunta: 'O que a Poloni definitivamente NÃO come?',
-        opcoes: ['Carne', 'Girassol (a planta, relaxa)', 'Chocolate', 'Batata frita'],
-        certa: 0,
-        certoMsg: 'Certíssimo, vegetariana com muito orgulho 🌱',
-        erradoMsg: 'Ela é ovolactovegetariana, carne está fora de cogitação 🌱'
+        pergunta: 'Quantos bichos a Ana tem hoje, contando cachorro, gato e calopsita?',
+        opcoes: ['5', '6', '8', '10'],
+        certa: 2,
+        certoMsg: 'Isso mesmo, 8! Koda, Xixico, Kovu, Yuk, Ahadi, Shury, Sol e Lua 🐾',
+        erradoMsg: 'São 8: Koda, Xixico e Kovu (cachorros), Yuk, Ahadi e Shury (gatos), Sol e Lua (calopsitas) 🐾'
     },
     {
         pergunta: 'Onde foi o nosso primeiro encontro de verdade?',
@@ -400,11 +439,11 @@ const QUIZ_PERGUNTAS = [
         erradoMsg: 'Foi no Colina, em Orlândia, dia 30/05, o dia em que tudo se encaixou.'
     },
     {
-        pergunta: 'Quantos bichos a Poloni tem hoje, contando cachorro, gato e calopsita?',
-        opcoes: ['5', '6', '8', '10'],
-        certa: 2,
-        certoMsg: 'Isso mesmo, 8! Koda, Xixico, Kovu, Yuk, Ahadi, Shury, Sol e Lua 🐾',
-        erradoMsg: 'São 8: Koda, Xixico e Kovu (cachorros), Yuk, Ahadi e Shury (gatos), Sol e Lua (calopsistas) 🐾'
+        pergunta: 'Qual cachorro torce descaradamente pra Ana, apesar de jurar que é neutro?',
+        opcoes: ['Slinky', 'Kovu', 'Thor', 'Mel'],
+        certa: 1,
+        certoMsg: 'O Kovu, sempre fingindo que não tem lado 🐾',
+        erradoMsg: 'É o Kovu! Jura que é neutro, mas todo mundo sabe pra quem o coração dele bate.'
     }
 ];
 
@@ -417,7 +456,7 @@ const QUIZ_PERGUNTAS = [
    diferente da playlist. Colocá-la como "faixa 1" aqui empurrava o
    arquivo que você realmente batizou de playlist_1 pra posição 2, dando
    a impressão de que a faixa 1 estava tocando a música errada. Agora a
-   playlist tem só as 3 faixas de verdade, na ordem que você escolher.
+   playlist tem 4 faixas de verdade, na ordem que você escolher.
 
    Sugestões de Jorge & Mateus pra cada momento, caso queira usar (edite
    título/artista/arquivo com a música real que escolher):
@@ -426,6 +465,7 @@ const QUIZ_PERGUNTAS = [
      - dia do atoleiro → algo mais animado, tipo "Propaganda"
      - dia do pedido → "Sosseguei" combina bem com a ideia de gente que
        já não precisa procurar mais nada
+     - quarta faixa livre → qualquer uma que tenha um significado especial
    ---------------------------------------------------------------------- */
 const PLAYLIST_FAIXAS = [
     {
@@ -445,6 +485,12 @@ const PLAYLIST_FAIXAS = [
         artista: '[Artista]',
         motivo: 'Escolhida especialmente pra hoje, pro dia que muda tudo.',
         src: 'audio_playlist_3'
+    },
+    {
+        titulo: '[Edite: quarta música]',
+        artista: '[Artista]',
+        motivo: 'Essa aqui é livre: bota a que fizer mais sentido pra gente.',
+        src: 'audio_playlist_4'
     }
 ];
 
@@ -461,7 +507,12 @@ const OPCOES_REGRAS_CONTRATO = [
     { id: 'bomdia', icon: 'bi-sunrise-fill', label: 'Mandar mensagem de bom dia', artigo: 'As mensagens de bom dia constituem cláusula pétrea deste contrato, não podendo ser suprimidas nem mesmo por emenda constitucional do sono.' },
     { id: 'conchinha', icon: 'bi-moon-stars-fill', label: 'Dormir de conchinha sempre que possível', artigo: 'O cobertor será dividido de forma equânime, ficando garantida a posição de conchinha sempre que possível.' },
     { id: 'filmes', icon: 'bi-film', label: 'Assistir filmes de terror/comédia juntos', artigo: 'Ficam instituídas as maratonas de filmes em conjunto, com direito a pipoca e comentários espontâneos sobre a trama, igualzinho ao dia de Todo Mundo em Pânico 6.' },
-    { id: 'sonhos', icon: 'bi-stars', label: 'Apoiar os sonhos um do outro', artigo: 'É dever de ambas as Partes apoiar incondicionalmente os sonhos, planos e ideias malucas uma da outra.' }
+    { id: 'sonhos', icon: 'bi-stars', label: 'Apoiar os sonhos um do outro', artigo: 'É dever de ambas as Partes apoiar incondicionalmente os sonhos, planos e ideias malucas uma da outra.' },
+    { id: 'manha_preguicosa', icon: 'bi-sunrise2', label: 'Manhãs de preguiça bem coladinhos', artigo: 'Fica instituído o direito a manhãs inteiras de preguiça, grudados um no outro, sem hora marcada pra sair da cama e com direito a "só mais 5 minutinhos" ilimitados.' },
+    { id: 'banho_dois', icon: 'bi-droplet-fill', label: 'Banho a dois quando o aquecedor cooperar', artigo: 'Sempre que o aquecedor permitir, fica autorizado e altamente recomendado o banho a dois, sem nenhuma pressa de sair do box.' },
+    { id: 'so_mais_um_pouco', icon: 'bi-fire', label: 'Direito a "só mais um pouquinho" antes de dormir', artigo: 'Toda vez que alguém disser "vamos dormir", fica reconhecido o direito legítimo de responder "só mais um pouquinho", sem nenhum julgamento sobre o que vem depois.' },
+    { id: 'acordar_grudados', icon: 'bi-emoji-heart-eyes-fill', label: 'Acordar se agarrando todo santo dia', artigo: 'Fica decretado, por unanimidade, que acordar se agarrando, com direito a mão boba e tudo, é rotina obrigatória deste contrato, feriado incluso.' },
+    { id: 'beijo_obrigatorio', icon: 'bi-heart-fill', label: 'Beijo de reconciliação obrigatório', artigo: 'Fica proibido dormir de biquinho fechado: toda discussão exige, no mínimo, um beijo de reconciliação antes do "boa noite", sem exceção.' }
 ];
 
 /* ----------------------------------------------------------------------
@@ -771,6 +822,22 @@ const LOJA_EASTER_EGGS = {
     lojaLogoClicavel: {
         titulo: 'A Aryah nem existe',
         texto: `Confesso: essa loja inteira é de mentira, criada só pra te trazer até aqui sem estragar a surpresa. A única coisa 100% real nessa história toda é o quanto eu te amo.`
+    },
+    destaquePrataCard: {
+        titulo: 'Prata 950, é?',
+        texto: `A prata é só enfeite dessa história. O que vale mesmo aqui não se mede em gramas nem em pureza de metal, é o que eu sinto por você, e isso não tem tabela de preço.`
+    },
+    pulseiraEsgrifaCard: {
+        titulo: 'Reparou na pulseira?',
+        texto: `Essa aqui nem é bem o presente. O presente de verdade tá esperando você lá no final dessa história toda.`
+    },
+    instagramIconeClicavel: {
+        titulo: 'Achou o Instagram falso',
+        texto: `Relaxa, ninguém vai te seguir de volta por aqui. Esse ícone só existe pra loja parecer de verdade. O que é de verdade mesmo é a gente.`
+    },
+    garantiaVitaliciaClicavel: {
+        titulo: 'Garantia vitalícia, hein?',
+        texto: `Essa palavra aí não é só marketing de loja não. É bem literal: o que eu sinto por você vem com garantia vitalícia mesmo, sem letrinha miúda escondendo nada.`
     }
 };
 
@@ -829,10 +896,10 @@ const MAPA_LUGARES = [
 /* ----------------------------------------------------------------------
    EASTER EGG DA LUA — 5 toques na lua do "Nosso céu" revelam essa
    mensagem em código Morse (ver iniciarEasterEggDaLua() em js/romance.js
-   e paraCodigoMorse() em js/utils.js).
+   e paraCodigoMorse() em js/utils.js). De propósito SEM botão de
+   tradução — a graça é ela mesma decifrar o código.
    ---------------------------------------------------------------------- */
 const MENSAGEM_SECRETA_LUA = 'EU AMO MUITO VOCE ANA JULIA POLONI';
-const MENSAGEM_SECRETA_LUA_EXIBICAO = 'Eu amo muito você, Ana Julia Poloni.';
 
 const SENHA_AREA_MEMORIAS = '1406';
 

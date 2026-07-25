@@ -204,6 +204,23 @@ function preencherValoresPadraoPedido() {
  * qualquer elemento pode virar um easter egg novo só adicionando uma
  * entrada em LOJA_EASTER_EGGS (js/config.js) com o mesmo id do elemento.
  */
+/**
+ * Os girassolzinhos-dica dos easter eggs ficam bem discretos na primeira
+ * visita de propósito (ela não deve reparar neles de cara) e um pouco
+ * mais visíveis nas visitas seguintes, uma vez que ela já sabe que
+ * existem e pode ir atrás com mais atenção.
+ */
+async function aplicarTamanhoDicasEasterEgg() {
+    let jaVisitouAntes = false;
+    try { jaVisitouAntes = !!(await obterConfiguracao('lojaJaVisitouAntes')); } catch (e) { /* sem configuração salva ainda, trata como primeira visita */ }
+
+    document.querySelectorAll('.easter-egg-dica').forEach(el => el.classList.toggle('easter-egg-dica-grande', jaVisitouAntes));
+
+    if (!jaVisitouAntes) {
+        try { await salvarConfiguracao('lojaJaVisitouAntes', true); } catch (e) { /* não crítico se falhar salvar */ }
+    }
+}
+
 function iniciarEasterEggsLoja() {
     if (typeof LOJA_EASTER_EGGS !== 'object' || !LOJA_EASTER_EGGS) return;
 
@@ -247,6 +264,7 @@ function iniciarLoja() {
     iniciarCupomFalso();
     preencherValoresPadraoPedido();
     iniciarEasterEggsLoja();
+    aplicarTamanhoDicasEasterEgg();
 
     document.getElementById('btnFecharCupom').addEventListener('click', fecharCupomFalso);
     document.getElementById('btnFecharCupomBtn').addEventListener('click', fecharCupomFalso);
@@ -256,7 +274,14 @@ function iniciarLoja() {
     });
 
     document.getElementById('freteBtn').addEventListener('click', () => {
-        document.getElementById('freteResult').classList.remove('d-none');
+        const cepDigitado = (document.getElementById('freteCepInput').value || '').replace(/\D/g, '');
+        const resultado = document.getElementById('freteResult');
+        if (cepDigitado === '140626') {
+            resultado.innerHTML = 'Esse "CEP" não existe em lugar nenhum, só na nossa história: 14/06, o dia do nosso primeiro "eu te amo". Feliz por você ter digitado justo esse aqui 💛';
+        } else {
+            resultado.textContent = 'Sedex Expresso - Frete Grátis (Chega em 2 a 3 dias úteis)';
+        }
+        resultado.classList.remove('d-none');
     });
 
     document.getElementById('btnIrParaCheckout').addEventListener('click', () => {

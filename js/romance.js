@@ -120,22 +120,11 @@ function iniciarEasterEggDaLua() {
     lua.dataset.easterEggIniciado = '1';
 
     const morseEl = document.getElementById('luaEasterEggMorse');
-    const traducaoEl = document.getElementById('luaEasterEggTraducao');
-    const btnTraduzir = document.getElementById('btnTraduzirMorse');
 
     contarToquesRepetidos(lua, 5, () => {
         morseEl.textContent = paraCodigoMorse(MENSAGEM_SECRETA_LUA);
-        traducaoEl.textContent = '';
-        traducaoEl.classList.add('d-none');
-        btnTraduzir.classList.remove('d-none');
         overlay.classList.remove('d-none');
         overlay.scrollTop = 0;
-    });
-
-    btnTraduzir.addEventListener('click', () => {
-        traducaoEl.textContent = `"${MENSAGEM_SECRETA_LUA_EXIBICAO}"`;
-        traducaoEl.classList.remove('d-none');
-        btnTraduzir.classList.add('d-none');
     });
 
     document.getElementById('btnFecharLuaEasterEgg').addEventListener('click', () => overlay.classList.add('d-none'));
@@ -157,9 +146,14 @@ function iniciarEstrelasCadentes() {
 
         // Cruza de um lado do céu até o outro: às vezes indo pra direita,
         // às vezes pra esquerda, sempre descendo um pouco, nunca sempre
-        // o mesmo trajeto.
+        // o mesmo trajeto. Como se estivesse vindo de longe: a POSIÇÃO
+        // INICIAL já fica fora da área visível (menos de 0% ou mais de
+        // 100%), então o começo do trajeto acontece escondido pelo
+        // overflow:hidden da camada, e a estrela só "aparece" quando já
+        // está cruzando de verdade, em vez de simplesmente surgir do nada
+        // já dentro do céu.
         const indoDireita = Math.random() < 0.5;
-        const distanciaX = 160 + Math.random() * 160; // 160 a 320px de travessia
+        const distanciaX = 220 + Math.random() * 180; // 220 a 400px de travessia, cruzando de fora pra dentro e seguindo pro outro lado
         const dx = indoDireita ? distanciaX : -distanciaX;
         const dy = 50 + Math.random() * 110; // sempre descendo um pouco, em graus variados
 
@@ -178,11 +172,38 @@ function iniciarEstrelasCadentes() {
         cadente.style.setProperty('--cadente-dy', `${dy}px`);
         cadente.style.setProperty('--cadente-rastro-rot', `${anguloRastro}deg`);
         cadente.style.top = `${Math.random() * 55}%`;
-        cadente.style.left = indoDireita ? `${Math.random() * 15}%` : `${55 + Math.random() * 30}%`;
+        cadente.style.left = indoDireita ? `${-25 - Math.random() * 15}%` : `${115 + Math.random() * 15}%`;
         cadente.style.animationDelay = `${Math.random() * 8 + i * 3}s`;
         cadente.style.animationDuration = `${2.4 + Math.random() * 1.6}s`;
         camada.appendChild(cadente);
     }
+
+    iniciarNaveAlienigena(camada);
+}
+
+/**
+ * Easter egg raro: uma navezinha alienígena cruza o céu bem devagar, uma
+ * vez a cada 5 minutos (tempo real, não só na abertura da página) — se
+ * ela ficar olhando o céu por tempo suficiente, tem chance de ver.
+ */
+function iniciarNaveAlienigena(camada) {
+    const CINCO_MINUTOS_MS = 5 * 60 * 1000;
+
+    function cruzarUmaVez() {
+        if (!document.body.contains(camada)) return; // saiu da página "Nossa História" — não continua gerando em segundo plano
+        const nave = document.createElement('div');
+        nave.className = 'ceu-nave-alienigena';
+        nave.innerHTML = '<span class="ceu-nave-cupula"></span><span class="ceu-nave-corpo"></span><span class="ceu-nave-luz ceu-nave-luz-1"></span><span class="ceu-nave-luz ceu-nave-luz-2"></span><span class="ceu-nave-luz ceu-nave-luz-3"></span>';
+        const indoDireita = Math.random() < 0.5;
+        nave.style.top = `${10 + Math.random() * 50}%`;
+        nave.style.left = indoDireita ? '-20%' : '120%';
+        nave.style.setProperty('--nave-dx', indoDireita ? '140%' : '-140%');
+        camada.appendChild(nave);
+        nave.addEventListener('animationend', () => nave.remove());
+    }
+
+    setTimeout(cruzarUmaVez, 30000 + Math.random() * 60000); // primeira aparição entre 30s e 1min30s, pra não depender só de quem fica 5min+ olhando
+    setInterval(cruzarUmaVez, CINCO_MINUTOS_MS);
 }
 
 function iniciarFechamentoEstrelaModal() {
@@ -217,21 +238,42 @@ function abrirEstrelaModal(indice) {
 }
 
 /* ---------------- "Nossos momentos" (mesa de fotos) ---------------- */
-function iniciarGaleriaMomentos() {
+async function iniciarGaleriaMomentos() {
     const galeria = document.getElementById('momentosGallery');
     if (!galeria) return;
-    const ids = ['imagem_momento_1', 'imagem_momento_2', 'imagem_momento_3', 'imagem_momento_4'];
     const cartoes = Array.from(galeria.querySelectorAll('.table-photo'));
-    cartoes.forEach((cartao, i) => aplicarImagemPlaceholder(cartao.querySelector('img'), ids[i], 'Foto do casal'));
 
-    const urls = ids.map(getAsset);
+    let fotos = [];
+    try {
+        fotos = await descobrirTodasAsFotosDaGaleria();
+    } catch (e) {
+        fotos = [];
+    }
+
+    // Sorteia até 4 fotos, sem repetir nenhuma (embaralha e pega as
+    // primeiras N) — toda vez que a página é aberta, uma seleção
+    // diferente de momentos aparece aqui.
+    const embaralhadas = fotos.slice().sort(() => Math.random() - 0.5);
+    const escolhidas = embaralhadas.slice(0, cartoes.length);
+
     cartoes.forEach((cartao, i) => {
-        cartao.style.cursor = 'pointer';
-        cartao.addEventListener('click', () => abrirLightboxGaleria(urls, i));
+        const img = cartao.querySelector('img');
+        if (escolhidas[i]) {
+            img.src = escolhidas[i];
+            img.alt = 'Foto do casal';
+            cartao.classList.remove('d-none');
+        } else {
+            // Menos de 4 fotos na galeria ainda (ex.: site recém criado) —
+            // cai no mesmo SVG "adicione esta foto" usado no resto do site,
+            // em vez de simplesmente sumir ou quebrar.
+            aplicarImagemPlaceholder(img, null, 'Foto do casal');
+        }
+        cartao.style.cursor = escolhidas[i] ? 'pointer' : '';
+        cartao.onclick = escolhidas[i] ? () => abrirLightboxGaleria(escolhidas, i) : null;
     });
 }
 
-/* ---------------- Mini quiz "O quanto você me conhece?" ---------------- */
+/* ---------------- Quiz do casal ---------------- */
 let quizIndiceAtual = 0;
 let quizRespostasEscolhidas = [];
 
@@ -471,6 +513,11 @@ async function iniciarEnvelopeCapsula() {
         hint.classList.remove('visivel');
         envelope.classList.add('aberto');
 
+        // A carta já abre direto no modo "luz de vela" (pedido explícito):
+        // antes exigia um toque extra num botão separado pra entrar nesse
+        // modo, e esse botão às vezes falhava. Agora é automático.
+        setTimeout(() => abrirModoVela('Um ano depois', textoEl.innerHTML, assinaturaEl.textContent), 900);
+
         const btnVela = document.getElementById('btnModoVelaCapsula');
         if (btnVela) {
             btnVela.classList.remove('d-none');
@@ -641,16 +688,31 @@ let lightboxLegendasAtuais = null;
 // Mesma técnica usada em galeria.html: trava o scroll do fundo (inclusive o
 // "bounce" do iOS) enquanto o lightbox está aberto, restaurando a posição
 // exata de onde a pessoa estava ao fechar.
+//
+// CORREÇÃO: antes usava uma única variável compartilhada — se dois
+// overlays travassem a rolagem meio que ao mesmo tempo (ex.: a tela de
+// carregamento e um lightbox), o primeiro a fechar destravava tudo e
+// podia restaurar a rolagem numa posição errada, mesmo com o outro
+// overlay ainda esperando ficar travado. Agora é uma contagem de
+// referências: só destrava de verdade quando todo mundo que travou já
+// destravou também.
 let __lembrancaScrollSalvo = 0;
+let __lembrancaScrollContagem = 0;
 function bloquearScrollFundoLembranca() {
-    __lembrancaScrollSalvo = window.scrollY || document.documentElement.scrollTop || 0;
-    document.documentElement.classList.add('aurora-scroll-lock');
-    document.body.style.top = `-${__lembrancaScrollSalvo}px`;
+    if (__lembrancaScrollContagem === 0) {
+        __lembrancaScrollSalvo = window.scrollY || document.documentElement.scrollTop || 0;
+        document.documentElement.classList.add('aurora-scroll-lock');
+        document.body.style.top = `-${__lembrancaScrollSalvo}px`;
+    }
+    __lembrancaScrollContagem++;
 }
 function desbloquearScrollFundoLembranca() {
-    document.documentElement.classList.remove('aurora-scroll-lock');
-    document.body.style.top = '';
-    window.scrollTo(0, __lembrancaScrollSalvo);
+    __lembrancaScrollContagem = Math.max(0, __lembrancaScrollContagem - 1);
+    if (__lembrancaScrollContagem === 0) {
+        document.documentElement.classList.remove('aurora-scroll-lock');
+        document.body.style.top = '';
+        window.scrollTo(0, __lembrancaScrollSalvo);
+    }
 }
 
 function abrirLightboxGaleria(itens, indiceInicial, legendas) {
@@ -760,7 +822,6 @@ async function goToRomancePage(primeiraVez) {
     iniciarQuiz();
     renderizarTimeline();
     iniciarFechamentoEstrelaModal();
-    iniciarGaleriaMomentos();
     exibirEasterEggSobrenome();
     renderizarCoisasQueElaAma();
     renderizarSeusBichos();
@@ -795,6 +856,7 @@ async function goToRomancePage(primeiraVez) {
         prepararCapsulaDoTempo(),
         verificarEspecialAniversario(),
         iniciarMomentoLento(),
+        iniciarGaleriaMomentos(), // agora varre a galeria de verdade pra sortear fotos, então entra aqui e não mais na lista "rápida" abaixo
 
         obterConfiguracao('aurora_data_pedido').then(dataPedidoIso => {
             if (!dataPedidoIso) return;
@@ -980,13 +1042,12 @@ function iniciarCartaDiscussao() {
 
     const passoSenha = document.getElementById('cartaDiscussaoPassoSenha');
     const passoPergunta = document.getElementById('cartaDiscussaoPassoPergunta');
-    const passoCarta = document.getElementById('cartaDiscussaoPassoCarta');
     const senhaInput = document.getElementById('cartaDiscussaoSenhaInput');
     const senhaErro = document.getElementById('cartaDiscussaoSenhaErro');
     const mensagemFofa = document.getElementById('cartaDiscussaoMensagemFofa');
 
     function mostrarPasso(passo) {
-        [passoSenha, passoPergunta, passoCarta].forEach(p => p.classList.add('d-none'));
+        [passoSenha, passoPergunta].forEach(p => p.classList.add('d-none'));
         passo.classList.remove('d-none');
         overlay.scrollTop = 0; // cada passo novo começa mostrando o topo, nunca no meio/fim
     }
@@ -1011,9 +1072,9 @@ function iniciarCartaDiscussao() {
     function tentarSenha() {
         const digitada = (senhaInput.value || '').trim().toLowerCase().replace(/\s+/g, '');
         if (digitada === SENHA_CARTA_DISCUSSAO) {
-            document.getElementById('cartaDiscussaoTexto').textContent = textoCartaDiscussao();
-            document.getElementById('cartaDiscussaoAssinatura').textContent = NOME_DELE + '.';
-            mostrarPasso(passoCarta);
+            overlay.classList.add('d-none');
+            // Já abre direto no modo "luz de vela" (pedido explícito).
+            abrirModoVela('Se um dia a gente discutir', textoCartaDiscussao(), NOME_DELE + '.');
         } else {
             senhaErro.classList.remove('d-none');
             senhaInput.value = '';
@@ -1041,8 +1102,6 @@ function iniciarCartaDiscussao() {
         document.getElementById('btnCartaDiscussaoSim').classList.add('d-none');
         document.getElementById('btnCartaDiscussaoNao').classList.add('d-none');
     });
-
-    document.getElementById('btnVoltarCartaDiscussao').addEventListener('click', () => mostrarPasso(passoPergunta));
 
     fechar.addEventListener('click', () => overlay.classList.add('d-none'));
     overlay.addEventListener('click', (evt) => { if (evt.target === overlay) overlay.classList.add('d-none'); });

@@ -56,28 +56,47 @@ function resetarBotaoNaoFujao() {
     btnNo.style.position = 'relative';
     btnNo.style.left = '0px';
     btnNo.style.top = '0px';
+    btnNo.style.width = '';
     tentativasBotaoNao = 0;
     const legenda = document.getElementById('btnNoLegenda');
     if (legenda) legenda.textContent = '';
 }
 
+/**
+ * O botão foge de verdade agora: em vez de só se deslocar um pouquinho
+ * dentro do card, ele vira position:fixed (relativo à tela inteira) e
+ * pula pro lado OPOSTO de onde estava, quase na outra ponta da tela —
+ * bem mais dramático e mais difícil de alcançar de propósito.
+ */
 function fugirBotaoNao(origem) {
     const btnNo = origem;
-    const card = document.getElementById('questionBox');
     tentativasBotaoNao++;
 
-    const cardRect = card.getBoundingClientRect();
+    const larguraTela = window.innerWidth;
+    const alturaTela = window.innerHeight;
     const btnRect = btnNo.getBoundingClientRect();
-    const margem = 10;
-    const maxX = Math.max(0, cardRect.width - btnRect.width - margem * 2);
-    const maxY = Math.max(0, 60); // desloca verticalmente pouco, o suficiente para escapar do dedo
+    const margem = 16;
 
-    const novoX = Math.random() * maxX - maxX / 2;
-    const novoY = (Math.random() - 0.5) * maxY;
+    // Se já está com position:fixed (não é a primeira fuga), usa a
+    // posição atual como referência de "onde está agora" pra fugir pro
+    // lado oposto; senão, usa a posição original na tela como ponto de
+    // partida.
+    const posAtualX = btnRect.left;
+    const posAtualY = btnRect.top;
+    const ladoOpostoX = posAtualX < larguraTela / 2
+        ? margem + Math.random() * (larguraTela * 0.35 - margem - btnRect.width) + larguraTela * 0.55
+        : margem + Math.random() * (larguraTela * 0.35 - margem);
+    const novoY = Math.max(margem, Math.min(alturaTela - btnRect.height - margem, posAtualY + (Math.random() - 0.5) * alturaTela * 0.4));
 
-    btnNo.style.position = 'relative';
-    btnNo.style.transition = 'left 0.25s ease, top 0.25s ease';
-    btnNo.style.left = `${novoX}px`;
+    if (btnNo.style.position !== 'fixed') {
+        // primeira fuga: fixa a largura atual antes de tirar do fluxo
+        // normal, pra não "encolher" ao virar position:fixed
+        btnNo.style.width = `${btnRect.width}px`;
+    }
+    btnNo.style.position = 'fixed';
+    btnNo.style.zIndex = '99999';
+    btnNo.style.transition = 'left 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), top 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)';
+    btnNo.style.left = `${Math.max(margem, Math.min(larguraTela - btnRect.width - margem, ladoOpostoX))}px`;
     btnNo.style.top = `${novoY}px`;
 
     const legenda = document.getElementById('btnNoLegenda');
@@ -521,13 +540,17 @@ function iniciarCartaFinal() {
                     continuarWrap.classList.remove('d-none');
                     continuarWrap.classList.add('reveal-up');
 
-                    // Modo vela só aparece depois que a carta terminou de se
-                    // revelar por completo — não faz sentido oferecer antes disso.
+                    // A carta já abre direto no modo "luz de vela" (pedido
+                    // explícito, e também porque o botão manual de entrar
+                    // nesse modo vinha falhando). Continua existindo como
+                    // botão de RE-abrir caso ela feche o modo vela sem
+                    // querer e queira voltar.
                     const btnVela = document.getElementById('btnModoVelaCarta');
                     if (btnVela) {
                         btnVela.classList.remove('d-none');
                         btnVela.onclick = () => abrirModoVela(letterEyebrow.textContent, letterTextEl.innerHTML, letterSignoff.textContent);
                     }
+                    setTimeout(() => abrirModoVela(letterEyebrow.textContent, letterTextEl.innerHTML, letterSignoff.textContent), 600);
                 }, 700);
             }, tempoTotalTrocas);
         }, 1200);

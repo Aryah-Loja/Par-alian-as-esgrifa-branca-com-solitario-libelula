@@ -144,6 +144,103 @@ function contarToquesRepetidos(elemento, quantidadeNecessaria, aoCompletar) {
     });
 }
 
+/**
+ * Rede de segurança pra "espaço em branco no fim da página depois de sair
+ * e voltar, que só some com F5": em navegadores de celular, quando o
+ * app fica em segundo plano no meio de alguma transição (um overlay
+ * fechando, a barra de endereço mudando de tamanho), o layout às vezes
+ * fica com um valor de altura desatualizado até a página recalcular tudo
+ * de novo — o que normalmente só acontece mesmo num reload. Forçando um
+ * reflow manual quando a aba volta a ficar visível, resolve sem precisar
+ * de F5.
+ */
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    requestAnimationFrame(() => {
+        document.body.style.display = 'none';
+        void document.body.offsetHeight; // força o navegador a recalcular o layout de verdade
+        document.body.style.display = '';
+    });
+});
+
+/* ---------------- Descoberta de itens da galeria (compartilhado entre galeria.html e "Nossos momentos" em index.html) ---------------- */
+const GALERIA_MAX_NUMERO = 500;       // teto de segurança, nunca deve ser alcançado na prática
+const GALERIA_LACUNA_PARA_PARAR = 6;  // depois de 6 números seguidos sem nada, para de procurar
+
+/** Confere (via HEAD, sem baixar o arquivo inteiro) se um caminho existe no servidor. */
+async function galeriaArquivoExiste(caminho) {
+    try {
+        const resposta = await fetch(caminho, { method: 'HEAD', cache: 'no-store' });
+        return resposta.ok;
+    } catch (e) {
+        return false;
+    }
+}
+
+/**
+ * Tenta descobrir o item "galeria_N" testando cada extensão de foto e
+ * vídeo aceita, em paralelo. Devolve { caminho, tipo } da primeira que
+ * existir, ou `null` se nenhuma existir.
+ */
+async function galeriaDescobrirItem(numero) {
+    // Testa cada extensão tanto em minúsculo quanto em MAIÚSCULO — celular
+    // (principalmente iPhone) às vezes salva/exporta com extensão em
+    // maiúsculo (ex.: IMG.MOV), e servidores estáticos (GitHub Pages, etc.)
+    // costumam ser case-sensitive, então "galeria_2.mov" não bate com
+    // "galeria_2.MOV" se testarmos só uma forma.
+    const candidatos = [
+        ...GALERIA_EXTENSOES_FOTO.flatMap(ext => ([
+            { ext, tipo: 'foto' },
+            { ext: ext.toUpperCase(), tipo: 'foto' }
+        ])),
+        ...GALERIA_EXTENSOES_VIDEO.flatMap(ext => ([
+            { ext, tipo: 'video' },
+            { ext: ext.toUpperCase(), tipo: 'video' }
+        ]))
+    ];
+
+    const resultados = await Promise.all(candidatos.map(async (c) => {
+        const caminho = `${PASTA_GALERIA}/galeria_${numero}.${c.ext}`;
+        const existe = await galeriaArquivoExiste(caminho);
+        return existe ? { caminho, tipo: c.tipo } : null;
+    }));
+
+    return resultados.find(r => r !== null) || null;
+}
+
+/**
+ * Varre a galeria inteira (mesma lógica de descoberta usada em
+ * galeria.html) e devolve só os itens do tipo "foto" encontrados. Usado
+ * por "Nossos momentos" (js/romance.js) pra sortear fotos aleatórias
+ * reais da galeria, em vez de depender de 4 arquivos fixos.
+ */
+async function descobrirTodasAsFotosDaGaleria() {
+    const TAMANHO_LOTE = 8;
+    let proximoNumero = 1;
+    let lacunaAtual = 0;
+    const fotosEncontradas = [];
+
+    while (proximoNumero <= GALERIA_MAX_NUMERO && lacunaAtual < GALERIA_LACUNA_PARA_PARAR) {
+        const numerosDoLote = [];
+        for (let i = 0; i < TAMANHO_LOTE; i++) numerosDoLote.push(proximoNumero + i);
+
+        const resultados = await Promise.all(numerosDoLote.map(n => galeriaDescobrirItem(n)));
+
+        for (let i = 0; i < resultados.length; i++) {
+            if (resultados[i]) {
+                lacunaAtual = 0;
+                if (resultados[i].tipo === 'foto') fotosEncontradas.push(resultados[i].caminho);
+            } else {
+                lacunaAtual++;
+                if (lacunaAtual >= GALERIA_LACUNA_PARA_PARAR) break;
+            }
+        }
+        proximoNumero += TAMANHO_LOTE;
+    }
+
+    return fotosEncontradas;
+}
+
 function bloquearZoom() {
     // Pinça em iOS Safari dispara eventos "gesture*" que ignoram o
     // user-scalable=no do viewport — precisam ser bloqueados manualmente.

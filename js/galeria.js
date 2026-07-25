@@ -19,54 +19,11 @@
  */
 
 let __galeriaFotosCarregadas = 0;
-const GALERIA_MAX_NUMERO = 500;       // teto de segurança, nunca deve ser alcançado na prática
-const GALERIA_LACUNA_PARA_PARAR = 6;  // depois de 6 números seguidos sem nada, para de procurar
 
 // Lista ordenada de tudo que entrou na galeria (fotos, vídeos locais e do
 // YouTube), na mesma ordem em que aparecem na grade — usada para navegar
 // entre itens (anterior/próxima) dentro do lightbox.
 let __galeriaItens = [];
-
-/** Confere (via HEAD, sem baixar o arquivo inteiro) se um caminho existe no servidor. */
-async function galeriaArquivoExiste(caminho) {
-    try {
-        const resposta = await fetch(caminho, { method: 'HEAD', cache: 'no-store' });
-        return resposta.ok;
-    } catch (e) {
-        return false;
-    }
-}
-
-/**
- * Tenta descobrir o item "galeria_N" testando cada extensão de foto e
- * vídeo aceita, em paralelo. Devolve { caminho, tipo } da primeira que
- * existir, ou `null` se nenhuma existir.
- */
-async function galeriaDescobrirItem(numero) {
-    // Testa cada extensão tanto em minúsculo quanto em MAIÚSCULO — celular
-    // (principalmente iPhone) às vezes salva/exporta com extensão em
-    // maiúsculo (ex.: IMG.MOV), e servidores estáticos (GitHub Pages, etc.)
-    // costumam ser case-sensitive, então "galeria_2.mov" não bate com
-    // "galeria_2.MOV" se testarmos só uma forma.
-    const candidatos = [
-        ...GALERIA_EXTENSOES_FOTO.flatMap(ext => ([
-            { ext, tipo: 'foto' },
-            { ext: ext.toUpperCase(), tipo: 'foto' }
-        ])),
-        ...GALERIA_EXTENSOES_VIDEO.flatMap(ext => ([
-            { ext, tipo: 'video' },
-            { ext: ext.toUpperCase(), tipo: 'video' }
-        ]))
-    ];
-
-    const resultados = await Promise.all(candidatos.map(async (c) => {
-        const caminho = `${PASTA_GALERIA}/galeria_${numero}.${c.ext}`;
-        const existe = await galeriaArquivoExiste(caminho);
-        return existe ? { caminho, tipo: c.tipo } : null;
-    }));
-
-    return resultados.find(r => r !== null) || null;
-}
 
 async function montarGaleria() {
     const masonry = document.getElementById('galeriaMasonry');

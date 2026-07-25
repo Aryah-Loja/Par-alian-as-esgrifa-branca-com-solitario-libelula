@@ -122,7 +122,7 @@
             <div class="promo-slide slide-a" data-slide="0">
                 <p class="promo-eyebrow">Coleção Esgrifa</p>
                 <h2 class="promo-title">Alianças que contam histórias</h2>
-                <p class="promo-sub">Prata 950 com acabamento artesanal e garantia vitalícia.</p>
+                <p class="promo-sub">Prata 950 com acabamento artesanal e <span id="garantiaVitaliciaClicavel" class="easter-egg-gatilho">garantia vitalícia<span class="easter-egg-dica" aria-hidden="true">🌻</span></span>.</p>
             </div>
             <div class="promo-slide slide-b d-none" data-slide="1">
                 <p class="promo-eyebrow">Edição Flor Rosa</p>
@@ -188,7 +188,7 @@
             <div class="px-2 mt-4 bg-white p-3 rounded shadow-sm border">
                 <h5 class="fs-6 fw-bold mb-2"><i class="bi bi-truck text-rosegold me-2"></i>Consultar Frete e Prazo</h5>
                 <div class="input-group input-group-sm mb-2">
-                    <input type="text" class="form-control" placeholder="00000-000" maxlength="9">
+                    <input type="text" id="freteCepInput" class="form-control" placeholder="00000-000" maxlength="9">
                     <button id="freteBtn" class="btn btn-outline-secondary placeholder-link" type="button">Calcular</button>
                 </div>
                 <div id="freteResult" class="d-none mt-2 text-success small fw-bold bg-light p-2 rounded">Sedex Expresso - Frete Grátis (Chega em 2 a 3 dias úteis)</div>
@@ -247,7 +247,7 @@
                 <div class="highlight-strip">
                     <div class="highlight-card"><img id="destaqueFlorRosa" alt="Coleção Flor Rosa"><p class="hc-label mb-0">Flor Rosa</p></div>
                     <div class="highlight-card"><img id="destaqueLibelula" alt="Coleção Libélula"><p class="hc-label mb-0">Libélula</p></div>
-                    <div class="highlight-card"><img id="destaquePrata" alt="Linha Prata 950"><p class="hc-label mb-0">Prata 950</p></div>
+                    <div class="highlight-card easter-egg-gatilho position-relative" id="destaquePrataCard"><span class="easter-egg-dica easter-egg-dica-canto" aria-hidden="true">🌻</span><img id="destaquePrata" alt="Linha Prata 950"><p class="hc-label mb-0">Prata 950</p></div>
                     <div class="highlight-card"><img id="destaqueEstojos" alt="Estojos presenteáveis"><p class="hc-label mb-0">Estojos</p></div>
                 </div>
             </div>
@@ -273,7 +273,7 @@
                 <div class="row row-cols-2 g-2">
                     <div class="col"><div class="card h-100 border-0 shadow-sm placeholder-link" style="cursor: pointer;"><img id="relacionadoColar" class="card-img-top related-img" alt="Colar Libélula Prata 950"><div class="card-body p-2 text-center"><p class="card-title small fw-bold mb-0 text-truncate">Colar Libélula Prata 950</p><p class="text-rosegold fw-bold small mt-1 mb-0">R$ 259,00</p></div></div></div>
                     <div class="col"><div class="card h-100 border-0 shadow-sm placeholder-link" style="cursor: pointer;"><img id="relacionadoBrinco" class="card-img-top related-img" alt="Brincos Flor Rosa Prata 950"><div class="card-body p-2 text-center"><p class="card-title small fw-bold mb-0 text-truncate">Brincos Flor Rosa Prata 950</p><p class="text-rosegold fw-bold small mt-1 mb-0">R$ 189,00</p></div></div></div>
-                    <div class="col"><div class="card h-100 border-0 shadow-sm placeholder-link" style="cursor: pointer;"><img id="relacionadoPulseira" class="card-img-top related-img" alt="Pulseira Esgrifa Prata 950"><div class="card-body p-2 text-center"><p class="card-title small fw-bold mb-0 text-truncate">Pulseira Esgrifa Prata 950</p><p class="text-rosegold fw-bold small mt-1 mb-0">R$ 219,00</p></div></div></div>
+                    <div class="col"><div class="card h-100 border-0 shadow-sm placeholder-link easter-egg-gatilho position-relative" id="pulseiraEsgrifaCard" style="cursor: pointer;"><span class="easter-egg-dica easter-egg-dica-canto" aria-hidden="true">🌻</span><img id="relacionadoPulseira" class="card-img-top related-img" alt="Pulseira Esgrifa Prata 950"><div class="card-body p-2 text-center"><p class="card-title small fw-bold mb-0 text-truncate">Pulseira Esgrifa Prata 950</p><p class="text-rosegold fw-bold small mt-1 mb-0">R$ 219,00</p></div></div></div>
                     <div class="col"><div class="card h-100 border-0 shadow-sm placeholder-link" style="cursor: pointer;"><img id="relacionadoEstojo" class="card-img-top related-img" alt="Estojo Presenteável Aryah"><div class="card-body p-2 text-center"><p class="card-title small fw-bold mb-0 text-truncate">Estojo Presenteável <span class="js-marca-loja">Aryah</span></p><p class="text-rosegold fw-bold small mt-1 mb-0">R$ 59,00</p></div></div></div>
                 </div>
             </div>
@@ -321,7 +321,7 @@
         <footer class="bg-light pt-4 pb-5 border-top text-center" style="margin-bottom: 70px;">
             <h5 class="text-rosegold fw-bold tracking-wide mb-3 js-marca-loja">ARYAH JOIAS</h5>
             <div class="d-flex justify-content-center gap-4 mb-3">
-                <i class="bi bi-instagram fs-4 text-muted placeholder-link"></i>
+                <span class="position-relative d-inline-block"><i id="instagramIconeClicavel" class="bi bi-instagram fs-4 text-muted placeholder-link easter-egg-gatilho"></i><span class="easter-egg-dica easter-egg-dica-canto" style="top:-8px; right:-10px;" aria-hidden="true">🌻</span></span>
                 <i class="bi bi-whatsapp fs-4 text-muted placeholder-link"></i>
                 <i class="bi bi-envelope fs-4 text-muted placeholder-link"></i>
             </div>
@@ -847,7 +847,7 @@
         </div>
 
         <div id="quizWrap" class="mt-5 reveal-up" style="max-width: 440px; margin: 0 auto;">
-            <p class="romance-section-title">O quanto você me conhece?</p>
+            <p class="romance-section-title">Quiz do casal</p>
             <div class="quiz-card" id="quizCard">
                 <div class="quiz-dots" id="quizDots"></div>
                 <h5 class="quiz-question" id="quizPergunta"></h5>
@@ -956,8 +956,7 @@
                     <p class="letter-eyebrow visivel">Mais opções</p>
                     <div class="d-flex gap-2 justify-content-center flex-wrap">
                         <button id="btnExportarCartaoPostal" class="btn btn-outline-dark btn-sm rounded-pill"><i class="bi bi-postcard me-1"></i>Cartão postal do mapa</button>
-                        <button id="btnExportarConstelacaoClara" class="btn btn-outline-dark btn-sm rounded-pill"><i class="bi bi-stars me-1"></i>Constelação (clara)</button>
-                        <button id="btnExportarConstelacaoEscura" class="btn btn-outline-dark btn-sm rounded-pill"><i class="bi bi-moon-stars-fill me-1"></i>Constelação (escura)</button>
+                        <button id="btnExportarConstelacao" class="btn btn-outline-dark btn-sm rounded-pill"><i class="bi bi-stars me-1"></i>Constelação</button>
                         <button id="btnExportarCartaFisica" class="btn btn-outline-dark btn-sm rounded-pill"><i class="bi bi-envelope-paper-fill me-1"></i>Carta física com QR</button>
                         <button id="btnExportarPolaroid" class="btn btn-outline-dark btn-sm rounded-pill"><i class="bi bi-camera me-1"></i>Polaroid do momento</button>
                         <button id="btnReverLoja" class="btn btn-outline-dark btn-sm rounded-pill"><i class="bi bi-shop me-1"></i>Rever a lojinha das alianças</button>
@@ -1015,30 +1014,34 @@
             <p id="cartaDiscussaoSenhaErro" class="save-status err d-none">Não é bem essa. Tenta de novo.</p>
             <button id="btnCartaDiscussaoSenhaEntrar" class="btn btn-rosegold w-100 rounded-pill fw-bold mt-3">Continuar</button>
         </div>
-
-        <!-- Passo 3: a carta -->
-        <div id="cartaDiscussaoPassoCarta" class="carta-discussao-papel carta-discussao-passo d-none">
-            <p class="letter-eyebrow visivel">Se um dia a gente discutir</p>
-            <p class="letter-text versiculo-visivel" id="cartaDiscussaoTexto"></p>
-            <p class="letter-signoff visivel" id="cartaDiscussaoAssinatura"></p>
-            <button id="btnVoltarCartaDiscussao" class="btn btn-outline-dark btn-sm rounded-pill mt-3"><i class="bi bi-arrow-left me-1"></i>Voltar</button>
-        </div>
     </div>
 
     <!-- ===================== ELEMENTOS OCULTOS USADOS SÓ PARA EXPORTAÇÃO ===================== -->
 
     <!-- Cartão postal do "Nosso mapa" — gerado NA HORA a partir de MAPA_LUGARES
          (js/config.js), então sempre reflete o que estiver la, sem precisar
-         editar nada aqui quando um lugar novo for adicionado. -->
+         editar nada aqui quando um lugar novo for adicionado. A grade de
+         colunas e o tamanho das fotos são calculados em JS (ver
+         calcularGradeParaCaber em js/export.js), então sempre cabe tudo
+         direitinho, não importa quantos lugares existam. -->
     <div id="cartaoPostalExportavel" class="exportavel-oculto cartao-postal-exportavel" aria-hidden="true">
+        <span class="cartao-postal-girassol cartao-postal-girassol-1">🌻</span>
+        <span class="cartao-postal-girassol cartao-postal-girassol-2">🌻</span>
+        <span class="cartao-postal-girassol cartao-postal-girassol-3">🌻</span>
         <p class="cartao-postal-titulo">Nosso mapa</p>
         <div class="cartao-postal-lista" id="cartaoPostalLista"></div>
     </div>
 
     <!-- Constelação pra imprimir — gerada a partir de TIMELINE_MARCOS
-         (js/config.js). Duas variantes (clara/escura) reaproveitam o mesmo
-         template, só trocando uma classe antes de capturar a imagem. -->
+         (js/config.js), sempre no visual escuro/estrelado (a versão clara
+         foi removida). Fundo com nebulosas, planeta e estrelas, tudo em
+         CSS puro. A grade também é calculada dinamicamente em JS, então
+         sempre cabe tudo, mesmo se a timeline crescer no futuro. -->
     <div id="constelacaoExportavel" class="exportavel-oculto constelacao-exportavel" aria-hidden="true">
+        <div class="constelacao-fundo-nebulosa constelacao-fundo-nebulosa-1"></div>
+        <div class="constelacao-fundo-nebulosa constelacao-fundo-nebulosa-2"></div>
+        <div class="constelacao-fundo-planeta"></div>
+        <div class="constelacao-fundo-estrelas"></div>
         <p class="constelacao-titulo">Nosso céu</p>
         <div class="constelacao-lista" id="constelacaoLista"></div>
     </div>
@@ -1098,14 +1101,12 @@
         </div>
     </div>
 
-    <!-- Easter egg da lua: 5 toques revelam uma mensagem em código Morse -->
+    <!-- Easter egg da lua: 5 toques revelam uma mensagem em código Morse (de propósito sem tradução — a graça é ela decifrar) -->
     <div id="luaEasterEggOverlay" class="carta-discussao-overlay d-none">
         <button id="btnFecharLuaEasterEgg" class="modo-vela-fechar" aria-label="Fechar"><i class="bi bi-x-lg"></i></button>
         <div class="carta-discussao-papel text-center">
             <p class="letter-eyebrow visivel">Você achou um segredo</p>
             <p class="lua-easter-egg-morse" id="luaEasterEggMorse"></p>
-            <button id="btnTraduzirMorse" class="btn btn-outline-dark btn-sm rounded-pill mt-2">Traduzir</button>
-            <p class="lua-easter-egg-traducao d-none" id="luaEasterEggTraducao"></p>
         </div>
     </div>
 

@@ -284,31 +284,12 @@ async function executarVerEstadoReset() {
     }
 }
 
-/** Confere (via HEAD, sem baixar o arquivo inteiro) se um caminho existe no servidor. */
-async function galeriaArquivoExiste(caminho) {
-    try {
-        const resposta = await fetch(`${caminho}?t=${Date.now()}`, { method: 'HEAD', cache: 'no-store' });
-        return resposta.ok;
-    } catch (err) {
-        return false;
-    }
-}
-
-/** Mesma lógica de descoberta usada em js/galeria.js — duplicada aqui só pra não precisar carregar o arquivo inteiro nesta página. */
-async function galeriaDescobrirItem(numero) {
-    // Testa maiúsculo e minúsculo (iPhone às vezes exporta extensão em
-    // maiúsculo, e servidores estáticos costumam ser case-sensitive).
-    const candidatos = [
-        ...GALERIA_EXTENSOES_FOTO.flatMap(ext => ([{ ext, tipo: 'foto' }, { ext: ext.toUpperCase(), tipo: 'foto' }])),
-        ...GALERIA_EXTENSOES_VIDEO.flatMap(ext => ([{ ext, tipo: 'video' }, { ext: ext.toUpperCase(), tipo: 'video' }]))
-    ];
-    const resultados = await Promise.all(candidatos.map(async (c) => {
-        const caminho = `${PASTA_GALERIA}/galeria_${numero}.${c.ext}`;
-        const existe = await galeriaArquivoExiste(caminho);
-        return existe ? { caminho, tipo: c.tipo } : null;
-    }));
-    return resultados.find(r => r !== null) || null;
-}
+// galeriaArquivoExiste() e galeriaDescobrirItem() agora vêm de js/utils.js
+// (compartilhadas com galeria.html e com "Nossos momentos" em
+// index.html) — antes eram duplicadas aqui pra não precisar carregar
+// galeria.js inteiro nesta página, mas como utils.js já era carregado
+// aqui mesmo, a duplicata virou um conflito de nome (as duas declarações
+// coexistindo quebravam a página). Removida a cópia local.
 
 async function executarTesteGaleria() {
     const btn = document.getElementById('btnTestarGaleria');
