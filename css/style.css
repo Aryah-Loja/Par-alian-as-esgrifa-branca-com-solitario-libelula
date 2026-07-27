@@ -522,6 +522,34 @@ img { max-width: 100%; }
 .aniversario-topo { font-family: 'Jost', sans-serif; font-size: 0.72rem; letter-spacing: 2px; text-transform: uppercase; color: #ffc478; margin: 0 0 10px; }
 .aniversario-texto { font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; font-size: 0.95rem; color: #fff0dd; line-height: 1.7; margin: 0; white-space: pre-wrap; }
 
+/* Vídeo dentro do bloco de aniversário (mesmo espírito visual do
+   momento-lento-container, mas com controles visíveis, já que aqui o
+   áudio do próprio vídeo importa). */
+.aniversario-video-wrap { margin-top: 18px; border-radius: 14px; overflow: hidden; background: #000; }
+.aniversario-video-wrap video { width: 100%; display: block; max-height: 420px; }
+
+/* Botão pequeno de tocar/pausar a música de aniversário — some sozinho
+   se não houver arquivo de música (ver js/romance.js). Existe porque
+   alguns navegadores bloqueiam autoplay com som. */
+.aniversario-musica-btn { margin-top: 16px; width: 42px; height: 42px; border-radius: 50%; border: 1px solid rgba(255,196,120,0.4); background: rgba(255,196,120,0.12); color: #ffc478; font-size: 1.1rem; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s ease, background 0.2s ease; }
+.aniversario-musica-btn:hover { background: rgba(255,196,120,0.22); transform: scale(1.06); }
+.aniversario-musica-btn.tocando { animation: aniversarioMusicaPulso 1.6s ease-in-out infinite; }
+@keyframes aniversarioMusicaPulso { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,196,120,0.35); } 50% { box-shadow: 0 0 0 8px rgba(255,196,120,0); } }
+
+/* Chuva de corações e balões subindo de baixo pra cima na tela, só no
+   dia do aniversário dela (ver iniciarChuvaDeAniversario em
+   js/romance.js). Container fixo, cobre a tela inteira, mas não
+   atrapalha nenhum clique por baixo. */
+.aniversario-chuva { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 9999; }
+.aniversario-chuva-item { position: absolute; bottom: -60px; font-size: 1.8rem; line-height: 1; opacity: 0; will-change: transform, opacity; animation-name: aniversarioSubir; animation-timing-function: ease-in; animation-fill-mode: forwards; }
+@keyframes aniversarioSubir {
+    0% { transform: translate(0, 0) rotate(0deg); opacity: 0; }
+    10% { opacity: 1; }
+    50% { transform: translate(var(--aniversario-desvio, 20px), -55vh) rotate(12deg); }
+    90% { opacity: 1; }
+    100% { transform: translate(calc(var(--aniversario-desvio, 20px) * -1), -115vh) rotate(-10deg); opacity: 0; }
+}
+
 /* ----------------------------------------------------------------------
    "NOSSO CÉU" — timeline em forma de constelação. Fundo com estrelinhas
    decorativas piscando (geradas via JS, ver renderizarTimeline) e uma

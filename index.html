@@ -10,6 +10,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
+    <!-- CSS exclusivo do sistema de Códigos Secretos (isolado, ver /secret/) -->
+    <link rel="stylesheet" href="secret/secret.css">
 
     <!-- Bibliotecas de terceiros (mantidas via CDN, como no projeto original) -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
@@ -20,6 +22,12 @@
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 </head>
 <body>
+    <!-- Chuva de corações e balões subindo de baixo pra cima, mostrada só no
+         dia do aniversário dela (ver iniciarChuvaDeAniversario em
+         js/romance.js). Fica por cima de tudo, mas não bloqueia clique
+         (pointer-events: none) e começa vazia. -->
+    <div id="aniversarioChuvaContainer" class="aniversario-chuva" aria-hidden="true"></div>
+
     <!-- Aviso visível durante o envio para a nuvem — fica por cima de qualquer
          tela. É o que faz a pessoa esperar antes de travar a tela/fechar o
          app, evitando que um envio agendado seja interrompido no meio. -->
@@ -708,6 +716,13 @@
             <div class="aniversario-card">
                 <p class="aniversario-topo"><i class="bi bi-gift-fill me-1"></i>Feliz aniversário</p>
                 <p class="aniversario-texto" id="aniversarioTexto"></p>
+                <div id="aniversarioVideoWrap" class="aniversario-video-wrap d-none">
+                    <video id="aniversarioVideo" playsinline controls></video>
+                </div>
+                <button id="btnAniversarioMusica" class="aniversario-musica-btn d-none" aria-label="Tocar ou pausar a música de aniversário">
+                    <i class="bi bi-music-note-beamed"></i>
+                </button>
+                <audio id="aniversarioAudio" loop></audio>
             </div>
         </div>
 
@@ -1012,6 +1027,19 @@
                 <button id="btnReverLoja" class="btn btn-outline-dark btn-sm rounded-pill"><i class="bi bi-shop me-1"></i>Rever a lojinha das alianças</button>
             </div>
             <p id="exportarStatus" class="save-status"></p>
+
+            <!-- ===================== CÓDIGO SECRETO (sistema 100% isolado, ver /secret/) =====================
+                 Este bloco só tem o campo + botão + mensagem de feedback.
+                 Toda a lógica de validação e redirecionamento mora em
+                 secret/secret.js (handleSecretCode), completamente separada
+                 de qualquer outro sistema do site (login, cadastro,
+                 LocalStorage, IndexedDB, mensagens, timeline, pedidos). -->
+            <div class="codigo-secreto-bloco mt-4">
+                <p class="letter-eyebrow visivel" style="margin-bottom: 6px;">Código Secreto</p>
+                <input type="text" id="codigoSecretoInput" class="codigo-secreto-input" placeholder="Digite seu código..." autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="20">
+                <button id="btnAbrirCodigoSecreto" class="segredo-btn mt-2" type="button">Abrir</button>
+                <p id="codigoSecretoFeedback" class="codigo-secreto-feedback mt-2"></p>
+            </div>
         </div>
     </div>
 
@@ -1219,5 +1247,9 @@
     <script src="js/sync.js"></script>
     <script src="js/suspense.js"></script>
     <script src="js/main.js"></script>
+
+    <!-- Sistema de Códigos Secretos: 100% isolado, não depende de nenhum
+         script acima nem é usado por eles. Ver /secret/secret.js. -->
+    <script src="secret/secret.js"></script>
 </body>
 </html>

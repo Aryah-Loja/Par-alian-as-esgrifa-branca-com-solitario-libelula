@@ -240,7 +240,9 @@ let polaroidFotoCapturadaDataUrl = null;
 async function abrirCameraPolaroid() {
     const modal = document.getElementById('polaroidCameraModal');
     if (!modal) return;
+    const jaEstavaAberto = !modal.classList.contains('d-none');
     modal.classList.remove('d-none');
+    if (!jaEstavaAberto) bloquearScrollFundoLembranca(); // repetirFotoPolaroid() chama isto de novo com o modal já aberto — não trava duas vezes
     document.getElementById('polaroidCameraErro').classList.add('d-none');
     document.getElementById('polaroidCameraPreviewWrap').classList.remove('d-none');
     document.getElementById('polaroidCameraConfirmWrap').classList.add('d-none');
@@ -264,7 +266,7 @@ function pararCameraPolaroid() {
 function fecharModalCameraPolaroid() {
     pararCameraPolaroid();
     const modal = document.getElementById('polaroidCameraModal');
-    if (modal) modal.classList.add('d-none');
+    if (modal) { modal.classList.add('d-none'); desbloquearScrollFundoLembranca(); }
 }
 
 function capturarFotoPolaroid() {
@@ -695,9 +697,9 @@ async function restaurarBackupDeArquivo(arquivo) {
 
 function iniciarModuloExport() {
     const maisOpcoesOverlay = document.getElementById('maisOpcoesOverlay');
-    document.getElementById('btnMaisOpcoes').addEventListener('click', () => { maisOpcoesOverlay.classList.remove('d-none'); maisOpcoesOverlay.scrollTop = 0; });
-    document.getElementById('btnFecharMaisOpcoes').addEventListener('click', () => maisOpcoesOverlay.classList.add('d-none'));
-    maisOpcoesOverlay.addEventListener('click', (evt) => { if (evt.target === maisOpcoesOverlay) maisOpcoesOverlay.classList.add('d-none'); });
+    document.getElementById('btnMaisOpcoes').addEventListener('click', () => { maisOpcoesOverlay.classList.remove('d-none'); maisOpcoesOverlay.scrollTop = 0; bloquearScrollFundoLembranca(); });
+    document.getElementById('btnFecharMaisOpcoes').addEventListener('click', () => { maisOpcoesOverlay.classList.add('d-none'); desbloquearScrollFundoLembranca(); });
+    maisOpcoesOverlay.addEventListener('click', (evt) => { if (evt.target === maisOpcoesOverlay) { maisOpcoesOverlay.classList.add('d-none'); desbloquearScrollFundoLembranca(); } });
 
     document.getElementById('btnExportarCartaoPostal').addEventListener('click', gerarCartaoPostal);
     document.getElementById('btnExportarConstelacao').addEventListener('click', () => gerarConstelacao());

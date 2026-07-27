@@ -61,6 +61,7 @@ function iniciarCupomFalso() {
         const loja = document.getElementById('lojaScreen');
         if (!loja || loja.style.display === 'none') return;
         document.getElementById('cupomPopup').classList.remove('d-none');
+        bloquearScrollFundoLembranca();
     }, 7000);
 }
 
@@ -78,6 +79,7 @@ function cancelarCupomFalsoPendente() {
 
 function fecharCupomFalso() {
     document.getElementById('cupomPopup').classList.add('d-none');
+    desbloquearScrollFundoLembranca();
 }
 
 /* ---------------- Carrossel promocional ---------------- */
@@ -232,9 +234,10 @@ function iniciarEasterEggsLoja() {
 
     document.getElementById('btnFecharLojaEasterEgg').addEventListener('click', () => {
         document.getElementById('lojaEasterEggOverlay').classList.add('d-none');
+        desbloquearScrollFundoLembranca();
     });
     document.getElementById('lojaEasterEggOverlay').addEventListener('click', (evt) => {
-        if (evt.target.id === 'lojaEasterEggOverlay') evt.target.classList.add('d-none');
+        if (evt.target.id === 'lojaEasterEggOverlay') { evt.target.classList.add('d-none'); desbloquearScrollFundoLembranca(); }
     });
 }
 
@@ -244,6 +247,7 @@ function abrirLojaEasterEgg(id) {
     document.getElementById('lojaEasterEggTitulo').textContent = dado.titulo || 'Você achou um segredo';
     document.getElementById('lojaEasterEggTexto').textContent = dado.texto || '';
     document.getElementById('lojaEasterEggOverlay').classList.remove('d-none');
+    bloquearScrollFundoLembranca();
     marcarEasterEggEncontrado(id);
 }
 
@@ -261,8 +265,13 @@ function iniciarLoja() {
     document.getElementById('btnFecharCupom').addEventListener('click', fecharCupomFalso);
     document.getElementById('btnFecharCupomBtn').addEventListener('click', fecharCupomFalso);
 
+    // O popup de manutenção já aparece visível por padrão (parte da ilusão
+    // de e-commerce real, ver .maintenance-overlay em style.css) — trava o
+    // scroll do fundo assim que a loja monta, não espera um clique de abrir.
+    bloquearScrollFundoLembranca();
     document.getElementById('btnFecharManutencao').addEventListener('click', () => {
         document.getElementById('maintenancePopup').style.display = 'none';
+        desbloquearScrollFundoLembranca();
     });
 
     document.getElementById('freteBtn').addEventListener('click', () => {
@@ -295,7 +304,8 @@ function iniciarLoja() {
         iniciarProcessamentoCompra(() => {
             atualizarResumoCheckout();
             cancelarCupomFalsoPendente();
-            document.getElementById('cupomPopup').classList.add('d-none');
+            const cupomPopup = document.getElementById('cupomPopup');
+            if (!cupomPopup.classList.contains('d-none')) { cupomPopup.classList.add('d-none'); desbloquearScrollFundoLembranca(); }
             document.getElementById('lojaScreen').style.display = 'none';
             document.getElementById('checkoutScreen').style.display = 'block';
             window.scrollTo(0, 0);

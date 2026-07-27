@@ -365,10 +365,12 @@ function solicitarSenhaReset(opcoes = {}) {
         overlay.classList.remove('d-none');
         erro.classList.add('d-none');
         input.value = '';
+        bloquearScrollFundoLembranca();
         setTimeout(() => input.focus(), 300);
 
         function fechar(resultado) {
             overlay.classList.add('d-none');
+            desbloquearScrollFundoLembranca();
             document.getElementById('btnSenhaResetEntrar').onclick = null;
             document.getElementById('btnSenhaResetCancelar').onclick = null;
             input.onkeydown = null;

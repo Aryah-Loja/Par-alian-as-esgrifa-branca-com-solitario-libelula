@@ -457,6 +457,32 @@ achar rápido):
   real de corrida aqui, já corrigido, ver `cancelarCupomFalsoPendente()`
   em `js/store.js`) e um carrossel promocional com auto-rotação — tudo em
   `js/store.js`, reforça a ilusão de e-commerce real.
+- **Vídeo, música e "chuva" de corações/balões no especial de 8 de
+  agosto**: o bloco de aniversário já existente (`verificarEspecialAniversario()`
+  em `js/romance.js`, `ANIVERSARIO_DIA`/`ANIVERSARIO_MES`/`textoAniversario()`
+  em `js/config.js`) agora também: (1) mostra um vídeo dentro do próprio
+  bloco, se o arquivo `assets/video/video-aniversario.{mp4,mov,webm}`
+  existir (`ANIVERSARIO_VIDEO_ARQUIVO_BASE`, resolvido com
+  `resolverVideoPorBase()`, já existente, mesmo padrão do vídeo de
+  "câmera lenta"); (2) toca uma música só nesse dia, se o arquivo
+  `assets/audio/musica-aniversario.{mp3,ogg,wav,m4a}` existir
+  (`ANIVERSARIO_MUSICA_ARQUIVO_BASE`, resolvido por uma função nova,
+  `resolverAudioPorBase()`, análoga a `resolverVideoPorBase()`, com nova
+  constante de extensões `AUDIO_EXTENSOES_ACEITAS` em `js/config.js`) —
+  como autoplay com som pode ser bloqueado pelo navegador, tem um botão
+  redondo pequeno (`#btnAniversarioMusica`) pra ela dar o play/pause na
+  mão; (3) dispara uma "chuva" de corações e balões subindo de baixo pra
+  cima da tela (`iniciarChuvaDeAniversario()`, container fixo
+  `#aniversarioChuvaContainer` já presente no `<body>` de `index.html`,
+  duração configurável em `ANIVERSARIO_CHUVA_DURACAO_MS`/itens em
+  `ANIVERSARIO_CHUVA_ITENS`, ambos em `js/config.js`). As três coisas só
+  acontecem no dia 8 de agosto de verdade (mesma checagem de hora do
+  servidor que já existia) e cada uma é totalmente opcional: vídeo e
+  música ficam escondidos/mudos sozinhos enquanto os arquivos não
+  existirem, sem quebrar nada. **Pendente:** o Gabriel ainda vai
+  adicionar o vídeo e a música de verdade nas pastas (ver os dois
+  `LEIA-ME*.md` novos em `assets/video/` e `assets/audio/`).
+
 - **Contador vivo do relacionamento**: grid que mostra anos/meses/
   dias/horas/minutos/segundos "vivos" (atualiza a cada segundo),
   `iniciarContadorVivo()`/`calcularDuracaoRelacionamento()` em
@@ -527,6 +553,61 @@ simulando cliques (como o próprio projeto recomenda antes de entregar
 mudanças) porque este ambiente de sessão está sem acesso à rede para
 instalar o pacote `jsdom` — se quiser esse nível de verificação a mais,
 peça numa sessão com rede liberada, ou rode localmente com Node.
+
+## Sistema de Códigos Secretos (novo, 27/07/2026)
+
+Adicionado a pedido do Gabriel: dentro do modal "Mais opções" (no fim de
+"Nossa História", `index.html`), agora existe um campo "Código Secreto"
+onde ele pode digitar um dos 5 códigos cadastrados pra abrir um conteúdo
+especial. **Sistema propositalmente isolado do resto do site** (não usa
+login, cadastro, LocalStorage, IndexedDB nem nenhuma função de
+`utils.js`/`romance.js`/etc), pra ele conseguir editar/adicionar/remover
+código no futuro sem risco de quebrar mais nada:
+
+```
+/secret/secret.js       → CODIGOS_SECRETOS (objeto central), normalização
+                           do texto digitado (maiúsculo, sem acento, sem
+                           espaço/hífen) e handleSecretCode(código)
+/secret/secret.css      → CSS exclusivo (campo, botão, animações,
+                           estilo-base compartilhado pelas 5 páginas)
+/secret/letter.html     → carta romântica (código X7KVM)
+/secret/video.html      → player de vídeo, pronto pra receber
+                           assets/video-secreto.{mp4,webm,mov} sem mexer
+                           em código (código Q3ZTN)
+/secret/coupon.html     → livrinho de vales-presente do amor: cada toque
+                           puxa um vale aleatório (array VALES_PRESENTE,
+                           editável dentro do próprio arquivo), evita
+                           repetir o mesmo vale duas vezes seguidas
+                           (código W9LXR)
+/secret/fortune.html    → bilhete da sorte apaixonado: cada toque puxa
+                           uma mensagem/previsão aleatória (array
+                           BILHETES_DA_SORTE, editável dentro do próprio
+                           arquivo) (código K4QWZ)
+/secret/wheel.html      → roleta girável de ideias de encontro (array
+                           IDEIAS_DE_ENCONTRO, editável dentro do
+                           próprio arquivo; a roleta é desenhada
+                           automaticamente a partir do array, então
+                           adicionar/remover item não exige mexer no
+                           desenho) (código R8NVX)
+```
+
+**Por que não repetiu galeria/cápsula/aniversário:** essas 3 ideias
+originais do sistema de códigos secretos foram substituídas a pedido do
+Gabriel porque o site já tem galeria de fotos (`galeria.html`), cápsula
+do tempo (dentro de "Nossa História", `js/futuro.js`) e um bloco
+especial de aniversário 8/8 (`verificarEspecialAniversario()` em
+`js/romance.js`) — os 3 códigos novos (vales-presente, bilhete da sorte,
+roleta de ideias de encontro) são conteúdo genuinamente novo, não
+duplicam nada que já existia.
+
+Código errado mostra só "Código inválido" (sem dica). Código certo
+mostra uma pequena animação no campo antes de navegar pra página.
+`diagnostico.html` ganhou uma seção "Códigos Secretos" que lê
+`CODIGOS_SECRETOS` direto de `secret/secret.js` e lista nome interno,
+finalidade, arquivo, descrição e data de criação de cada um, só pra
+controle/manutenção (ela nunca vê essa página). **Pendente:** o vídeo
+de verdade em `secret/assets/video-secreto.mp4` (mostra aviso enquanto
+não existir).
 
 ## Pendências / sugestões em aberto
 

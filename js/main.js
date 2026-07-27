@@ -54,12 +54,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const estagio = await obterConfiguracao('aurora_stage');
     if (estagio === 'final') {
         document.getElementById('maintenancePopup').style.display = 'none';
+        desbloquearScrollFundoLembranca(); // popup de manutenção nunca chegou a ser fechado pelo botão nesse fluxo
         await solicitarSenhaMemorias(); // só libera "Nossa História" com a senha certa (item 8 do prompt de melhorias)
         goToRomancePage();
     } else {
         const dataPedidoExistente = await obterConfiguracao('aurora_data_pedido');
         if (dataPedidoExistente) {
             document.getElementById('maintenancePopup').style.display = 'none';
+            desbloquearScrollFundoLembranca(); // idem — popup pulado direto, sem passar pelo botão de fechar
             definirFundoBody(CORES_FUNDO.escuro);
             document.getElementById('lojaScreen').style.display = 'none';
             document.getElementById('suspenseOverlay').style.display = 'flex';

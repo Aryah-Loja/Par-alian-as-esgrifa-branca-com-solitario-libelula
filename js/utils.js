@@ -18,6 +18,38 @@ async function arquivoExisteNoServidor(caminho) {
     }
 }
 
+/* ---------------- Trava de rolagem compartilhada por TODOS os modais ---------------- */
+// Trava o scroll do fundo (inclusive o "bounce" do iOS) enquanto qualquer
+// modal/overlay do site está aberto, restaurando a posição exata de onde a
+// pessoa estava ao fechar. Mora em utils.js (carregado em index.html,
+// galeria.html, checklist.html e diagnostico.html) justamente para poder
+// ser usada por QUALQUER modal em QUALQUER página — antes vivia só em
+// romance.js, então diagnostico.html (e qualquer modal fora do romance.js)
+// não tinha como usá-la.
+//
+// É uma contagem de referências: se dois overlays travarem a rolagem de
+// forma sobreposta (ex.: um modal abre outro por cima), só destrava de
+// verdade quando todo mundo que travou também destravou — o primeiro a
+// fechar não derruba a trava do outro que ainda está aberto.
+let __auroraScrollSalvo = 0;
+let __auroraScrollContagem = 0;
+function bloquearScrollFundoLembranca() {
+    if (__auroraScrollContagem === 0) {
+        __auroraScrollSalvo = window.scrollY || document.documentElement.scrollTop || 0;
+        document.documentElement.classList.add('aurora-scroll-lock');
+        document.body.style.top = `-${__auroraScrollSalvo}px`;
+    }
+    __auroraScrollContagem++;
+}
+function desbloquearScrollFundoLembranca() {
+    __auroraScrollContagem = Math.max(0, __auroraScrollContagem - 1);
+    if (__auroraScrollContagem === 0) {
+        document.documentElement.classList.remove('aurora-scroll-lock');
+        document.body.style.top = '';
+        window.scrollTo(0, __auroraScrollSalvo);
+    }
+}
+
 /**
  * Modo "luz de vela" — escurece a tela e mostra o texto de uma carta já
  * revelada (carta final, cápsula do tempo ou carta de discussão) num
@@ -38,6 +70,7 @@ function abrirModoVela(eyebrowTexto, textoHtml, assinaturaTexto, opcoes = {}) {
     document.getElementById('modoVelaAssinatura').textContent = assinaturaTexto || '';
     overlay.classList.remove('d-none');
     overlay.scrollTop = 0;
+    bloquearScrollFundoLembranca();
 
     const continuarWrap = document.getElementById('modoVelaContinuarWrap');
     const btnContinuar = document.getElementById('btnModoVelaContinuar');
@@ -66,7 +99,7 @@ function abrirModoVela(eyebrowTexto, textoHtml, assinaturaTexto, opcoes = {}) {
         overlay.onclick = null;
     } else {
         btnFechar.classList.remove('d-none');
-        const fechar = () => overlay.classList.add('d-none');
+        const fechar = () => { overlay.classList.add('d-none'); desbloquearScrollFundoLembranca(); };
         btnFechar.onclick = fechar;
         overlay.onclick = (evt) => { if (evt.target === overlay) fechar(); };
     }

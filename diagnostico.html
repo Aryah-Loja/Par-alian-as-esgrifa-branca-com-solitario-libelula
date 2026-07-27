@@ -125,6 +125,18 @@
         <p id="trocarVideoStatus" class="save-status mt-2"></p>
     </div>
 
+    <!-- ===================== CÓDIGOS SECRETOS (área administrativa) =====================
+         Só lista, nesta página de uso interno, os códigos cadastrados em
+         secret/secret.js (objeto CODIGOS_SECRETOS). Não valida nem abre
+         nada aqui, é só consulta/manutenção. Pra adicionar um código novo,
+         mexa em secret/secret.js; esta tabela é preenchida sozinha lendo
+         aquele mesmo arquivo (ver script no fim da página). -->
+    <p class="diag-secao-titulo">Códigos Secretos</p>
+    <div class="text-center mb-2">
+        <p class="small text-white-50 mb-3">Lista de manutenção dos códigos cadastrados em <code>secret/secret.js</code>. Ela nunca vê esta página.</p>
+    </div>
+    <div id="diagCodigosSecretos" class="diag-estado-reset" style="text-align:left;"></div>
+
     <a href="index.html" class="diag-voltar">← Voltar para o site</a>
 
     <script src="js/config.js"></script>
@@ -132,5 +144,27 @@
     <script src="js/utils.js"></script>
     <script src="js/sync.js"></script>
     <script src="js/diagnostics.js"></script>
+
+    <!-- Isolado: só lê o objeto CODIGOS_SECRETOS pra listar, nunca escreve
+         nem depende de nada dos outros scripts acima. -->
+    <script src="secret/secret.js"></script>
+    <script>
+        (function preencherPainelCodigosSecretos() {
+            const container = document.getElementById('diagCodigosSecretos');
+            if (!container || typeof CODIGOS_SECRETOS === 'undefined') return;
+
+            let html = '';
+            Object.keys(CODIGOS_SECRETOS).forEach(function (chave) {
+                const codigo = CODIGOS_SECRETOS[chave];
+                html += '<h6>' + chave + '</h6>';
+                html += '<div class="linha"><span>Nome interno</span><span>' + codigo.nomeInterno + '</span></div>';
+                html += '<div class="linha"><span>Finalidade</span><span>' + codigo.finalidade + '</span></div>';
+                html += '<div class="linha"><span>Arquivo</span><span>' + codigo.arquivo + '</span></div>';
+                html += '<div class="linha"><span>Descrição</span><span>' + codigo.descricao + '</span></div>';
+                html += '<div class="linha"><span>Criado em</span><span>' + codigo.criadoEm + '</span></div>';
+            });
+            container.innerHTML = html;
+        })();
+    </script>
 </body>
 </html>

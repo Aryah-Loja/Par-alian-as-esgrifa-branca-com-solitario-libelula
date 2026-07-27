@@ -125,11 +125,13 @@ function iniciarEasterEggDaLua() {
         morseEl.textContent = paraCodigoMorse(MENSAGEM_SECRETA_LUA);
         overlay.classList.remove('d-none');
         overlay.scrollTop = 0;
+        bloquearScrollFundoLembranca();
         marcarEasterEggEncontrado('luaMorse');
     });
 
-    document.getElementById('btnFecharLuaEasterEgg').addEventListener('click', () => overlay.classList.add('d-none'));
-    overlay.addEventListener('click', (evt) => { if (evt.target === overlay) overlay.classList.add('d-none'); });
+    const fecharLuaEasterEgg = () => { overlay.classList.add('d-none'); desbloquearScrollFundoLembranca(); };
+    document.getElementById('btnFecharLuaEasterEgg').addEventListener('click', fecharLuaEasterEgg);
+    overlay.addEventListener('click', (evt) => { if (evt.target === overlay) fecharLuaEasterEgg(); });
 }
 
 // Estrelas cadentes: puramente decorativas, cruzam o céu de vez em
@@ -212,8 +214,9 @@ function iniciarFechamentoEstrelaModal() {
     const fechar = document.getElementById('btnFecharEstrelaModal');
     if (!overlay || overlay.dataset.iniciado === '1') return;
     overlay.dataset.iniciado = '1';
-    fechar.addEventListener('click', () => overlay.classList.add('d-none'));
-    overlay.addEventListener('click', (evt) => { if (evt.target === overlay) overlay.classList.add('d-none'); });
+    const fecharEstrelaModal = () => { overlay.classList.add('d-none'); desbloquearScrollFundoLembranca(); };
+    fechar.addEventListener('click', fecharEstrelaModal);
+    overlay.addEventListener('click', (evt) => { if (evt.target === overlay) fecharEstrelaModal(); });
 }
 
 function abrirEstrelaModal(indice) {
@@ -230,6 +233,7 @@ function abrirEstrelaModal(indice) {
     textoEl.textContent = marco.texto || '';
     overlay.classList.remove('d-none');
     overlay.scrollTop = 0; // sempre abre mostrando o começo do texto, nunca no meio
+    bloquearScrollFundoLembranca();
 
     foto.onclick = () => {
         const todasFotos = TIMELINE_MARCOS.map(m => getAsset(m.foto));
@@ -689,35 +693,10 @@ let lightboxItensAtuais = [];
 let lightboxIndiceAtual = 0;
 let lightboxLegendasAtuais = null;
 
-// Mesma técnica usada em galeria.html: trava o scroll do fundo (inclusive o
-// "bounce" do iOS) enquanto o lightbox está aberto, restaurando a posição
-// exata de onde a pessoa estava ao fechar.
-//
-// CORREÇÃO: antes usava uma única variável compartilhada — se dois
-// overlays travassem a rolagem meio que ao mesmo tempo (ex.: a tela de
-// carregamento e um lightbox), o primeiro a fechar destravava tudo e
-// podia restaurar a rolagem numa posição errada, mesmo com o outro
-// overlay ainda esperando ficar travado. Agora é uma contagem de
-// referências: só destrava de verdade quando todo mundo que travou já
-// destravou também.
-let __lembrancaScrollSalvo = 0;
-let __lembrancaScrollContagem = 0;
-function bloquearScrollFundoLembranca() {
-    if (__lembrancaScrollContagem === 0) {
-        __lembrancaScrollSalvo = window.scrollY || document.documentElement.scrollTop || 0;
-        document.documentElement.classList.add('aurora-scroll-lock');
-        document.body.style.top = `-${__lembrancaScrollSalvo}px`;
-    }
-    __lembrancaScrollContagem++;
-}
-function desbloquearScrollFundoLembranca() {
-    __lembrancaScrollContagem = Math.max(0, __lembrancaScrollContagem - 1);
-    if (__lembrancaScrollContagem === 0) {
-        document.documentElement.classList.remove('aurora-scroll-lock');
-        document.body.style.top = '';
-        window.scrollTo(0, __lembrancaScrollSalvo);
-    }
-}
+// Trava de scroll (bloquearScrollFundoLembranca/desbloquearScrollFundoLembranca)
+// agora mora em utils.js — é usada por praticamente todos os modais do site,
+// não só pelo lightbox, então precisa estar disponível em qualquer página que
+// carregue utils.js (index.html, galeria.html, checklist.html, diagnostico.html).
 
 function abrirLightboxGaleria(itens, indiceInicial, legendas) {
     if (!itens || !itens.length) return;
@@ -945,6 +924,7 @@ function solicitarSenhaMemorias() {
         overlay.classList.remove('d-none');
         erro.classList.add('d-none');
         input.value = '';
+        bloquearScrollFundoLembranca();
         setTimeout(() => input.focus(), 300);
 
         function tentarDesbloquear() {
@@ -952,6 +932,7 @@ function solicitarSenhaMemorias() {
             if (senhaDigitada === SENHA_AREA_MEMORIAS) {
                 try { sessionStorage.setItem('aurora_memorias_desbloqueadas', '1'); } catch (e) { /* ignora */ }
                 overlay.classList.add('d-none');
+                desbloquearScrollFundoLembranca();
                 resolve();
             } else {
                 erro.classList.remove('d-none');
@@ -1014,6 +995,93 @@ async function verificarEspecialAniversario() {
 
     document.getElementById('aniversarioTexto').textContent = textoAniversario();
     bloco.classList.remove('d-none');
+
+    // Vídeo especial do aniversário — some sozinho se o arquivo ainda não
+    // existir em assets/video/ (mesmo padrão do "momento em câmera lenta").
+    const videoWrap = document.getElementById('aniversarioVideoWrap');
+    const video = document.getElementById('aniversarioVideo');
+    if (videoWrap && video) {
+        const caminhoVideo = await resolverVideoPorBase(ANIVERSARIO_VIDEO_ARQUIVO_BASE);
+        if (caminhoVideo) {
+            video.src = caminhoVideo;
+            videoWrap.classList.remove('d-none');
+        }
+    }
+
+    // Música especial do aniversário — some sozinha se o arquivo ainda não
+    // existir em assets/audio/. Tenta tocar sozinha; se o navegador
+    // bloquear autoplay com som, o botão continua visível pra ela dar o
+    // play manualmente (e também serve pra pausar/retomar a qualquer hora).
+    const audio = document.getElementById('aniversarioAudio');
+    const btnMusica = document.getElementById('btnAniversarioMusica');
+    if (audio && btnMusica) {
+        const caminhoAudio = await resolverAudioPorBase(ANIVERSARIO_MUSICA_ARQUIVO_BASE);
+        if (caminhoAudio) {
+            audio.src = caminhoAudio;
+            btnMusica.classList.remove('d-none');
+
+            const atualizarIconeBotao = (tocando) => {
+                btnMusica.innerHTML = tocando
+                    ? '<i class="bi bi-pause-fill"></i>'
+                    : '<i class="bi bi-music-note-beamed"></i>';
+                btnMusica.classList.toggle('tocando', tocando);
+            };
+            btnMusica.addEventListener('click', () => {
+                if (audio.paused) {
+                    audio.play().then(() => atualizarIconeBotao(true)).catch(() => atualizarIconeBotao(false));
+                } else {
+                    audio.pause();
+                    atualizarIconeBotao(false);
+                }
+            });
+
+            audio.play().then(() => atualizarIconeBotao(true)).catch(() => atualizarIconeBotao(false));
+        }
+    }
+
+    // Corações e balões subindo de baixo pra cima na tela, só hoje.
+    iniciarChuvaDeAniversario();
+}
+
+/* Cria corações/balões que sobem de baixo pra cima da tela por um tempo
+ * (ANIVERSARIO_CHUVA_DURACAO_MS), só chamada quando é o dia dela de
+ * verdade (ver verificarEspecialAniversario acima). Cada elemento é
+ * descartado sozinho quando a animação termina, então não acumula nada
+ * na página com o passar do tempo. */
+function iniciarChuvaDeAniversario() {
+    const container = document.getElementById('aniversarioChuvaContainer');
+    if (!container || !Array.isArray(ANIVERSARIO_CHUVA_ITENS) || !ANIVERSARIO_CHUVA_ITENS.length) return;
+
+    const INTERVALO_MS = 220;
+    const inicio = Date.now();
+
+    const criarItem = () => {
+        const item = document.createElement('span');
+        item.className = 'aniversario-chuva-item';
+        item.textContent = ANIVERSARIO_CHUVA_ITENS[Math.floor(Math.random() * ANIVERSARIO_CHUVA_ITENS.length)];
+
+        const posicaoHorizontal = Math.random() * 96; // % da largura da tela
+        const desvio = 20 + Math.random() * 60; // px de "vento" durante a subida
+        const duracaoS = 5 + Math.random() * 3.5;
+        const tamanhoRem = 1.4 + Math.random() * 1.3;
+
+        item.style.left = `${posicaoHorizontal}%`;
+        item.style.fontSize = `${tamanhoRem}rem`;
+        item.style.setProperty('--aniversario-desvio', `${desvio}px`);
+        item.style.animationDuration = `${duracaoS}s`;
+
+        container.appendChild(item);
+        item.addEventListener('animationend', () => item.remove());
+    };
+
+    const temporizador = setInterval(() => {
+        if (Date.now() - inicio > ANIVERSARIO_CHUVA_DURACAO_MS) {
+            clearInterval(temporizador);
+            return;
+        }
+        criarItem();
+    }, INTERVALO_MS);
+    criarItem(); // primeiro item já na hora, sem esperar o primeiro intervalo
 }
 
 /* ---------------- "Se um dia estiver triste, lembre-se disso" ---------------- */
@@ -1077,6 +1145,7 @@ function iniciarCartaDiscussao() {
         document.getElementById('btnCartaDiscussaoSim').classList.remove('d-none');
         document.getElementById('btnCartaDiscussaoNao').classList.remove('d-none');
         overlay.classList.remove('d-none');
+        bloquearScrollFundoLembranca();
         mostrarPasso(passoPergunta);
     }
 
@@ -1092,6 +1161,7 @@ function iniciarCartaDiscussao() {
         const digitada = (senhaInput.value || '').trim().toLowerCase().replace(/\s+/g, '');
         if (digitada === SENHA_CARTA_DISCUSSAO) {
             overlay.classList.add('d-none');
+            desbloquearScrollFundoLembranca();
             // Já abre direto no modo "luz de vela" (pedido explícito).
             abrirModoVela('Se um dia a gente discutir', textoCartaDiscussao(), NOME_DELE + '.');
         } else {
@@ -1122,8 +1192,8 @@ function iniciarCartaDiscussao() {
         document.getElementById('btnCartaDiscussaoNao').classList.add('d-none');
     });
 
-    fechar.addEventListener('click', () => overlay.classList.add('d-none'));
-    overlay.addEventListener('click', (evt) => { if (evt.target === overlay) overlay.classList.add('d-none'); });
+    fechar.addEventListener('click', () => { overlay.classList.add('d-none'); desbloquearScrollFundoLembranca(); });
+    overlay.addEventListener('click', (evt) => { if (evt.target === overlay) { overlay.classList.add('d-none'); desbloquearScrollFundoLembranca(); } });
 }
 
 /* ---------------- "Nosso mapa" ---------------- */

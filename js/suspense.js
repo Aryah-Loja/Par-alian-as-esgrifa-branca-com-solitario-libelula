@@ -527,6 +527,7 @@ function iniciarCartaFinal() {
             abrirModoVela('Um verso pro nosso universo', montarHtmlVersiculo(), TEXTOS.assinaturaCartaFinal, {
                 aoContinuar: async () => {
                     document.getElementById('modoVelaOverlay').classList.add('d-none');
+                    desbloquearScrollFundoLembranca();
                     await salvarConfiguracao('aurora_stage', 'final', true);
                     iniciarFlashback(() => { goToRomancePage(true); });
                 }

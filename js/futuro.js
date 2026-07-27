@@ -72,11 +72,13 @@ function resetarFuturoOverlayEstado() {
 
 function abrirFuturoOverlay() {
     document.getElementById('futuroOverlay').classList.remove('d-none');
+    bloquearScrollFundoLembranca();
     resetarFuturoOverlayEstado();
 }
 
 function fecharFuturoOverlay() {
     document.getElementById('futuroOverlay').classList.add('d-none');
+    desbloquearScrollFundoLembranca();
     if (futuroTimeoutMaximo) { clearTimeout(futuroTimeoutMaximo); futuroTimeoutMaximo = null; }
     if (futuroRecorder && futuroRecorder.state !== 'inactive') { try { futuroRecorder.stop(); } catch (e) { /* já estava parado, sem problema */ } }
     pararStreamFuturo();

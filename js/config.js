@@ -272,6 +272,13 @@ const EXTENSOES_FOTO_ACEITAS = ['jpg', 'jpeg', 'png', 'webp'];
 const GALERIA_EXTENSOES_FOTO = EXTENSOES_FOTO_ACEITAS;
 const GALERIA_EXTENSOES_VIDEO = ['mp4', 'mov', 'webm'];
 
+/* Extensões de áudio aceitas em qualquer lugar do site que resolve um
+ * áudio "por nome", sem precisar dizer a extensão exata em config.js —
+ * mesmo espírito de GALERIA_EXTENSOES_VIDEO, mas pra arquivos estáticos
+ * de áudio colocados direto em assets/audio/ (ver resolverAudioPorBase
+ * mais abaixo). Hoje usada pela música especial de aniversário. */
+const AUDIO_EXTENSOES_ACEITAS = ['mp3', 'ogg', 'wav', 'm4a'];
+
 /* ----------------------------------------------------------------------
    NOSSA HISTÓRIA — LINHA DO TEMPO
    ---------------------------------------------------------------------- */
@@ -728,6 +735,30 @@ Que esse ano novo te traga viagem, foto nova pra guardar, bicho novo pra cuidar,
 Feliz aniversário, meu amor. Hoje o mundo gira um pouquinho mais em volta de você, e eu não podia estar mais feliz de fazer parte disso.`;
 }
 
+/* Vídeo especial que aparece junto com a mensagem de aniversário, dentro
+ * do mesmo bloco. Coloque o arquivo em assets/video/ com esse nome (ver
+ * assets/video/LEIA-ME-video-aniversario.md) — qualquer extensão de
+ * GALERIA_EXTENSOES_VIDEO serve. Enquanto o arquivo não existir, só o
+ * texto aparece, sem espaço vazio nem nada quebrado. */
+const ANIVERSARIO_VIDEO_ARQUIVO_BASE = 'video-aniversario';
+
+/* Música especial que toca sozinha, só no dia 8 de agosto, junto com o
+ * bloco de aniversário. Coloque o arquivo em assets/audio/ com esse nome
+ * (ver assets/audio/LEIA-ME-musica-aniversario.md) — qualquer extensão de
+ * AUDIO_EXTENSOES_ACEITAS serve. Enquanto o arquivo não existir, nada
+ * toca (sem erro, sem botão quebrado). Alguns navegadores bloqueiam
+ * autoplay com som; por isso existe um botão pequeno de tocar/pausar
+ * junto do bloco, pra ela poder dar o play manualmente se precisar. */
+const ANIVERSARIO_MUSICA_ARQUIVO_BASE = 'musica-aniversario';
+
+/* "Chuva" de corações e balões subindo de baixo pra cima na tela, que
+ * acontece só quando o bloco de aniversário aparece (ou seja, só no dia
+ * dela). ANIVERSARIO_CHUVA_DURACAO_MS é por quanto tempo os elementos
+ * continuam surgindo (em milissegundos); ANIVERSARIO_CHUVA_ITENS é o
+ * conjunto de emojis usados, sorteados um de cada vez. */
+const ANIVERSARIO_CHUVA_DURACAO_MS = 9000;
+const ANIVERSARIO_CHUVA_ITENS = ['❤️', '🎈', '💛', '🎈', '💕', '🎈'];
+
 /* ----------------------------------------------------------------------
    "SE UM DIA ESTIVER TRISTE, LEMBRE-SE DISSO" — um baralho de cartas, uma
    por vez, cada uma com um adjetivo + o motivo específico (não genérico)
@@ -887,6 +918,29 @@ async function resolverVideoPorBase(arquivoBase) {
         const caminho = `assets/video/${arquivoBase}.${ext}`;
         if (await arquivoExisteNoServidor(caminho)) {
             __cacheResolverVideoPorBase[arquivoBase] = caminho;
+            return caminho;
+        }
+    }
+    return null; // não guarda no cache — se o arquivo for adicionado depois, uma nova tentativa pode encontrar
+}
+
+/**
+ * Igual a resolverVideoPorBase, mas para um áudio estático em
+ * assets/audio/ (não gravado pelo usuário, um arquivo que você mesmo
+ * coloca na pasta) — testa cada extensão de AUDIO_EXTENSOES_ACEITAS,
+ * maiúscula e minúscula, e devolve null se nada for encontrado (quem
+ * chamar decide o que fazer nesse caso, ex.: não tocar nada).
+ */
+const __cacheResolverAudioPorBase = {};
+async function resolverAudioPorBase(arquivoBase) {
+    if (!arquivoBase) return null;
+    if (arquivoBase in __cacheResolverAudioPorBase) return __cacheResolverAudioPorBase[arquivoBase];
+
+    const candidatos = AUDIO_EXTENSOES_ACEITAS.flatMap(ext => [ext, ext.toUpperCase()]);
+    for (const ext of candidatos) {
+        const caminho = `assets/audio/${arquivoBase}.${ext}`;
+        if (await arquivoExisteNoServidor(caminho)) {
+            __cacheResolverAudioPorBase[arquivoBase] = caminho;
             return caminho;
         }
     }
