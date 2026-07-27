@@ -39,7 +39,7 @@ async function testeConfiguracaoTextoSimples() {
     const chave = 'diagnostico_config_teste';
     const valor = `ok_${Date.now()}`;
     try {
-        await salvarConfiguracao(chave, valor);
+        await salvarConfiguracao(chave, valor, false, false);
         const lido = await obterConfiguracao(chave);
         localStorage.removeItem(chave);
         try { await db.configuracoes.delete(chave); } catch (e) { /* best-effort: ok se a chave nem existia */ }

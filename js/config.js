@@ -100,6 +100,7 @@ const PLACEHOLDERS = {
     imagem_timeline_6: { arquivo: 'timeline-6.jpg', tipo: 'imagem', descricao: 'Timeline — 14/06, o "eu te amo" depois da Brooks' },
     imagem_timeline_7: { arquivo: 'timeline-7.jpg', tipo: 'imagem', descricao: 'Timeline — 20/07, apresentação pros avós em Santa Rosa de Viterbo, Parque Curupira e o balanço em Sales de Oliveira' },
     imagem_timeline_8: { arquivo: 'timeline-8.jpg', tipo: 'imagem', descricao: 'Timeline — 12/07, o dia em Nuporanga que acabei conhecendo o tio e a tia dela' },
+    imagem_timeline_9: { arquivo: 'timeline-9.jpg', tipo: 'imagem', descricao: 'Timeline — 26/07, o dia que ela conheceu minha casa de verdade e eu voltei na casa do tio dela' },
     imagem_timeline_hoje: { arquivo: 'timeline-hoje.jpg', tipo: 'imagem', descricao: 'Timeline — foto de hoje, marcando o dia do pedido' },
 
     // ---- Nossos momentos (mesa de fotos) ----
@@ -314,6 +315,11 @@ const TIMELINE_MARCOS = [
         data: '20 de julho',
         texto: `Te levei pra conhecer meus avós, em Santa Rosa de Viterbo. Depois passeamos no Parque Curupira, em Ribeirão Preto, e no fim do dia sentamos num balanço em Sales de Oliveira, só a gente. Percebi no seu jeito que você achou que eu ia te pedir em namoro ali. Eu também queria, mais do que qualquer coisa, só que as alianças ainda nem tinham chegado. Guardei aquela vontade pra esse dia aqui. Valeu a pena esperar.`,
         foto: 'imagem_timeline_7'
+    },
+    {
+        data: '26 de julho',
+        texto: `Você conheceu minha casa de verdade, oficialmente, dessa vez. E eu voltei lá na casa do seu tio, só que num dia diferente do da vez que "escapei" sem conhecer ninguém: dessa vez conheci sua prima, sua avó, e finalmente consegui conversar direito com sua mãe. Deu tudo certo, e fiquei aliviado de ver que tinha valido a pena esperar o momento certo pra isso acontecer do jeito que devia. No fim da noite, ainda ficamos juntinhos e vimos mais um episódio da nossa primeira série juntos, do jeito que eu mais gosto de terminar o dia.`,
+        foto: 'imagem_timeline_9'
     },
     {
         data: null,
@@ -810,6 +816,23 @@ const ADJETIVOS_PARA_ELA = [
    escondida. Cada chave abaixo corresponde ao id de um elemento clicável
    em index.html (ver iniciarEasterEggsLoja em js/store.js).
    ---------------------------------------------------------------------- */
+/* ----------------------------------------------------------------------
+   CONTADOR DE EASTER EGGS
+   ----------------------------------------------------------------------
+   Lista mestra de TODOS os easter eggs "de verdade" do site (secretos,
+   achados sem instrução nenhuma) — usada só pra saber o TOTAL pro
+   contador discreto no canto da tela ("X de Y encontrados"). Se um
+   easter egg novo for adicionado em qualquer lugar do site, inclua o id
+   dele aqui também (ver marcarEasterEggEncontrado() em js/utils.js).
+   Não inclui o atalho de teste pra desktop (abrirauroradesktop), que é
+   uma ferramenta de desenvolvimento, não uma surpresa pra ela achar.
+   ---------------------------------------------------------------------- */
+const IDS_TODOS_OS_EASTER_EGGS = [
+    'imagemPrincipalProduto', 'reviewGabrielClicavel', 'lojaLogoClicavel',
+    'destaquePrataCard', 'pulseiraEsgrifaCard', 'instagramIconeClicavel', 'garantiaVitaliciaClicavel',
+    'luaMorse', 'freteData'
+];
+
 const LOJA_EASTER_EGGS = {
     imagemPrincipalProduto: {
         titulo: 'Achou 👀',

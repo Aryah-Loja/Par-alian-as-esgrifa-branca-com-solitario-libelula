@@ -20,12 +20,17 @@ async function arquivoExisteNoServidor(caminho) {
 
 /**
  * Modo "luz de vela" — escurece a tela e mostra o texto de uma carta já
- * revelada (carta final ou cápsula do tempo) num papel iluminado, como se
- * estivesse sendo lida à luz de uma vela. Recebe o HTML já pronto (com
- * qualquer troca de nome já feita), não o texto bruto — não refaz nenhuma
- * lógica de revelação, só troca a apresentação visual.
+ * revelada (carta final, cápsula do tempo ou carta de discussão) num
+ * papel iluminado, como se estivesse sendo lida à luz de uma vela.
+ * Recebe o HTML já pronto (com qualquer troca de nome já feita), não o
+ * texto bruto — não refaz nenhuma lógica de revelação, só troca a
+ * apresentação visual.
+ *
+ * `opcoes.aoContinuar`, se fornecido, mostra um botão "Continuar" dentro
+ * do próprio modo vela (usado só pela carta final, que precisa seguir
+ * pro flashback/"Nossa História" depois de lida).
  */
-function abrirModoVela(eyebrowTexto, textoHtml, assinaturaTexto) {
+function abrirModoVela(eyebrowTexto, textoHtml, assinaturaTexto, opcoes = {}) {
     const overlay = document.getElementById('modoVelaOverlay');
     if (!overlay) return;
     document.getElementById('modoVelaEyebrow').textContent = eyebrowTexto || '';
@@ -33,6 +38,16 @@ function abrirModoVela(eyebrowTexto, textoHtml, assinaturaTexto) {
     document.getElementById('modoVelaAssinatura').textContent = assinaturaTexto || '';
     overlay.classList.remove('d-none');
     overlay.scrollTop = 0;
+
+    const continuarWrap = document.getElementById('modoVelaContinuarWrap');
+    const btnContinuar = document.getElementById('btnModoVelaContinuar');
+    if (opcoes.aoContinuar) {
+        continuarWrap.classList.remove('d-none');
+        btnContinuar.onclick = opcoes.aoContinuar;
+    } else {
+        continuarWrap.classList.add('d-none');
+        btnContinuar.onclick = null;
+    }
 
     const fechar = () => overlay.classList.add('d-none');
     document.getElementById('btnFecharModoVela').onclick = fechar;
@@ -142,6 +157,39 @@ function contarToquesRepetidos(elemento, quantidadeNecessaria, aoCompletar) {
             aoCompletar();
         }
     });
+}
+
+/**
+ * Contador de easter eggs — compartilhado por TODOS eles (loja, lua,
+ * frete). Marca o id como encontrado (persistido, sobrevive a reload),
+ * sem contar duas vezes o mesmo, e atualiza o contador discreto no canto
+ * da tela. Não revela QUAIS ela já achou, só o total.
+ */
+async function marcarEasterEggEncontrado(id) {
+    let encontrados = [];
+    try { encontrados = JSON.parse(await obterConfiguracao('easterEggsEncontrados') || '[]'); } catch (e) { /* trata como nenhum encontrado ainda */ }
+    if (!Array.isArray(encontrados)) encontrados = [];
+
+    if (!encontrados.includes(id)) {
+        encontrados.push(id);
+        try { await salvarConfiguracao('easterEggsEncontrados', encontrados, false, false); } catch (e) { /* não crítico se falhar salvar */ }
+    }
+    atualizarContadorEasterEggs(encontrados.length);
+}
+
+function atualizarContadorEasterEggs(quantidadeEncontrada) {
+    const el = document.getElementById('contadorEasterEggsTexto');
+    if (!el) return;
+    const total = IDS_TODOS_OS_EASTER_EGGS.length;
+    el.textContent = `${quantidadeEncontrada} de ${total}`;
+}
+
+/** Chamado uma vez no carregamento da página pra mostrar o número certo desde o início. */
+async function iniciarContadorEasterEggs() {
+    let encontrados = [];
+    try { encontrados = JSON.parse(await obterConfiguracao('easterEggsEncontrados') || '[]'); } catch (e) { /* nenhum ainda */ }
+    if (!Array.isArray(encontrados)) encontrados = [];
+    atualizarContadorEasterEggs(encontrados.length);
 }
 
 /**
@@ -424,6 +472,7 @@ function montarOpcoesMediaRecorder(modo) {
    junto com a troca de tela. */
 function definirFundoBody(cor) {
     document.body.style.backgroundColor = cor;
+    document.documentElement.style.backgroundColor = cor; // ver comentário acima da função
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute('content', cor);
 }

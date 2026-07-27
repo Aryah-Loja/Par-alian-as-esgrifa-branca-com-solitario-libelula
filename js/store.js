@@ -217,7 +217,7 @@ async function aplicarTamanhoDicasEasterEgg() {
     document.querySelectorAll('.easter-egg-dica').forEach(el => el.classList.toggle('easter-egg-dica-grande', jaVisitouAntes));
 
     if (!jaVisitouAntes) {
-        try { await salvarConfiguracao('lojaJaVisitouAntes', true); } catch (e) { /* não crítico se falhar salvar */ }
+        try { await salvarConfiguracao('lojaJaVisitouAntes', true, false, false); } catch (e) { /* não crítico se falhar salvar */ }
     }
 }
 
@@ -244,16 +244,7 @@ function abrirLojaEasterEgg(id) {
     document.getElementById('lojaEasterEggTitulo').textContent = dado.titulo || 'Você achou um segredo';
     document.getElementById('lojaEasterEggTexto').textContent = dado.texto || '';
     document.getElementById('lojaEasterEggOverlay').classList.remove('d-none');
-
-    // Marca esse easter egg como encontrado (salvo localmente) — usado só
-    // pra, futuramente, dar algum retorno visual de "quantos você já achou".
-    try {
-        const encontrados = JSON.parse(localStorage.getItem('aurora_easter_eggs_encontrados') || '[]');
-        if (!encontrados.includes(id)) {
-            encontrados.push(id);
-            localStorage.setItem('aurora_easter_eggs_encontrados', JSON.stringify(encontrados));
-        }
-    } catch (e) { /* localStorage indisponível — não é crítico, só não conta pro contador visual */ }
+    marcarEasterEggEncontrado(id);
 }
 
 function iniciarLoja() {
@@ -265,6 +256,7 @@ function iniciarLoja() {
     preencherValoresPadraoPedido();
     iniciarEasterEggsLoja();
     aplicarTamanhoDicasEasterEgg();
+    iniciarContadorEasterEggs();
 
     document.getElementById('btnFecharCupom').addEventListener('click', fecharCupomFalso);
     document.getElementById('btnFecharCupomBtn').addEventListener('click', fecharCupomFalso);
@@ -278,6 +270,7 @@ function iniciarLoja() {
         const resultado = document.getElementById('freteResult');
         if (cepDigitado === '140626') {
             resultado.innerHTML = 'Esse "CEP" não existe em lugar nenhum, só na nossa história: 14/06, o dia do nosso primeiro "eu te amo". Feliz por você ter digitado justo esse aqui 💛';
+            marcarEasterEggEncontrado('freteData');
         } else {
             resultado.textContent = 'Sedex Expresso - Frete Grátis (Chega em 2 a 3 dias úteis)';
         }

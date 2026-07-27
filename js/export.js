@@ -115,6 +115,7 @@ async function gerarConstelacao() {
             const fotoSrc = await resolverFotoPlaceholderOuAsset(marco.foto);
             const tamanhoEsteItem = marco.ehPedido ? tamanhoFoto * 1.18 : tamanhoFoto;
             item.innerHTML = `
+                <span class="constelacao-item-estrela" aria-hidden="true">✦</span>
                 <img src="${fotoSrc}" alt="${marco.ehPedido ? 'Hoje' : marco.data}" style="width:${tamanhoEsteItem}px; height:${tamanhoEsteItem}px;">
                 <p class="constelacao-item-data" style="font-size:${fonteData}px;">${marco.ehPedido ? 'Hoje' : (marco.data || '')}</p>`;
             lista.appendChild(item);
@@ -499,7 +500,7 @@ function esconderLembreteBackup() {
 }
 
 async function adiarLembreteBackup() {
-    await salvarConfiguracao('aurora_lembrete_backup_adiado_em', String(Date.now()));
+    await salvarConfiguracao('aurora_lembrete_backup_adiado_em', String(Date.now()), false, false);
     esconderLembreteBackup();
 }
 
@@ -516,7 +517,7 @@ async function baixarBackupCompleto() {
         // Registra quando o último backup manual foi feito — usado pelo
         // lembrete de backup (ver verificarLembreteBackup) pra não incomodar
         // toda vez, só quando já faz tempo que ninguém baixa uma cópia.
-        await salvarConfiguracao('aurora_ultimo_backup_manual', String(Date.now()));
+        await salvarConfiguracao('aurora_ultimo_backup_manual', String(Date.now()), false, false);
         esconderLembreteBackup();
     } catch (err) {
         console.error('Falha ao gerar backup completo', err);

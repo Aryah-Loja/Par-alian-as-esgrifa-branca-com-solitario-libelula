@@ -125,6 +125,7 @@ function iniciarEasterEggDaLua() {
         morseEl.textContent = paraCodigoMorse(MENSAGEM_SECRETA_LUA);
         overlay.classList.remove('d-none');
         overlay.scrollTop = 0;
+        marcarEasterEggEncontrado('luaMorse');
     });
 
     document.getElementById('btnFecharLuaEasterEgg').addEventListener('click', () => overlay.classList.add('d-none'));
@@ -1299,6 +1300,7 @@ function abrirLojaSomenteVisualizacao() {
     trocarNomeLojaParaVisualizacao(true);
 
     document.getElementById('modoVisualizacaoBarra').classList.remove('d-none');
+    document.body.classList.add('modo-visualizacao-ativo'); // reserva espaço pra barra fixa não cobrir o fim da loja
     window.scrollTo(0, 0);
 }
 
@@ -1310,9 +1312,25 @@ function fecharLojaSomenteVisualizacao() {
     trocarNomeLojaParaVisualizacao(false);
 
     document.getElementById('modoVisualizacaoBarra').classList.add('d-none');
-    document.getElementById('romancePage').style.display = '';
+    document.body.classList.remove('modo-visualizacao-ativo');
+    const romancePage = document.getElementById('romancePage');
+    romancePage.style.display = '';
     definirFundoBody(CORES_FUNDO.escuro);
     window.scrollTo(0, 0);
+
+    // CORREÇÃO ("tela roxa/vazia" ao voltar da loja): alternar
+    // display:none -> '' faz o navegador RECRIAR a renderização da página
+    // inteira, o que reinicia do zero as animações de entrada
+    // (".reveal-up", que começam com opacity:0 e só aparecem depois de
+    // 0.8s). Como ela já tinha visto "Nossa História" antes, replay dessa
+    // animação de novo só dá a impressão de uma tela em branco por um
+    // instante. Aqui a gente força tudo a aparecer JÁ no estado final,
+    // sem re-tocar a animação.
+    romancePage.querySelectorAll('.reveal-up').forEach(el => {
+        el.style.animation = 'none';
+        el.style.opacity = '1';
+        el.style.transform = 'none';
+    });
 }
 
 /**

@@ -34,6 +34,13 @@
         <button id="btnVoltarDaLoja" class="btn btn-rosegold btn-sm rounded-pill fw-bold">Voltar para nossa história</button>
     </div>
 
+    <!-- Contador discreto de easter eggs — só o número, nunca revela quais.
+         Fica escondido enquanto o modo visualização da loja está ativo,
+         pra não brigar com a barra dele lá embaixo. -->
+    <div id="contadorEasterEggs" class="contador-easter-eggs">
+        <span aria-hidden="true">🌻</span> <span id="contadorEasterEggsTexto">0 de 9</span>
+    </div>
+
 
     <!-- ===================== VINHETA DE ABERTURA ===================== -->
     <div id="vinhetaAbertura" class="vinheta-abertura">
@@ -487,19 +494,7 @@
             <div class="letter-stage">
                 <div id="envelope" class="envelope">
                     <div class="envelope-back"></div>
-                    <div class="letter-paper" id="letterPaper">
-                        <div class="letter-paper-scroll">
-                            <p class="letter-eyebrow" id="letterEyebrow">Um verso pro nosso universo</p>
-                            <p class="letter-text" id="letterTextFinal"></p>
-                            <p class="letter-signoff" id="letterSignoff"></p>
-                        </div>
-                        <div class="letter-paper-rodape">
-                            <button id="btnModoVelaCarta" class="btn-modo-vela d-none" aria-label="Ler à luz de vela"><i class="bi bi-fire"></i> Ler à luz de vela</button>
-                            <div id="finalContinuarWrap" class="d-none">
-                                <button id="btnVerHistoria" class="btn btn-rosegold rounded-pill fw-bold mt-2 px-4 py-2 glow-effect">Continuar</button>
-                            </div>
-                        </div>
-                    </div>
+                    <div class="letter-paper" id="letterPaper"></div>
                     <div class="envelope-flap" id="envelopeFlap"></div>
                     <div class="envelope-seal" id="envelopeSeal"><i class="bi bi-heart-fill"></i></div>
                 </div>
@@ -518,6 +513,9 @@
             <p class="letter-eyebrow visivel" id="modoVelaEyebrow"></p>
             <p class="letter-text versiculo-visivel" id="modoVelaTexto"></p>
             <p class="letter-signoff visivel" id="modoVelaAssinatura"></p>
+            <div id="modoVelaContinuarWrap" class="text-center d-none">
+                <button id="btnModoVelaContinuar" class="btn btn-rosegold rounded-pill fw-bold mt-3 px-4 py-2 glow-effect">Continuar</button>
+            </div>
         </div>
     </div>
 

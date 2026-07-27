@@ -153,12 +153,15 @@ async function excluirMedia(id) {
 // estágio "final") que não podem correr o risco de ficar só no timer de
 // 1,2s agendado — o resto (respostas de quiz, regras do contrato) continua
 // agrupado, para não martelar a rede a cada pequena mudança.
-async function salvarConfiguracao(chave, valor, imediato = false) {
+async function salvarConfiguracao(chave, valor, imediato = false, afetaSincronizacao = true) {
     try { localStorage.setItem(chave, typeof valor === 'string' ? valor : JSON.stringify(valor)); } catch (e) { console.error('localStorage indisponível para', chave, e); }
     try { await db.configuracoes.put({ chave, valor }); } catch (e) { console.error('Falha ao salvar configuração no IndexedDB:', chave, e); }
     // 'aurora_atualizado_em' é escrita diretamente por marcarAtualizacaoLocal/sincronizarNaAbertura;
-    // evita chamar a si mesma em loop.
-    if (chave !== 'aurora_atualizado_em') await marcarAtualizacaoLocal(imediato);
+    // evita chamar a si mesma em loop. `afetaSincronizacao = false` é para
+    // configs puramente locais/cosméticas (ex.: quais easter eggs já foram
+    // encontrados, se já visitou a loja antes) que NÃO devem contar como
+    // "dado novo" para fins de sincronização/reset entre aparelhos.
+    if (chave !== 'aurora_atualizado_em' && afetaSincronizacao) await marcarAtualizacaoLocal(imediato);
 }
 
 async function obterConfiguracao(chave) {

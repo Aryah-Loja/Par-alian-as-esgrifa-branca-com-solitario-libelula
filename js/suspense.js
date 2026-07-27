@@ -500,60 +500,12 @@ function finalizarSequencia() {
 function iniciarCartaFinal() {
     const envelope = document.getElementById('envelope');
     const envelopeHint = document.getElementById('envelopeHint');
-    const letterEyebrow = document.getElementById('letterEyebrow');
-    const letterTextEl = document.getElementById('letterTextFinal');
-    const letterSignoff = document.getElementById('letterSignoff');
-    const continuarWrap = document.getElementById('finalContinuarWrap');
-    if (!envelope || !letterTextEl) return;
+    if (!envelope) return;
 
     let jaAbriu = false;
-    letterTextEl.innerHTML = '';
-    letterTextEl.classList.remove('versiculo-visivel');
-    letterEyebrow.classList.remove('visivel');
-    letterSignoff.classList.remove('visivel');
-    letterSignoff.textContent = TEXTOS.assinaturaCartaFinal;
-    continuarWrap.classList.add('d-none');
 
     function montarHtmlVersiculo() {
-        let contador = 0;
-        return textoVersiculoBase().replace(/\{AMOR\}/g, () => `<span class="amor-swap" id="amorSwap${contador++}">amor</span>`);
-    }
-
-    function revelarVersiculo() {
-        letterEyebrow.classList.add('visivel');
-        letterTextEl.innerHTML = montarHtmlVersiculo();
-        requestAnimationFrame(() => letterTextEl.classList.add('versiculo-visivel'));
-
-        setTimeout(() => {
-            const trocas = Array.from(letterTextEl.querySelectorAll('.amor-swap'));
-            trocas.forEach((span, i) => {
-                setTimeout(() => {
-                    span.style.opacity = '0';
-                    setTimeout(() => { span.textContent = NOME_DELA; span.style.opacity = '1'; }, 420);
-                }, i * 900);
-            });
-
-            const tempoTotalTrocas = trocas.length * 900 + 900;
-            setTimeout(() => {
-                letterSignoff.classList.add('visivel');
-                setTimeout(() => {
-                    continuarWrap.classList.remove('d-none');
-                    continuarWrap.classList.add('reveal-up');
-
-                    // A carta já abre direto no modo "luz de vela" (pedido
-                    // explícito, e também porque o botão manual de entrar
-                    // nesse modo vinha falhando). Continua existindo como
-                    // botão de RE-abrir caso ela feche o modo vela sem
-                    // querer e queira voltar.
-                    const btnVela = document.getElementById('btnModoVelaCarta');
-                    if (btnVela) {
-                        btnVela.classList.remove('d-none');
-                        btnVela.onclick = () => abrirModoVela(letterEyebrow.textContent, letterTextEl.innerHTML, letterSignoff.textContent);
-                    }
-                    setTimeout(() => abrirModoVela(letterEyebrow.textContent, letterTextEl.innerHTML, letterSignoff.textContent), 600);
-                }, 700);
-            }, tempoTotalTrocas);
-        }, 1200);
+        return textoVersiculoBase().replace(/\{AMOR\}/g, NOME_DELA);
     }
 
     function abrirEnvelope() {
@@ -567,7 +519,19 @@ function iniciarCartaFinal() {
         audio.currentTime = 0;
         audio.play().catch(err => console.error('Música não pôde iniciar (autoplay bloqueado?):', err));
 
-        setTimeout(revelarVersiculo, 900);
+        // Simplificado (pedido explícito): só a animação de ABRIR O
+        // ENVELOPE acontece aqui — a carta não fica exibida "lisa" antes
+        // disso. Ela já vai direto pro modo luz de vela, com o nome já
+        // trocado e o botão "Continuar" dentro do próprio modo vela.
+        setTimeout(() => {
+            abrirModoVela('Um verso pro nosso universo', montarHtmlVersiculo(), TEXTOS.assinaturaCartaFinal, {
+                aoContinuar: async () => {
+                    document.getElementById('modoVelaOverlay').classList.add('d-none');
+                    await salvarConfiguracao('aurora_stage', 'final', true);
+                    iniciarFlashback(() => { goToRomancePage(true); });
+                }
+            });
+        }, 900);
     }
 
     envelope.addEventListener('click', abrirEnvelope);
@@ -742,10 +706,5 @@ function iniciarSuspense() {
     document.getElementById('btnPedirPermissaoNovamente').addEventListener('click', async () => {
         await solicitarPermissoes();
         verificarOrientacao();
-    });
-
-    document.getElementById('btnVerHistoria').addEventListener('click', async () => {
-        await salvarConfiguracao('aurora_stage', 'final', true);
-        iniciarFlashback(() => { goToRomancePage(true); });
     });
 }
