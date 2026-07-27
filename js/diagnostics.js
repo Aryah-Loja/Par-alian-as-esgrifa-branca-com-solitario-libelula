@@ -346,12 +346,21 @@ async function executarTesteGaleria() {
  * página). Mesma proteção por senha de antes, sem nenhuma mudança de
  * comportamento nesse quesito.
  */
-function solicitarSenhaReset() {
+function solicitarSenhaReset(opcoes = {}) {
     return new Promise((resolve) => {
         const overlay = document.getElementById('senhaResetOverlay');
         const input = document.getElementById('senhaResetInput');
         const erro = document.getElementById('senhaResetErro');
         if (!overlay || !input) { resolve(false); return; }
+
+        // Título/subtítulo do modal são customizáveis porque este mesmo modal
+        // de senha é reaproveitado por mais de uma ação sensível (reset total
+        // do site, reset só do contrato, troca de vídeo) — sem isso, o texto
+        // fixo "essa ação apaga tudo" ficaria enganoso para ações parciais.
+        const titulo = overlay.querySelector('.senha-memorias-titulo');
+        const subtitulo = overlay.querySelector('.senha-memorias-sub');
+        if (titulo) titulo.textContent = opcoes.titulo || 'Resetar o site';
+        if (subtitulo) subtitulo.textContent = opcoes.subtitulo || 'Essa ação apaga tudo (neste aparelho e no outro). Digite a senha para confirmar.';
 
         overlay.classList.remove('d-none');
         erro.classList.add('d-none');
@@ -425,6 +434,54 @@ async function executarReset() {
     location.reload();
 }
 
+/**
+ * Reset PARCIAL: apaga só as regras do contrato de namoro escolhidas
+ * (chave 'aurora_regras_contrato'), sem mexer em mais nada (vídeo,
+ * assinatura, fotos, checklist, easter eggs, etc). Depois disso,
+ * "Nossa História" volta a mostrar a grade de seleção de regras do zero
+ * (ver prepararContrato() em js/romance.js — hoje, uma vez que o
+ * contrato é gerado, o site não mostra mais a grade, só o contrato já
+ * pronto, então não existia outro jeito de refazer a escolha).
+ *
+ * Usa a MESMA senha do reset total (SENHA_RESET_SITE) por ser uma ação
+ * destrutiva, mas é bem menos drástica: não apaga vídeo/fotos/progresso,
+ * e não usa o mecanismo de "reset publicado na nuvem" (que é reservado
+ * pro reset total, para os dois aparelhos saberem que TUDO foi limpo).
+ * A remoção da configuração ainda sincroniza normalmente para o outro
+ * aparelho pelo caminho de backup de sempre (marcarAtualizacaoLocal via
+ * excluirConfiguracao, em js/db.js), como qualquer outra config que muda.
+ */
+async function executarResetContrato() {
+    const senhaOk = await solicitarSenhaReset({
+        titulo: 'Resetar só o contrato',
+        subtitulo: 'Isso apaga só as regras do contrato de namoro escolhidas (o resto do site não é afetado). Digite a senha para confirmar.'
+    });
+    if (!senhaOk) return;
+
+    if (!confirm('Isso apaga as regras do contrato de namoro escolhidas atualmente (neste aparelho e no outro, na próxima sincronização) — o resto do site (vídeo, fotos, checklist, progresso) NÃO é afetado. Na próxima vez que "Nossa História" abrir a seção do contrato, ela vai pedir para escolher as regras de novo. Continuar?')) return;
+
+    const botao = document.getElementById('btnResetarContrato');
+    const status = document.getElementById('resetarContratoStatus');
+    if (botao) { botao.disabled = true; botao.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Resetando contrato...'; }
+    if (status) { status.textContent = ''; status.className = 'save-status'; }
+
+    try {
+        await excluirConfiguracao('aurora_regras_contrato', true);
+        if (status) {
+            status.textContent = 'Contrato resetado com sucesso. Vai sincronizar com o outro aparelho normalmente.';
+            status.className = 'save-status ok';
+        }
+    } catch (e) {
+        console.error('Falha ao resetar o contrato:', e);
+        if (status) {
+            status.textContent = 'Deu erro tentando resetar o contrato: ' + e.message;
+            status.className = 'save-status err';
+        }
+    } finally {
+        if (botao) { botao.disabled = false; botao.innerHTML = '<i class="bi bi-file-earmark-x me-1"></i>Resetar só o contrato'; }
+    }
+}
+
 async function executarTesteCapsula() {
     const botao = document.getElementById('btnTestarCapsula');
     const resultado = document.getElementById('capsulaTesteResultado');
@@ -489,7 +546,10 @@ function iniciarTrocaDeVideo() {
     if (!botao || !input) return;
 
     botao.addEventListener('click', async () => {
-        const senhaOk = await solicitarSenhaReset();
+        const senhaOk = await solicitarSenhaReset({
+            titulo: 'Trocar o vídeo do pedido',
+            subtitulo: 'Isso substitui o vídeo do pedido salvo (o resto do site não é afetado). Digite a senha para confirmar.'
+        });
         if (!senhaOk) return;
         input.value = '';
         input.click();
@@ -551,6 +611,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btnVerEstadoReset').addEventListener('click', executarVerEstadoReset);
     document.getElementById('btnTestarGaleria').addEventListener('click', executarTesteGaleria);
     document.getElementById('btnResetar').addEventListener('click', executarReset);
+    document.getElementById('btnResetarContrato').addEventListener('click', executarResetContrato);
     document.getElementById('btnTestarCapsula').addEventListener('click', executarTesteCapsula);
     iniciarTrocaDeVideo();
     executarDiagnosticoCompleto();

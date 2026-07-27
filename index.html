@@ -35,9 +35,16 @@
     </div>
 
     <!-- Contador discreto de easter eggs — só o número, nunca revela quais.
-         Fica escondido enquanto o modo visualização da loja está ativo,
-         pra não brigar com a barra dele lá embaixo. -->
-    <div id="contadorEasterEggs" class="contador-easter-eggs">
+         CORREÇÃO (item 1 do prompt de correções): fica com "d-none" por
+         padrão porque ele NUNCA pode aparecer na loja inicial nem no
+         checkout/carta, só depois que o pedido já foi feito, dentro de
+         "Nossa História" (ver ativarContadorEasterEggsFaseFinal(), chamada
+         em goToRomancePage(), js/romance.js). Também some sozinho quando
+         todos os 9 já foram encontrados (ver atualizarContadorEasterEggs()
+         em js/utils.js). Continua escondido também enquanto o modo
+         visualização da loja está ativo, pra não brigar com a barra dele
+         lá embaixo. -->
+    <div id="contadorEasterEggs" class="contador-easter-eggs d-none">
         <span aria-hidden="true">🌻</span> <span id="contadorEasterEggsTexto">0 de 9</span>
     </div>
 
@@ -736,6 +743,15 @@
         </div>
 
         <div class="mt-5 reveal-up" style="max-width: 440px; margin: 0 auto;">
+            <p class="romance-section-title"><i class="bi bi-list-check me-2"></i>Nosso checklist</p>
+            <div class="checklist-resumo-card">
+                <p class="checklist-resumo-texto" id="checklistResumoTexto">carregando...</p>
+                <div class="checklist-resumo-barra-fundo"><div id="checklistResumoBarra" class="checklist-resumo-barra-preenchida" style="width:0%"></div></div>
+                <a href="checklist.html" class="btn btn-share"><i class="bi bi-list-check me-2"></i>Ver nosso checklist</a>
+            </div>
+        </div>
+
+        <div class="mt-5 reveal-up" style="max-width: 440px; margin: 0 auto;">
             <p class="romance-section-title"><i class="bi bi-paw me-2"></i>Seus bichos</p>
             <div class="bichos-grid" id="seusBichosGrid"></div>
             <div class="bicho-slinky-destaque d-none" id="bichoSlinkyDestaque">
@@ -854,16 +870,18 @@
             </div>
             <div id="quizFinalMsg" class="d-none text-center mt-3">
                 <i class="bi bi-heart-fill text-rosegold" style="font-size: 1.3rem;"></i>
-                <p class="small text-white-50 mt-2 mb-0" id="quizResumoTexto"></p>
+                <p class="fw-bold mt-2 mb-0" id="quizPontuacaoTexto"></p>
+                <p class="small text-white-50 mt-1 mb-0" id="quizResumoTexto"></p>
+                <button id="btnRefazerQuiz" type="button" class="btn btn-outline-light btn-sm rounded-pill mt-3">Refazer o quiz</button>
             </div>
         </div>
 
         <div id="regrasSelecaoWrap" class="mt-5 reveal-up" style="max-width: 460px; margin: 0 auto;">
             <p class="romance-section-title">Escolha as regras do nosso contrato</p>
-            <p class="text-center text-white-50 small mb-3" style="max-width: 360px; margin: 0 auto;">Selecione de 2 a 5 combinados pra virarem cláusulas oficiais (e bem afetivas) do nosso contrato de namoro.</p>
+            <p class="text-center text-white-50 small mb-3" style="max-width: 360px; margin: 0 auto;">Selecione de 2 a 8 combinados pra virarem cláusulas oficiais (e nada sérias) do nosso contrato de namoro.</p>
             <div class="rules-grid" id="rulesGrid"></div>
             <div class="text-center mt-3">
-                <p id="regrasContador" class="small text-white-50 mb-2">0 de 3 selecionadas (mínimo 2)</p>
+                <p id="regrasContador" class="small text-white-50 mb-2">0 de 8 selecionadas (mínimo 2)</p>
                 <button id="btnGerarContrato" class="btn btn-rosegold rounded-pill fw-bold px-4" disabled>Gerar nosso contrato</button>
             </div>
         </div>
@@ -948,21 +966,6 @@
 
             <button id="btnMaisOpcoes" class="btn btn-outline-light btn-sm rounded-pill mt-3"><i class="bi bi-three-dots me-1"></i>Mais opções</button>
 
-            <div id="maisOpcoesOverlay" class="carta-discussao-overlay d-none">
-                <button id="btnFecharMaisOpcoes" class="modo-vela-fechar" aria-label="Fechar"><i class="bi bi-x-lg"></i></button>
-                <div class="carta-discussao-papel mais-opcoes-papel">
-                    <p class="letter-eyebrow visivel">Mais opções</p>
-                    <div class="d-flex gap-2 justify-content-center flex-wrap">
-                        <button id="btnExportarCartaoPostal" class="btn btn-outline-dark btn-sm rounded-pill"><i class="bi bi-postcard me-1"></i>Cartão postal do mapa</button>
-                        <button id="btnExportarConstelacao" class="btn btn-outline-dark btn-sm rounded-pill"><i class="bi bi-stars me-1"></i>Constelação</button>
-                        <button id="btnExportarCartaFisica" class="btn btn-outline-dark btn-sm rounded-pill"><i class="bi bi-envelope-paper-fill me-1"></i>Carta física com QR</button>
-                        <button id="btnExportarPolaroid" class="btn btn-outline-dark btn-sm rounded-pill"><i class="bi bi-camera me-1"></i>Polaroid do momento</button>
-                        <button id="btnReverLoja" class="btn btn-outline-dark btn-sm rounded-pill"><i class="bi bi-shop me-1"></i>Rever a lojinha das alianças</button>
-                    </div>
-                    <p id="exportarStatus" class="save-status"></p>
-                </div>
-            </div>
-
             <div id="polaroidSalvaWrap" class="polaroid-salva-wrap d-none">
                 <img src="" alt="Nossa polaroid">
                 <p class="polaroid-salva-legenda">Sua polaroid, salva e sincronizada</p>
@@ -986,6 +989,29 @@
             </div>
 
             <button id="btnCartaDiscussao" class="btn-carta-discussao"><i class="bi bi-envelope-heart-fill me-2"></i>Se um dia a gente brigar, aperte aqui</button>
+        </div>
+    </div>
+
+    <!-- ===================== "MAIS OPÇÕES" (exportar mapa/constelação/carta/polaroid, rever loja) =====================
+         CORREÇÃO: esse overlay antes ficava dentro de #romancePage, que tem
+         `overflow: hidden` — o mesmo problema já documentado no bug #1 do
+         CONTEXTO-PROJETO.md (position:fixed dentro de ancestral com
+         overflow:hidden se comporta errado no Safari do iPhone, ficando
+         "colado"/clipado em vez de abrir como modal de tela cheia de
+         verdade). Agora é filho direto do body, igual ao
+         #cartaDiscussaoOverlay logo abaixo. -->
+    <div id="maisOpcoesOverlay" class="carta-discussao-overlay d-none">
+        <button id="btnFecharMaisOpcoes" class="modo-vela-fechar" aria-label="Fechar"><i class="bi bi-x-lg"></i></button>
+        <div class="carta-discussao-papel mais-opcoes-papel">
+            <p class="letter-eyebrow visivel">Mais opções</p>
+            <div class="d-flex gap-2 justify-content-center flex-wrap">
+                <button id="btnExportarCartaoPostal" class="btn btn-outline-dark btn-sm rounded-pill"><i class="bi bi-postcard me-1"></i>Cartão postal do mapa</button>
+                <button id="btnExportarConstelacao" class="btn btn-outline-dark btn-sm rounded-pill"><i class="bi bi-stars me-1"></i>Constelação</button>
+                <button id="btnExportarCartaFisica" class="btn btn-outline-dark btn-sm rounded-pill"><i class="bi bi-envelope-paper-fill me-1"></i>Carta física com QR</button>
+                <button id="btnExportarPolaroid" class="btn btn-outline-dark btn-sm rounded-pill"><i class="bi bi-camera me-1"></i>Polaroid do momento</button>
+                <button id="btnReverLoja" class="btn btn-outline-dark btn-sm rounded-pill"><i class="bi bi-shop me-1"></i>Rever a lojinha das alianças</button>
+            </div>
+            <p id="exportarStatus" class="save-status"></p>
         </div>
     </div>
 
@@ -1014,52 +1040,66 @@
         </div>
     </div>
 
-    <!-- ===================== ELEMENTOS OCULTOS USADOS SÓ PARA EXPORTAÇÃO ===================== -->
-
-    <!-- Cartão postal do "Nosso mapa" — gerado NA HORA a partir de MAPA_LUGARES
-         (js/config.js), então sempre reflete o que estiver la, sem precisar
-         editar nada aqui quando um lugar novo for adicionado. A grade de
-         colunas e o tamanho das fotos são calculados em JS (ver
-         calcularGradeParaCaber em js/export.js), então sempre cabe tudo
-         direitinho, não importa quantos lugares existam. -->
-    <div id="cartaoPostalExportavel" class="exportavel-oculto cartao-postal-exportavel" aria-hidden="true">
-        <span class="cartao-postal-girassol cartao-postal-girassol-1">🌻</span>
-        <span class="cartao-postal-girassol cartao-postal-girassol-2">🌻</span>
-        <span class="cartao-postal-girassol cartao-postal-girassol-3">🌻</span>
-        <p class="cartao-postal-titulo">Nosso mapa</p>
-        <div class="cartao-postal-lista" id="cartaoPostalLista"></div>
-    </div>
-
-    <!-- Constelação pra imprimir — gerada a partir de TIMELINE_MARCOS
-         (js/config.js), sempre no visual escuro/estrelado (a versão clara
-         foi removida). Fundo com nebulosas, planeta e estrelas, tudo em
-         CSS puro. A grade também é calculada dinamicamente em JS, então
-         sempre cabe tudo, mesmo se a timeline crescer no futuro. -->
-    <div id="constelacaoExportavel" class="exportavel-oculto constelacao-exportavel" aria-hidden="true">
-        <div class="constelacao-fundo-nebulosa constelacao-fundo-nebulosa-1"></div>
-        <div class="constelacao-fundo-nebulosa constelacao-fundo-nebulosa-2"></div>
-        <div class="constelacao-fundo-planeta"></div>
-        <div class="constelacao-fundo-estrelas"></div>
-        <p class="constelacao-titulo">Nosso céu</p>
-        <div class="constelacao-lista" id="constelacaoLista"></div>
-    </div>
-
-    <!-- Carta física com QR code — mesmo texto da carta final, com um QR
-         no rodapé apontando pro link do site (URL_DO_SITE, em config.js). -->
-    <div id="cartaFisicaExportavel" class="exportavel-oculto carta-fisica-exportavel" aria-hidden="true">
-        <p class="kicker">Um verso pro nosso universo</p>
-        <p id="cartaFisicaTexto" class="corpo"></p>
-        <p id="cartaFisicaAssinatura" class="assinatura"></p>
-        <div id="cartaFisicaQrWrap" class="carta-fisica-qr-wrap d-none">
-            <div id="cartaFisicaQr"></div>
-            <p class="carta-fisica-qr-legenda">aponte a câmera pra reviver tudo de novo</p>
+    <!-- ===================== ELEMENTOS OCULTOS USADOS SÓ PARA EXPORTAÇÃO =====================
+         CORREÇÃO: antes cada `.exportavel-oculto` era jogado pra fora da tela
+         sozinho com `position:fixed; left:-9999px`. Isso deixava um bloco de
+         1181x1772px (o cartão postal do mapa, por exemplo) flutuando bem
+         longe à esquerda, mas ainda tecnicamente "no viewport" — em alguns
+         navegadores/momentos (troca de orientação, teclado abrindo, o
+         html2canvas manipulando o elemento pra gerar a imagem) isso podia
+         fazer esse bloco aparecer entrando/saindo pela lateral da tela ou
+         criar rolagem horizontal fantasma. Agora TODOS esses elementos ficam
+         dentro de `.area-exportavel-oculta`, um invólucro fixo de 0x0 com
+         `overflow:hidden`: o conteúdo continua existindo com o tamanho real
+         de exportação (pro html2canvas capturar certinho), mas fica
+         recortado/escondido de verdade, sem depender de um deslocamento
+         gigante em pixels. -->
+    <div class="area-exportavel-oculta" aria-hidden="true">
+        <!-- Cartão postal do "Nosso mapa" — gerado NA HORA a partir de MAPA_LUGARES
+             (js/config.js), então sempre reflete o que estiver la, sem precisar
+             editar nada aqui quando um lugar novo for adicionado. A grade de
+             colunas e o tamanho das fotos são calculados em JS (ver
+             calcularGradeParaCaber em js/export.js), então sempre cabe tudo
+             direitinho, não importa quantos lugares existam. -->
+        <div id="cartaoPostalExportavel" class="exportavel-oculto cartao-postal-exportavel">
+            <span class="cartao-postal-girassol cartao-postal-girassol-1">🌻</span>
+            <span class="cartao-postal-girassol cartao-postal-girassol-2">🌻</span>
+            <span class="cartao-postal-girassol cartao-postal-girassol-3">🌻</span>
+            <p class="cartao-postal-titulo">Nosso mapa</p>
+            <div class="cartao-postal-lista" id="cartaoPostalLista"></div>
         </div>
-    </div>
 
-    <div id="polaroidExportavel" class="exportavel-oculto polaroid-exportavel" aria-hidden="true">
-        <img id="polaroidExportavelImg" alt="Nosso momento">
-        <p class="legenda-data" id="polaroidExportavelData"></p>
-        <p class="legenda" id="polaroidExportavelLegenda"></p>
+        <!-- Constelação pra imprimir — gerada a partir de TIMELINE_MARCOS
+             (js/config.js), sempre no visual escuro/estrelado (a versão clara
+             foi removida). Fundo com nebulosas, planeta e estrelas, tudo em
+             CSS puro. A grade também é calculada dinamicamente em JS, então
+             sempre cabe tudo, mesmo se a timeline crescer no futuro. -->
+        <div id="constelacaoExportavel" class="exportavel-oculto constelacao-exportavel">
+            <div class="constelacao-fundo-nebulosa constelacao-fundo-nebulosa-1"></div>
+            <div class="constelacao-fundo-nebulosa constelacao-fundo-nebulosa-2"></div>
+            <div class="constelacao-fundo-planeta"></div>
+            <div class="constelacao-fundo-estrelas"></div>
+            <p class="constelacao-titulo">Nosso céu</p>
+            <div class="constelacao-lista" id="constelacaoLista"></div>
+        </div>
+
+        <!-- Carta física com QR code — mesmo texto da carta final, com um QR
+             no rodapé apontando pro link do site (URL_DO_SITE, em config.js). -->
+        <div id="cartaFisicaExportavel" class="exportavel-oculto carta-fisica-exportavel">
+            <p class="kicker">Um verso pro nosso universo</p>
+            <p id="cartaFisicaTexto" class="corpo"></p>
+            <p id="cartaFisicaAssinatura" class="assinatura"></p>
+            <div id="cartaFisicaQrWrap" class="carta-fisica-qr-wrap d-none">
+                <div id="cartaFisicaQr"></div>
+                <p class="carta-fisica-qr-legenda">aponte a câmera pra reviver tudo de novo</p>
+            </div>
+        </div>
+
+        <div id="polaroidExportavel" class="exportavel-oculto polaroid-exportavel">
+            <img id="polaroidExportavelImg" alt="Nosso momento">
+            <p class="legenda-data" id="polaroidExportavelData"></p>
+            <p class="legenda" id="polaroidExportavelLegenda"></p>
+        </div>
     </div>
 
 

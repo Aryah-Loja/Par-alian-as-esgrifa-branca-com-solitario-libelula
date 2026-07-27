@@ -182,6 +182,20 @@ pra evitar toque acidental — mesma senha de antes) e agora:
    antes de mais nada e se limpa também, se for o caso. Ver
    `sincronizarNaAbertura()` em `js/sync.js`.
 
+## Reset parcial só do contrato de namoro
+
+Além do reset total acima, `diagnostico.html` também tem um botão
+"Resetar só o contrato" (mesma senha `SENHA_RESET_SITE`), pra quando você
+só quer refazer a escolha das cláusulas do contrato sem apagar mais nada
+(vídeo, fotos, checklist e progresso continuam intactos). Ele apaga só a
+configuração `aurora_regras_contrato` (local + IndexedDB) via
+`excluirConfiguracao()` (`js/db.js`) e marca a atualização local, então a
+remoção sincroniza para o outro aparelho pelo mesmo caminho de backup de
+sempre — não usa o marcador de "reset publicado na nuvem" (esse é
+reservado pro reset total). Depois de resetado, a seção do contrato em
+"Nossa História" volta a mostrar a grade de seleção de regras do zero
+(`prepararContrato()` em `js/romance.js`).
+
 ## Rever a lojinha (sem afetar nada)
 
 Na página final, o botão "Rever a lojinha das alianças" mostra de novo a

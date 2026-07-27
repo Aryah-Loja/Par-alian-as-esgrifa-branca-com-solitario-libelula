@@ -94,7 +94,12 @@ index.html          → site principal inteiro: loja falsa → checkout/suspense
                        página, screens alternados via display:none/'')
 galeria.html         → álbum de fotos/vídeos PERMANENTE, independente,
                        carrega utils.js (compartilha funções com index.html)
-diagnostico.html     → testes técnicos + reset do site (ela NUNCA vê essa página)
+checklist.html        → "Nosso Checklist" (lista de programas/experiências
+                       do casal), página PERMANENTE e independente, com
+                       contador de progresso ("X de Y feitos" + barra) —
+                       ver seção própria abaixo
+diagnostico.html     → testes técnicos + reset do site + reset PARCIAL do
+                       contrato de namoro (ela NUNCA vê essa página)
 
 css/style.css        → TODO o CSS do projeto inteiro (um arquivo só)
 
@@ -114,6 +119,11 @@ js/romance.js        → toda a lógica da página "Nossa História" (o maior
 js/suspense.js       → perguntas de checkout → assinatura → vídeo → carta final
 js/store.js          → lógica da loja falsa (inclui os easter eggs de 5 toques)
 js/futuro.js         → mensagens/cápsulas pro futuro
+js/checklist.js      → lógica da checklist.html (renderiza CHECKLIST_ENCONTROS,
+                       marca/desmarca item, contador de progresso). Usa
+                       obterConfiguracao/salvarConfiguracao normalmente,
+                       então entra no backup/sincronização como qualquer
+                       config pequena (ver seção própria abaixo)
 js/export.js         → geração de itens pra baixar/imprimir (mapa, constelação,
                        carta em PDF, polaroid) + backup completo (.zip)
 js/utils.js          → funções COMPARTILHADAS entre index.html, galeria.html e
@@ -245,6 +255,85 @@ está comentada no código, mas vale saber de antemão:
     `utils.js`) em vez de cada uma ter sua lógica de exibição própria —
     reduz duplicação e concentra os bugs de exibição de carta num lugar
     só, mais fácil de corrigir de vez.
+13. **Um handler `async` de checkbox/toggle que faz "ler estado do banco →
+    mutar → salvar" a cada clique tem uma condição de corrida real**
+    quando dois toggles acontecem em sequência rápida (ex.: marcar vários
+    itens de uma lista um atrás do outro): os dois liam o mesmo estado
+    antigo antes de qualquer um terminar de salvar, e o segundo salvamento
+    sobrescrevia o primeiro, perdendo a marcação (achado com um teste
+    jsdom automatizado no checklist, ver `js/checklist.js`). Correção
+    padrão: manter o estado em memória (carregado uma vez) como fonte da
+    verdade, mutando e persistindo sempre o MESMO objeto, nunca relendo do
+    banco entre uma mudança e outra.
+
+## Checklist de encontros ("Nosso Checklist")
+
+Página separada `checklist.html` (+ `js/checklist.js`), acessível pelo botão
+"Ver nosso checklist" na seção "Nosso checklist" de `index.html` (dentro de
+"Nossa História"). Lista 132 programas/experiências do casal, agrupados em
+9 categorias (`CHECKLIST_ENCONTROS`, em `js/config.js` — conteúdo extraído
+de uma lista pronta fornecida pelo Gabriel, texto dos itens não deve ser
+reescrito sem necessidade).
+
+- **Formato do estado salvo:** chave `aurora_checklist_encontros`
+  (`obterConfiguracao`/`salvarConfiguracao`, como qualquer config pequena),
+  valor é um objeto só com os itens MARCADOS: `{ "<catIdx>_<itemIdx>": true }`.
+  Item desmarcado simplesmente não existe no objeto.
+- **IDs são por POSIÇÃO**, não por texto — reordenar ou remover itens no
+  meio de uma categoria em `CHECKLIST_ENCONTROS` faz o progresso salvo
+  "escorregar" para os itens vizinhos. Pra adicionar itens novos no
+  futuro, sempre ACRESCENTAR no final de uma categoria (ou como categoria
+  nova no final da lista).
+- **Entra no backup/sincronização entre aparelhos** como qualquer outra
+  config: precisou ser adicionado EXPLICITAMENTE em duas pontas de
+  `js/export.js` (`gerarBackupZipBlob` e `aplicarBackupDeZip`), porque o
+  manifest do zip lista campos um por um, não faz backup de toda a tabela
+  `configuracoes` automaticamente — qualquer config nova que precise
+  sincronizar entre aparelhos tem que ser adicionada nesses dois lugares
+  também, não só salva com `salvarConfiguracao`.
+- **Estado em memória como fonte da verdade** (`__checklistEstadoAtual` em
+  `js/checklist.js`): a primeira versão relia ler o estado do banco a cada
+  toggle, o que causava uma condição de corrida real (achada num teste
+  jsdom automatizado) — marcar vários itens em sequência rápida perdia
+  marcações, porque dois toggles liam o mesmo estado antigo antes de
+  qualquer um salvar. Corrigido carregando o estado uma vez ao montar a
+  página e só mutando/persistindo esse mesmo objeto daí pra frente, nunca
+  relendo do banco entre um toggle e outro.
+- `checklist.html` carrega Dexie + JSZip (para sincronizar de verdade,
+  igual ao index.html) e chama `sincronizarNaAbertura()` ao abrir — ao
+  contrário de `galeria.html`, que é 100% estática e não sincroniza nada.
+- Resumo de progresso ("X de Y já vivemos juntos" + barra) também aparece
+  dentro de "Nossa História" (`renderizarResumoChecklist()`, em
+  `js/romance.js`), sem precisar abrir a página separada.
+
+## Reset parcial do contrato de namoro (adicionado nesta sessão)
+
+`diagnostico.html` agora tem, além do "Resetar site" (total), um botão
+**"Resetar só o contrato"** — motivo: uma vez que o contrato é gerado
+(`regrasSelecionadas.length >= MIN_REGRAS`), `prepararContrato()` em
+`js/romance.js` some com a grade de seleção e só mostra o contrato já
+pronto, então não existia nenhum jeito de refazer a escolha das cláusulas
+sem apagar o site inteiro.
+
+- Botão em `diagnostico.html` (`#btnResetarContrato`), lógica em
+  `executarResetContrato()` (`js/diagnostics.js`). Mesma senha do reset
+  total (`SENHA_RESET_SITE`) por ser destrutivo, mas bem mais restrito.
+- Apaga só a chave `aurora_regras_contrato` via nova função
+  `excluirConfiguracao(chave, imediato)` (`js/db.js`, generalizável para
+  qualquer reset parcial futuro) — remove de localStorage + IndexedDB e
+  chama `marcarAtualizacaoLocal(true)`, então a remoção **sincroniza
+  normalmente com o outro aparelho** pelo caminho de backup de sempre
+  (próximo `gerarBackupZipBlob()` não vai incluir `regrasContrato`, então
+  `aplicarBackupDeZip()` no outro aparelho também não vai restaurá-lo).
+- **NÃO usa** o marcador de "reset publicado na nuvem"
+  (`publicarResetNaNuvem()`/`meta.resetado`) — esse mecanismo é exclusivo
+  do reset TOTAL. Um reset parcial não precisa (nem deve) forçar o outro
+  aparelho a se limpar por completo.
+- `solicitarSenhaReset()` agora aceita `{ titulo, subtitulo }` opcionais
+  para customizar o texto do modal de senha (antes era fixo "Resetar o
+  site" / "apaga tudo", o que ficaria enganoso reaproveitado para o reset
+  parcial do contrato e para a troca de vídeo do pedido — ambos os
+  usos já foram corrigidos para textos específicos).
 
 ## Sistema de easter eggs
 
@@ -275,18 +364,169 @@ easter egg — é ferramenta de desenvolvimento, não surpresa pra ela achar.
 
 Praticamente tudo descrito no `README.md` já está implementado e
 funcionando: loja falsa com checkout disfarçado de "perguntas de
-entrega" (com botão "Não" que foge pela tela inteira), carta final que
-abre direto em modo "luz de vela" com música, flashback cinematográfico,
-"Nossa História" completa (constelação da timeline com meteoros/nave
-alienígena/lua clicável, mapa dos lugares, quiz do casal, playlist de 4
-faixas, contrato de namoro com cláusulas cômicas/ousadas, cápsula do
-tempo, carta de discussão protegida por senha, adjetivos com frase
-própria cada, "nossos momentos" com 4 fotos aleatórias da galeria de
-verdade), galeria de fotos com descoberta automática e barra de
-carregamento, exportação de mapa/constelação/carta física/polaroid
-(todas com fallback de compartilhamento pro iPhone), backup completo em
-.zip, sincronização entre aparelhos via Supabase, reset remoto com
-confirmação, e um contador discreto de easter eggs.
+entrega" (com botão "Não" que foge pela tela inteira, cupom falso,
+popup de "manutenção" e carrossel promocional como detalhes de imersão),
+carta final que abre direto em modo "luz de vela" com música, flashback
+cinematográfico, "Nossa História" completa (contador vivo do tempo de
+relacionamento, constelação da timeline com meteoros/nave alienígena/lua
+clicável, mapa dos lugares, quiz do casal, playlist de 4 faixas, contrato
+de namoro com cláusulas cômicas/ousadas, cápsula do tempo, carta de
+discussão protegida por senha, baralho de adjetivos "se um dia estiver
+triste, lembre-se disso", "nossos momentos" com 4 fotos aleatórias da
+galeria de verdade, seção "coisas que a Poloni ama", seção "seus bichos",
+vídeo em câmera lenta de um momento com frases sobrepostas, mensagem
+especial que só aparece no dia do aniversário dela, easter egg do
+sobrenome, proteção por senha pra reabrir a página depois que o pedido já
+aconteceu, vídeo do pedido alternativo via YouTube), galeria de fotos com
+descoberta automática e barra de carregamento, exportação de
+mapa/constelação/cartão postal/carta física/polaroid (todas com fallback
+de compartilhamento pro iPhone), backup completo em .zip, sincronização
+entre aparelhos via Supabase, reset remoto com confirmação (total e
+parcial, só do contrato), e um contador discreto de easter eggs.
+
+## Funcionalidades que faltavam neste arquivo (auditoria de 27/07/2026)
+
+O Gabriel pediu pra conferir se tudo que existe no código também está
+documentado aqui. Lendo `js/config.js` seção por seção (cada bloco de
+comentário com `/* ---- TÍTULO ---- */`) e cruzando com o que já estava
+escrito neste arquivo, estas funcionalidades EXISTIAM no código mas não
+estavam descritas aqui (agora estão, com as chaves/funções certas pra
+achar rápido):
+
+- **Proteção por senha da área de memórias** (a mais importante que
+  faltava): depois que o pedido acontece (`aurora_stage === 'final'`),
+  toda vez que o link for aberto de novo, `js/main.js` chama
+  `solicitarSenhaMemorias()` (`js/romance.js`) ANTES de mostrar "Nossa
+  História" — senha é `SENHA_AREA_MEMORIAS` (`'1406'`, em `js/config.js`).
+  Uma vez digitada certo, fica desbloqueada só nesta sessão/aba
+  (`sessionStorage`, chave `aurora_memorias_desbloqueadas`) — fechar e
+  reabrir o navegador pede de novo. Tem uma animação de "errado" (shake)
+  no overlay quando a senha não bate. **Diferente** da senha do reset
+  (`SENHA_RESET_SITE`) e da senha da carta de discussão — são 3 senhas
+  distintas, cada uma protegendo uma coisa diferente.
+- **Senha da carta de discussão**: valor real é `SENHA_CARTA_DISCUSSAO =
+  'teamo'` com dica `DICA_SENHA_CARTA_DISCUSSAO` ("as duas palavras que a
+  gente nunca pode esquecer de dizer um pro outro"), em `js/config.js`.
+  Isso já estava citado de forma genérica aqui ("carta de discussão
+  protegida por senha"), mas sem os valores — agora estão registrados.
+- **Especial de aniversário (8 de agosto)**: `ANIVERSARIO_DIA`/
+  `ANIVERSARIO_MES` + `textoAniversario()` em `js/config.js`. Checando
+  pela hora do servidor (mesma fonte de tempo confiável da cápsula, ver
+  `obterHoraConfiavel()` em `js/sync.js`), toda vez que o site é aberto
+  justo no dia 8 de agosto, uma seção com mensagem exclusiva aparece no
+  topo de "Nossa História", acima de tudo o mais.
+- **Câmera lenta de um momento**: `MOMENTO_LENTO_ARQUIVO_BASE` (nome do
+  arquivo esperado em `assets/video/`), `MOMENTO_LENTO_VELOCIDADE` (0.45 =
+  quase metade da velocidade normal) e `MOMENTO_LENTO_FRASES` (frases que
+  vão surgindo por cima, uma de cada vez), tudo em `js/config.js`; lógica
+  em `iniciarMomentoLento()` (`js/romance.js`). Segue o mesmo padrão de
+  "some sozinho se o arquivo não existir" do resto do projeto — ver
+  `assets/video/LEIA-ME-camera-lenta.md`.
+- **Baralho "se um dia estiver triste, lembre-se disso"**: é como o
+  `ADJETIVOS_PARA_ELA` (já citado aqui como "adjetivos com frase própria
+  cada") é apresentado na tela — não é uma lista simples, é um baralho de
+  cartas que ela vira uma de cada vez, cada carta com um adjetivo +
+  motivo específico (não genérico). Tem mais de 70 adjetivos hoje.
+- **Easter egg do sobrenome**: `TEXTO_EASTER_EGG_SOBRENOME` (`js/config.js`)
+  + `exibirEasterEggSobrenome()` (`js/romance.js`) — uma mensagem
+  brincando que ela "deixa de ser 'do Vale' e vira 'Schmeisk'". **Atenção:
+  apesar do nome, isso NÃO é um dos 9 easter eggs "de verdade" contados no
+  `IDS_TODOS_OS_EASTER_EGGS`** — é só um texto mostrado automaticamente em
+  "Nossa História", não algo escondido pra ela descobrir. Não adicionar
+  ao contador nem tratar como o easter egg nº 10.
+- **Vídeo do pedido via YouTube (alternativa ao vídeo local)**: config
+  `aurora_video_pedido_youtube` (só o ID do vídeo), lida por
+  `iniciarVideoYoutubePedido()` em `js/romance.js`, fica logo abaixo de
+  "Nossas lembranças". Existe porque o vídeo gravado localmente
+  (IndexedDB) pode ficar grande demais pro armazenamento do celular —
+  serve como alternativa/complemento, sincroniza normalmente como
+  qualquer outra config pequena.
+- **Seção "Coisas que a Poloni ama"**: lista `COISAS_QUE_ELA_AMA` em
+  `js/config.js` (10 itens hoje, cada um com ícone Bootstrap + frase) —
+  pequena seção da página de memórias, deliberadamente enxuta pra não
+  virar uma lista de curiosidades genérica.
+- **Exportação "cartão postal do mapa"**: além de mapa/constelação/carta
+  física/polaroid (já citados aqui), `js/export.js` também gera um
+  **cartão postal** (`gerarCartaoPostal()`, botão
+  `#btnExportarCartaoPostal`) — mais um formato de exportação do mapa dos
+  lugares, mesmo padrão de fallback de compartilhamento pro iPhone.
+- **Detalhes de imersão da loja falsa** (menores, mas valem registro):
+  popup de "manutenção" (`#maintenancePopup`, "algumas áreas do site
+  estão passando por manutenção"), cupom falso que aparece 7s depois de
+  entrar na loja (cancelado se avançar pro checkout antes — havia um bug
+  real de corrida aqui, já corrigido, ver `cancelarCupomFalsoPendente()`
+  em `js/store.js`) e um carrossel promocional com auto-rotação — tudo em
+  `js/store.js`, reforça a ilusão de e-commerce real.
+- **Contador vivo do relacionamento**: grid que mostra anos/meses/
+  dias/horas/minutos/segundos "vivos" (atualiza a cada segundo),
+  `iniciarContadorVivo()`/`calcularDuracaoRelacionamento()` em
+  `js/romance.js`. **Ponto pra confirmar com o Gabriel**: a data usada
+  como início da contagem é `aurora_primeiro_acesso` (a data em que ESTE
+  SITE foi aberto pela primeira vez, guardada automaticamente na primeira
+  visita via `obterOuCriarDataPrimeiroAcesso()`), não a data oficial do
+  casal (14 de junho). Pode ser intencional (contar a partir de quando
+  ela começou a ver o site/a jornada), mas se a intenção for contar o
+  relacionamento desde 14/06, esse é o lugar certo pra ajustar.
+
+## Verificação geral do site (feita nesta sessão, 27/07/2026)
+
+Pedido explícito do Gabriel: conferir se havia algo inconsistente ou
+quebrado no site como um todo, além de adicionar o reset do contrato.
+Resultado: **nenhum bug novo encontrado**, o site está consistente com o
+que este arquivo e o `README.md` já descreviam. O que foi checado
+(programaticamente, não só lendo o código por cima):
+
+1. **Duplicação de nomes top-level entre arquivos JS carregados na mesma
+   página** (o bug nº 
+   [ver item já catalogado sobre `diagnostico.html` quebrar por causa de
+   função duplicada] já aconteceu antes) — rodada uma checagem em todas
+   as 4 páginas (`index.html`, `galeria.html`, `checklist.html`,
+   `diagnostico.html`) comparando `function`/`const`/`let`/`var`
+   declarados no nível raiz de cada arquivo JS que a página carrega.
+   **Nenhuma duplicata encontrada** em nenhuma das 4 combinações.
+2. **IDs referenciados via `getElementById` nos arquivos JS de cada
+   página vs. IDs que existem no HTML daquela página** — todo "id
+   faltando" encontrado automaticamente foi conferido manualmente e é um
+   FALSO POSITIVO esperado: são elementos criados dinamicamente via
+   `innerHTML`/`createElement` em tempo de execução (ex.:
+   `dataPedidoTimeline` em `romance.js`, `desktopBlockQr` em
+   `desktop-block.js`) — não existem no HTML estático, mas são criados
+   antes de serem lidos. Os poucos casos em que um elemento só existe em
+   `index.html` mas a função que o lê mora em `utils.js` (compartilhado
+   entre as 4 páginas) — `abrirModoVela()`, `aplicarVisibilidadeContadorEasterEggs()`,
+   `atualizarContadorEasterEggs()` — já têm guarda `if (!elemento) return;`
+   logo no início, então rodam sem erro nas páginas onde o elemento não
+   existe (galeria/checklist/diagnóstico). Nenhuma correção necessária.
+3. **Regra "nunca travessão (—) em texto que ela vai ler"** — refeita a
+   busca por `—` em `js/config.js` filtrando comentários e o campo
+   interno `descricao:` (que é só anotação pra você, nunca aparece pra
+   ela). As ~35 ocorrências restantes são todas cabeçalhos de blocos de
+   comentário (`SEÇÃO X — descrição`), nenhuma dentro de string/template
+   literal de conteúdo real. **Regra sendo seguida corretamente.**
+4. **Backup/restauração (`js/export.js`)** — confirmado que tanto
+   `aurora_regras_contrato` (contrato) quanto `aurora_checklist_encontros`
+   (checklist) estão presentes nos dois lados (`gerarBackupZipBlob` E
+   `aplicarBackupDeZip`), como o padrão documentado exige.
+5. **Config pendente de preenchimento** (`js/config.js`): `URL_DO_SITE`
+   (vazio) e `CAPSULA_YOUTUBE_ID` (vazio) continuam pendentes — já
+   documentado abaixo, não é bug, é decisão que só o Gabriel pode tomar
+   (onde hospedar / se vai ter vídeo na cápsula). `SUPABASE_URL`,
+   `SUPABASE_ANON_KEY`, `SENHA_RESET_SITE` e `EXPERIENCE_ID` já estão
+   preenchidos com valores reais (não são mais placeholder).
+6. **Sintaxe de todos os arquivos `js/*.js`** validada com
+   `node --check` (sem erro em nenhum).
+7. **Ordem de carregamento dos `<script>`** em cada uma das 4 páginas
+   conferida contra as dependências reais de cada arquivo (`config.js`
+   antes de quem usa `TEXTOS`/config; `utils.js` antes de quem usa suas
+   funções) — sem problema em nenhuma página, incluindo o caso de
+   `galeria.html` carregar `desktop-block.js` antes de `config.js` (não é
+   problema porque `desktop-block.js` não depende de nada de `config.js`).
+
+**Não foi possível** desta vez rodar um teste funcional real em jsdom
+simulando cliques (como o próprio projeto recomenda antes de entregar
+mudanças) porque este ambiente de sessão está sem acesso à rede para
+instalar o pacote `jsdom` — se quiser esse nível de verificação a mais,
+peça numa sessão com rede liberada, ou rode localmente com Node.
 
 ## Pendências / sugestões em aberto
 

@@ -723,8 +723,20 @@ html.aurora-scroll-lock body { position: fixed; left: 0; right: 0; width: 100%; 
 .lightbox-nav-prev { left: 12px; }
 .lightbox-nav-next { right: 12px; }
 
-/* ---------------- Elementos "fora da tela" usados apenas para exportação ---------------- */
-.exportavel-oculto { position: fixed; left: -9999px; top: 0; }
+/* ---------------- Elementos usados apenas para exportação ----------------
+   CORREÇÃO: antes cada `.exportavel-oculto` usava `position:fixed;
+   left:-9999px` pra sumir da tela sozinho. Um bloco de mais de 1000px de
+   largura (o cartão postal do mapa, a constelação etc) só deslocado pra
+   longe ainda contava como conteúdo "no viewport" em alguns cenários
+   (rotação, teclado abrindo, o próprio html2canvas manipulando o elemento
+   pra gerar a imagem), podendo aparecer entrando/saindo pela lateral da
+   tela. Agora o esconderijo é feito pelo invólucro `.area-exportavel-oculta`
+   (ver abaixo), que recorta de verdade com `overflow:hidden` numa caixa de
+   0x0 — o elemento em si só precisa ficar `position: relative` (herdado das
+   classes específicas de cada card) pra ficar "ancorado" no canto desse
+   invólucro. */
+.area-exportavel-oculta { position: fixed; top: 0; left: 0; width: 0; height: 0; overflow: hidden; pointer-events: none; z-index: -1; }
+.exportavel-oculto { position: relative; }
 
 /* Cartão postal do "Nosso mapa" e constelação pra imprimir: tamanho fixo
    em pixels batendo com IMPRIMIVEL_LARGURA_PX/ALTURA_PX (js/config.js),
@@ -1121,4 +1133,121 @@ body.modo-visualizacao-ativo #lojaScreen { padding-bottom: 92px; }
     color: #ffe6a3;
     font-size: 0.8rem;
     line-height: 1.5;
+}
+
+/* ============================================================================
+   BOTÃO + RESUMO DO CHECKLIST — usados dentro de "Nossa História" (index.html),
+   como chamada para a página separada checklist.html.
+   ============================================================================ */
+.checklist-resumo-card {
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 16px 20px;
+    border-radius: 16px;
+    background: rgba(183,110,121,0.10);
+    border: 1px solid rgba(183,110,121,0.35);
+    text-align: center;
+}
+.checklist-resumo-texto {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 1rem;
+    color: #f6e4de;
+    margin: 0 0 10px;
+}
+.checklist-resumo-barra-fundo {
+    width: 100%;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.12);
+    overflow: hidden;
+    margin-bottom: 14px;
+}
+.checklist-resumo-barra-preenchida {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--rosegold-dark), var(--rosegold));
+    border-radius: 999px;
+    transition: width 0.5s ease;
+}
+
+/* ============================================================================
+   PÁGINA checklist.html — "Nosso Checklist"
+   Reaproveita o fundo/cabeçalho escuro de galeria.html (.galeria-body,
+   .galeria-header etc.) e acrescenta só o que é específico da lista.
+   ============================================================================ */
+html.checklist-html { background-color: #1c1014; }
+
+.checklist-wrap { max-width: 640px; margin: 0 auto; padding: 0 16px 70px; }
+
+.checklist-progresso-card {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(183,110,121,0.35);
+    border-radius: 18px;
+    padding: 18px 20px;
+    margin-bottom: 28px;
+}
+.checklist-progresso-topo { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.checklist-progresso-texto { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.15rem; color: #f8e9ec; }
+.checklist-progresso-percentual { font-family: 'Jost', sans-serif; font-size: 0.85rem; color: var(--rosegold); font-weight: 600; }
+.checklist-progresso-barra-fundo { width: 100%; height: 8px; border-radius: 999px; background: rgba(255,255,255,0.1); overflow: hidden; }
+.checklist-progresso-barra-preenchida { height: 100%; width: 0%; background: linear-gradient(90deg, var(--rosegold-dark), var(--rosegold)); border-radius: 999px; transition: width 0.5s ease; }
+.checklist-progresso-faltam { font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; font-size: 0.9rem; color: rgba(240,217,221,0.7); margin: 10px 0 0; text-align: center; }
+
+.checklist-carregando { text-align: center; color: rgba(240,217,221,0.6); padding: 30px 0; font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; }
+.checklist-carregando .spinner-border { margin-bottom: 8px; }
+.checklist-carregando.d-none { display: none; }
+
+.checklist-categorias { opacity: 0; transition: opacity 0.4s ease; }
+.checklist-categorias.checklist-categorias-visivel { opacity: 1; }
+
+.checklist-categoria { margin-bottom: 30px; }
+.checklist-categoria-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid rgba(183,110,121,0.25); }
+.checklist-categoria-titulo { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.2rem; color: #f8e9ec; margin: 0; }
+.checklist-categoria-emoji { margin-right: 8px; }
+.checklist-categoria-contador { font-family: 'Jost', sans-serif; font-size: 0.7rem; letter-spacing: 0.5px; color: rgba(240,217,221,0.55); white-space: nowrap; }
+
+.checklist-categoria-itens { display: flex; flex-direction: column; gap: 6px; }
+
+.checklist-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+.checklist-item:hover { background: rgba(255,255,255,0.04); }
+.checklist-item input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    pointer-events: none;
+}
+.checklist-item-check {
+    flex: 0 0 auto;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(240,217,221,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: transparent;
+    font-size: 0.9rem;
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+.checklist-item-texto {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 1.02rem;
+    color: rgba(240,217,221,0.9);
+    transition: color 0.2s ease, opacity 0.2s ease;
+}
+.checklist-item-feito .checklist-item-check { background: var(--rosegold); border-color: var(--rosegold); color: #fff; }
+.checklist-item-feito .checklist-item-texto { color: rgba(240,217,221,0.5); text-decoration: line-through; opacity: 0.8; }
+
+@media (prefers-reduced-motion: reduce) {
+    .checklist-progresso-barra-preenchida, .checklist-resumo-barra-preenchida, .checklist-categorias, .checklist-item, .checklist-item-check { transition: none !important; }
 }

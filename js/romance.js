@@ -277,6 +277,7 @@ async function iniciarGaleriaMomentos() {
 /* ---------------- Quiz do casal ---------------- */
 let quizIndiceAtual = 0;
 let quizRespostasEscolhidas = [];
+let quizAcertos = 0; // pontuação (item 3 do prompt de correções)
 
 function renderizarQuizDots() {
     const dots = document.getElementById('quizDots');
@@ -312,6 +313,7 @@ async function responderQuiz(indiceEscolhido, btnClicado) {
     document.querySelectorAll('#quizOpcoes .quiz-opcao-btn').forEach(b => { b.disabled = true; });
 
     const acertou = indiceEscolhido === p.certa;
+    if (acertou) quizAcertos++;
     btnClicado.classList.add('selecionada', acertou ? 'certa' : 'errada');
     quizRespostasEscolhidas.push({ pergunta: p.pergunta, resposta: p.opcoes[indiceEscolhido], acertou });
 
@@ -330,8 +332,9 @@ async function responderQuiz(indiceEscolhido, btnClicado) {
         } else {
             document.getElementById('quizCard').classList.add('d-none');
             const finalMsg = document.getElementById('quizFinalMsg');
+            document.getElementById('quizPontuacaoTexto').textContent = `Você acertou ${quizAcertos} de ${QUIZ_PERGUNTAS.length}`;
             document.getElementById('quizResumoTexto').textContent =
-                `Não importa quantas você acertou — o que importa é que a gente continua escrevendo essas respostas juntos, todos os dias, ${NOME_DELA}.`;
+                `O que importa mesmo é que a gente continua escrevendo essas respostas juntos, todos os dias, ${NOME_DELA}.`;
             finalMsg.classList.remove('d-none');
             finalMsg.classList.add('reveal-up');
             await salvarConfiguracao('aurora_quiz_respostas', JSON.stringify(quizRespostasEscolhidas));
@@ -340,7 +343,7 @@ async function responderQuiz(indiceEscolhido, btnClicado) {
 }
 
 function iniciarQuiz() {
-    quizIndiceAtual = 0; quizRespostasEscolhidas = [];
+    quizIndiceAtual = 0; quizRespostasEscolhidas = []; quizAcertos = 0;
     document.getElementById('quizCard').classList.remove('d-none');
     document.getElementById('quizFinalMsg').classList.add('d-none');
     mostrarPerguntaQuiz();
@@ -348,7 +351,7 @@ function iniciarQuiz() {
 
 /* ---------------- Regras do contrato ---------------- */
 let regrasSelecionadas = [];
-const MAX_REGRAS = 5; // até 5 regras personalizadas (item 5 do prompt de melhorias)
+const MAX_REGRAS = 8; // até 8 regras personalizadas (item 4 do prompt de correções, era 5)
 const MIN_REGRAS = 2;
 
 function renderRulesGrid() {
@@ -819,6 +822,10 @@ async function goToRomancePage(primeiraVez) {
     if (!primeiraVez) pausarMusicaFundoImediatamente();
     iniciarPlaylistDaGente();
 
+    // CORREÇÃO (item 1 do prompt de correções): só a partir daqui o
+    // contador de girassóis pode aparecer (ver js/utils.js).
+    ativarContadorEasterEggsFaseFinal();
+
     // Rápidas e sem leitura pesada no banco — chamadas direto, sem entrar na barra de progresso.
     iniciarQuiz();
     renderizarTimeline();
@@ -888,11 +895,22 @@ async function goToRomancePage(primeiraVez) {
                 document.getElementById('contratoSignatureImg').src = assinatura.texto;
                 document.getElementById('romanceSignatureWrap').classList.remove('d-none');
             }
-        })
+        }),
+
+        renderizarResumoChecklist()
     ];
 
     await executarComBarraDeProgresso(tarefas);
     esconderLoadingRomance();
+
+    // Mesma correção do "espaço vazio/roxo no fim da tela" (ver
+    // forcarRecalculoDeLayout() em js/utils.js): essa é a maior troca de
+    // tela do site (loja/checkout/suspense -> romancePage, os únicos dois
+    // elementos que realmente definem a altura do documento), tanto na
+    // primeira vez (logo depois do flashback) quanto ao reabrir o link já
+    // no estágio final. Sem esse reflow forçado aqui, o mesmo tipo de
+    // faixa vazia podia aparecer bem na entrada de "Nossa História".
+    forcarRecalculoDeLayout();
 }
 
 /* ----------------------------------------------------------------------
@@ -1139,6 +1157,29 @@ function renderizarCoisasQueElaAma() {
     });
 }
 
+/* ---------------- Resumo do "Nosso checklist" (progresso + link para checklist.html) ---------------- */
+async function renderizarResumoChecklist() {
+    const textoEl = document.getElementById('checklistResumoTexto');
+    const barraEl = document.getElementById('checklistResumoBarra');
+    if (!textoEl || typeof CHECKLIST_ENCONTROS === 'undefined') return;
+
+    const total = CHECKLIST_ENCONTROS.reduce((soma, cat) => soma + cat.itens.length, 0);
+    let estado = {};
+    try {
+        const bruto = await obterConfiguracao('aurora_checklist_encontros');
+        estado = bruto ? JSON.parse(bruto) : {};
+    } catch (e) { estado = {}; }
+    if (!estado || typeof estado !== 'object' || Array.isArray(estado)) estado = {};
+
+    const feitos = Object.keys(estado).filter(id => estado[id]).length;
+    const percentual = total > 0 ? Math.round((feitos / total) * 100) : 0;
+
+    textoEl.textContent = feitos === 0
+        ? `${total} coisas esperando pra gente viver junto.`
+        : `${feitos} de ${total} já vivemos juntos.`;
+    if (barraEl) barraEl.style.width = `${percentual}%`;
+}
+
 /* ---------------- "Seus bichos" ---------------- */
 async function renderizarSeusBichos() {
     const grid = document.getElementById('seusBichosGrid');
@@ -1277,6 +1318,9 @@ function iniciarModuloRomance() {
 
     document.getElementById('btnReverLoja').addEventListener('click', abrirLojaSomenteVisualizacao);
     document.getElementById('btnVoltarDaLoja').addEventListener('click', fecharLojaSomenteVisualizacao);
+
+    // Item 3 do prompt de correções: permite recomeçar o quiz do casal do zero.
+    document.getElementById('btnRefazerQuiz').addEventListener('click', iniciarQuiz);
 }
 
 /* ----------------------------------------------------------------------
@@ -1302,6 +1346,13 @@ function abrirLojaSomenteVisualizacao() {
     document.getElementById('modoVisualizacaoBarra').classList.remove('d-none');
     document.body.classList.add('modo-visualizacao-ativo'); // reserva espaço pra barra fixa não cobrir o fim da loja
     window.scrollTo(0, 0);
+
+    // Mesma correção do "espaço vazio/roxo no fim da tela" usada ao voltar
+    // da lojinha (ver forcarRecalculoDeLayout() em js/utils.js): troca
+    // entre #romancePage e #lojaScreen também muda a altura real do
+    // documento nesse sentido (entrando na lojinha), então precisa do
+    // mesmo reflow forçado.
+    forcarRecalculoDeLayout();
 }
 
 function fecharLojaSomenteVisualizacao() {
@@ -1331,6 +1382,13 @@ function fecharLojaSomenteVisualizacao() {
         el.style.opacity = '1';
         el.style.transform = 'none';
     });
+
+    // Mesma correção do "espaço vazio/roxo no fim da tela" (ver
+    // forcarRecalculoDeLayout() em js/utils.js): como essa troca acontece
+    // dentro da mesma página (display:none -> '', sem navegação de
+    // verdade), o listener de "pageshow" não dispara aqui, então força o
+    // reflow manualmente também.
+    forcarRecalculoDeLayout();
 }
 
 /**

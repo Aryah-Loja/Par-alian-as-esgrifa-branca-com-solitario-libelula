@@ -424,20 +424,6 @@ const QUIZ_PERGUNTAS = [
         erradoMsg: 'Foi a história do maquinista que morreu nos trilhos do trem. Guardo até hoje o efeito que ela teve.'
     },
     {
-        pergunta: 'Qual é a flor favorita da Ana, de verdade, sem ser força de expressão?',
-        opcoes: ['Rosa', 'Girassol', 'Orquídea', 'Lírio'],
-        certa: 1,
-        certoMsg: 'Óbvio que a gente ia acertar essa 🌻',
-        erradoMsg: 'Girassol! Ainda vou plantar um jardim inteiro deles pra você 🌻'
-    },
-    {
-        pergunta: 'Quantos bichos a Ana tem hoje, contando cachorro, gato e calopsita?',
-        opcoes: ['5', '6', '8', '10'],
-        certa: 2,
-        certoMsg: 'Isso mesmo, 8! Koda, Xixico, Kovu, Yuk, Ahadi, Shury, Sol e Lua 🐾',
-        erradoMsg: 'São 8: Koda, Xixico e Kovu (cachorros), Yuk, Ahadi e Shury (gatos), Sol e Lua (calopsitas) 🐾'
-    },
-    {
         pergunta: 'Onde foi o nosso primeiro encontro de verdade?',
         opcoes: ['Colina, em Orlândia', 'Praia', 'Shopping', 'Uma festa'],
         certa: 0,
@@ -445,11 +431,25 @@ const QUIZ_PERGUNTAS = [
         erradoMsg: 'Foi no Colina, em Orlândia, dia 30/05, o dia em que tudo se encaixou.'
     },
     {
-        pergunta: 'Qual cachorro torce descaradamente pra Ana, apesar de jurar que é neutro?',
-        opcoes: ['Slinky', 'Kovu', 'Thor', 'Mel'],
-        certa: 1,
-        certoMsg: 'O Kovu, sempre fingindo que não tem lado 🐾',
-        erradoMsg: 'É o Kovu! Jura que é neutro, mas todo mundo sabe pra quem o coração dele bate.'
+        pergunta: 'Onde a gente se conheceu, antes de tudo começar de verdade?',
+        opcoes: ['Na UNIP', 'Numa festa', 'Pelo Instagram', 'Através de amigos em comum'],
+        certa: 0,
+        certoMsg: 'Isso, na UNIP. De lá pra cá olha onde a gente chegou 💛',
+        erradoMsg: 'Foi na UNIP. O comecinho de tudo, bem antes da gente imaginar onde isso ia dar.'
+    },
+    {
+        pergunta: 'Qual foi a primeira pizzaria que a gente foi junto?',
+        opcoes: ['Verace', 'Uma rede grande de pizza', 'Uma pizzaria qualquer do bairro', 'A gente nunca foi numa pizzaria junto'],
+        certa: 0,
+        certoMsg: 'A Verace, a primeira de muitas 🍕',
+        erradoMsg: 'Foi a Verace, nossa primeira pizzaria juntos.'
+    },
+    {
+        pergunta: 'Qual foi o primeiro lugar que eu falei que queria te levar?',
+        opcoes: ['A praia', 'Uma cachoeira', 'Outro estado', 'Um show'],
+        certa: 0,
+        certoMsg: 'A praia! Ainda vamos riscar isso da lista juntos 🌊',
+        erradoMsg: 'Foi a praia. Um sonho nosso que ainda vamos realizar.'
     }
 ];
 
@@ -504,21 +504,27 @@ const PLAYLIST_FAIXAS = [
    REGRAS DO "CONTRATO DE NAMORO"
    ---------------------------------------------------------------------- */
 const OPCOES_REGRAS_CONTRATO = [
-    { id: 'girassol', icon: 'bi-flower1', label: 'Sempre ter um girassol por perto', artigo: 'Fica decretado que jamais faltará um girassol por perto, seja na varanda, na mesa ou apenas guardado em uma lembrança.' },
-    { id: 'batata', icon: 'bi-basket2', label: 'Dividir a última batata frita', artigo: 'Fica estabelecido o compartilhamento voluntário de qualquer petisco, sendo o mínimo aceitável oferecer pelo menos a última batata frita antes de terminar o prato sozinho(a).' },
-    { id: 'kovu', icon: 'bi-paw', label: 'Levar o Kovu pra passear junto', artigo: 'O Kovu tem direito garantido a passeios em dupla sempre que a agenda permitir, sem necessidade de justificativa prévia.' },
-    { id: 'maos_dadas', icon: 'bi-hand-index-thumb', label: 'Andar sempre de mãos dadas', artigo: 'As mãos dadas são cláusula obrigatória em qualquer caminhada, trajeto de carro ou fila de cinema.' },
-    { id: 'praia', icon: 'bi-sun', label: 'Realizar o sonho de ir à praia juntos', artigo: 'Fica registrado o compromisso de, assim que possível, realizar juntos o sonho da praia, com direito a pôr do sol e os pés na areia.' },
-    { id: 'musica_sertaneja', icon: 'bi-music-note-beamed', label: 'Cantar Jorge & Mateus no volume máximo', artigo: 'Fica autorizado, e incentivado, cantar Jorge & Mateus e Zé Neto & Cristiano no volume máximo durante qualquer viagem de carro.' },
-    { id: 'bomdia', icon: 'bi-sunrise-fill', label: 'Mandar mensagem de bom dia', artigo: 'As mensagens de bom dia constituem cláusula pétrea deste contrato, não podendo ser suprimidas nem mesmo por emenda constitucional do sono.' },
-    { id: 'conchinha', icon: 'bi-moon-stars-fill', label: 'Dormir de conchinha sempre que possível', artigo: 'O cobertor será dividido de forma equânime, ficando garantida a posição de conchinha sempre que possível.' },
-    { id: 'filmes', icon: 'bi-film', label: 'Assistir filmes de terror/comédia juntos', artigo: 'Ficam instituídas as maratonas de filmes em conjunto, com direito a pipoca e comentários espontâneos sobre a trama, igualzinho ao dia de Todo Mundo em Pânico 6.' },
-    { id: 'sonhos', icon: 'bi-stars', label: 'Apoiar os sonhos um do outro', artigo: 'É dever de ambas as Partes apoiar incondicionalmente os sonhos, planos e ideias malucas uma da outra.' },
-    { id: 'manha_preguicosa', icon: 'bi-sunrise2', label: 'Manhãs de preguiça bem coladinhos', artigo: 'Fica instituído o direito a manhãs inteiras de preguiça, grudados um no outro, sem hora marcada pra sair da cama e com direito a "só mais 5 minutinhos" ilimitados.' },
-    { id: 'banho_dois', icon: 'bi-droplet-fill', label: 'Banho a dois quando o aquecedor cooperar', artigo: 'Sempre que o aquecedor permitir, fica autorizado e altamente recomendado o banho a dois, sem nenhuma pressa de sair do box.' },
-    { id: 'so_mais_um_pouco', icon: 'bi-fire', label: 'Direito a "só mais um pouquinho" antes de dormir', artigo: 'Toda vez que alguém disser "vamos dormir", fica reconhecido o direito legítimo de responder "só mais um pouquinho", sem nenhum julgamento sobre o que vem depois.' },
-    { id: 'acordar_grudados', icon: 'bi-emoji-heart-eyes-fill', label: 'Acordar se agarrando todo santo dia', artigo: 'Fica decretado, por unanimidade, que acordar se agarrando, com direito a mão boba e tudo, é rotina obrigatória deste contrato, feriado incluso.' },
-    { id: 'beijo_obrigatorio', icon: 'bi-heart-fill', label: 'Beijo de reconciliação obrigatório', artigo: 'Fica proibido dormir de biquinho fechado: toda discussão exige, no mínimo, um beijo de reconciliação antes do "boa noite", sem exceção.' }
+    { id: 'girassol', icon: 'bi-flower1', label: 'Sempre ter um girassol por perto', artigo: 'Nunca pode faltar um girassol por perto, seja na varanda, na mesa ou só guardado numa lembrança.' },
+    { id: 'batata', icon: 'bi-basket2', label: 'Dividir a última batata frita', artigo: 'Última batata frita do prato é sempre dividida. Comer tudo sozinho(a) na cara dura é quebra de contrato.' },
+    { id: 'kovu', icon: 'bi-paw', label: 'Levar o Kovu pra passear junto', artigo: 'O Kovu vai junto no passeio sempre que der, e sem precisar dar satisfação pra ninguém.' },
+    { id: 'maos_dadas', icon: 'bi-hand-index-thumb', label: 'Andar sempre de mãos dadas', artigo: 'Mão dada é obrigatória em qualquer caminhada, trajeto de carro ou fila de cinema. Sem desculpa de "tô com a mão suada".' },
+    { id: 'praia', icon: 'bi-sun', label: 'Realizar o sonho de ir à praia juntos', artigo: 'Assim que der, a gente vai pra praia juntos de verdade, com pôr do sol e pé na areia incluídos.' },
+    { id: 'musica_sertaneja', icon: 'bi-music-note-beamed', label: 'Cantar Jorge & Mateus no volume máximo', artigo: 'Jorge & Mateus e Zé Neto & Cristiano no talo em qualquer viagem de carro, sem ninguém pedir pra abaixar.' },
+    { id: 'bomdia', icon: 'bi-sunrise-fill', label: 'Mandar mensagem de bom dia', artigo: 'Bom dia todo santo dia, nem que seja só um emoji. Sono não é desculpa.' },
+    { id: 'conchinha', icon: 'bi-moon-stars-fill', label: 'Dormir de conchinha sempre que possível', artigo: 'Cobertor dividido igualzinho, e conchinha garantida sempre que der.' },
+    { id: 'filmes', icon: 'bi-film', label: 'Assistir filmes de terror/comédia juntos', artigo: 'Maratona de filme com pipoca e comentário solto sobre a trama, igualzinho no dia de Todo Mundo em Pânico 6.' },
+    { id: 'sonhos', icon: 'bi-stars', label: 'Apoiar os sonhos um do outro', artigo: 'Sonho, plano ou ideia maluca de um, o outro apoia sem ficar de cara torta.' },
+    { id: 'manha_preguicosa', icon: 'bi-sunrise2', label: 'Manhãs de preguiça bem coladinhos', artigo: 'Manhã de preguiça grudados, sem hora marcada pra levantar e com direito a "só mais 5 minutinhos" quantas vezes precisar.' },
+    { id: 'banho_dois', icon: 'bi-droplet-fill', label: 'Banho a dois quando o aquecedor cooperar', artigo: 'Sempre que o aquecedor deixar, banho a dois liberado, sem pressa nenhuma de sair do box.' },
+    { id: 'so_mais_um_pouco', icon: 'bi-fire', label: 'Direito a "só mais um pouquinho" antes de dormir', artigo: 'Quando alguém falar "vamos dormir", o outro tem todo direito de responder "só mais um pouquinho", sem julgamento sobre o que vem depois.' },
+    { id: 'acordar_grudados', icon: 'bi-emoji-heart-eyes-fill', label: 'Acordar se agarrando todo santo dia', artigo: 'Acordar se agarrando, com mão boba e tudo, é rotina fixa por aqui. Feriado incluso.' },
+    { id: 'beijo_obrigatorio', icon: 'bi-heart-fill', label: 'Beijo de reconciliação obrigatório', artigo: 'Proibido dormir de biquinho fechado: toda discussão exige, no mínimo, um beijo de reconciliação antes do boa noite.' },
+    { id: 'lava_louca', icon: 'bi-cup-hot', label: 'Ela lava a louça pra sempre', artigo: 'Fica combinado (por mim, e só por mim) que a louça é sempre com você. Eu fico só na moral, torcendo e elogiando.' },
+    { id: 'ela_paga_jantar', icon: 'bi-wallet2', label: 'Ela paga o jantar sempre', artigo: 'A partir de hoje o jantar é sempre por sua conta. Prometo escolher bem o restaurante em troca.' },
+    { id: 'ele_escolhe_filme', icon: 'bi-joystick', label: 'Ele escolhe o filme sem votação', artigo: 'Escolha do filme é sempre minha, sem plebiscito, sem recurso e sem enquete no Instagram.' },
+    { id: 'ela_dirige', icon: 'bi-car-front-fill', label: 'Ela dirige em toda viagem', artigo: 'Direção é sempre com você. Eu cuido do som, do lanche e da conversa, com muito orgulho da minha função.' },
+    { id: 'lado_bom_cama', icon: 'bi-moon-fill', label: 'Ele fica com o lado bom da cama', artigo: 'O lado bom da cama é meu, sempre foi e sempre vai ser. Isso aqui é inegociável, mesmo sem argumento nenhum que sustente.' },
+    { id: 'aguentar_ronco', icon: 'bi-volume-up-fill', label: 'Ela finge que não liga pro meu ronco', artigo: 'Fica combinado que o ronco existe, é meu, e você finge educadamente que não incomoda nadinha.' }
 ];
 
 /* ----------------------------------------------------------------------
@@ -563,7 +569,7 @@ const TEXTO_CARTA_TESTE = `[CARTA_TESTE] Este é um texto provisório só para t
 /* ----------------------------------------------------------------------
    CÁPSULA DO TEMPO — carta que se abre sozinha 1 ano após o pedido
    ---------------------------------------------------------------------- */
-const CAPSULA_DIAS_PARA_DESBLOQUEIO = 1;
+const CAPSULA_DIAS_PARA_DESBLOQUEIO = 365;
 function textoCapsulaDoTempo() {
     return `Se você está lendo isso, já faz um ano inteiro que eu te pedi em namoro.
 
@@ -592,12 +598,12 @@ Com tudo o que eu sou,`;
  * antes da data. A trava por hora do servidor (ver obterHoraConfiavel em
  * js/sync.js) cobre o golpe mais comum, que é só adiantar a data do
  * celular. */
-const CAPSULA_YOUTUBE_ID = 'https://www.youtube.com/watch?v=SaE2B-xA3qM';
+const CAPSULA_YOUTUBE_ID = '';
 
 /* Link do YouTube com o vídeo mostrando todo o processo até o pedido
  * (o "making of"). Cole a URL completa aqui quando publicar o vídeo — o
  * botão só aparece na página se este campo não estiver vazio. */
-const VIDEO_PROCESSO_YOUTUBE_URL = 'https://www.youtube.com/watch?v=SaE2B-xA3qM';
+const VIDEO_PROCESSO_YOUTUBE_URL = '';
 
 /* ----------------------------------------------------------------------
    EASTER EGG — brincadeira do sobrenome
@@ -710,8 +716,8 @@ const MOMENTO_LENTO_FRASES = [
    cápsula do tempo — ver js/sync.js), essa seção aparece na página de
    memórias, acima de tudo o mais, com uma mensagem só desse dia.
    ---------------------------------------------------------------------- */
-const ANIVERSARIO_DIA = 27;
-const ANIVERSARIO_MES = 7; // agosto
+const ANIVERSARIO_DIA = 8;
+const ANIVERSARIO_MES = 8; // agosto
 function textoAniversario() {
     return `Hoje é diferente de todos os outros dias: hoje é o seu dia.
 
@@ -906,6 +912,206 @@ const MAPA_LUGARES = [
     { nome: 'Um balanço', cidade: 'Sales de Oliveira', texto: 'Onde a gente sentou no fim daquele dia e o tempo pareceu parar um pouco.', icon: 'bi-flower1', foto: 'mapa_balanco' },
     { nome: 'Nuporanga', cidade: 'Onde acabei conhecendo seu tio e sua tia', texto: 'Um dia que era só de passagem e virou mais um lugar nosso.', icon: 'bi-signpost-2-fill', foto: 'mapa_nuporanga' },
     { nome: 'Próximo destino', cidade: 'A definir, com você', texto: 'Ainda temos o mundo inteiro pra conhecer juntos.', icon: 'bi-airplane-fill', futuro: true, foto: 'mapa_proximo' }
+];
+
+/* ----------------------------------------------------------------------
+   CHECKLIST DE ENCONTROS ("Coisas para fazer juntos")
+   ----------------------------------------------------------------------
+   Lista de programas/experiências pro casal ir riscando junto, na página
+   separada checklist.html (ver js/checklist.js). Cada item vira um id
+   estável baseado na posição ("<índice da categoria>_<índice do item>"),
+   calculado em checklist.js — NÃO reordenar itens já marcados sem se
+   atentar a isso, porque o progresso salvo é por posição, não por texto.
+   Chave salva no banco: 'aurora_checklist_encontros' (ver js/db.js e a
+   inclusão no backup/sincronização em js/export.js).
+   ---------------------------------------------------------------------- */
+const CHECKLIST_ENCONTROS = [
+    {
+        nome: "Gastronomia",
+        emoji: "🍕",
+        itens: [
+            "Pedir um kit festa e comer juntos",
+            "Fazer brigadeiro e ver um filme",
+            "Cozinhar uma receita nova juntos",
+            "Fazer uma noite de pizza caseira",
+            "Ir tomar sorvete à noite",
+            "Fazer um café da manhã especial juntos",
+            "Fazer um café da manhã na cama",
+            "Pedir comida e fazer um \"cinema em casa\"",
+            "Fazer fondue de chocolate",
+            "Experimentar um restaurante novo",
+            "Pedir comida no escuro (sem ver o cardápio antes)",
+            "Fazer milk-shake caseiro",
+            "Assar cookies juntos",
+            "Fazer pipoca gourmet",
+            "Fazer uma noite de fondue",
+            "Experimentar uma comida que nenhum dos dois conhece",
+            "Fazer um desafio de cozinhar sem receita",
+            "Cozinhar usando apenas o que tem em casa",
+            "Experimentar doces importados",
+            "Fazer degustação de chocolates",
+            "Fazer um jantar à luz de velas",
+            "Preparar um café especial um para o outro",
+            "Fazer panquecas no café da manhã",
+            "Montar uma cesta de piquenique",
+        ]
+    },
+    {
+        nome: "Em Casa",
+        emoji: "🏡",
+        itens: [
+            "Assistir reels juntos",
+            "Fazer skincare em casa juntos",
+            "Jogar Uno ou baralho",
+            "Montar um quebra-cabeça",
+            "Montar um quebra-cabeça de 1000 peças",
+            "Montar Lego juntos",
+            "Fazer uma guerra de travesseiros",
+            "Ler um livro em voz alta um para o outro",
+            "Dançar na sala de casa",
+            "Fazer um dia sem celular",
+            "Montar um forte de cobertas",
+            "Fazer um karaokê em casa",
+            "Brincar de \"verdade ou desafio\"",
+            "Jogar xadrez",
+            "Jogar dominó",
+            "Fazer um caça ao tesouro em casa",
+            "Fazer uma sessão de massagens",
+            "Fazer uma faxina ouvindo música",
+            "Organizar o guarda-roupa juntos",
+        ]
+    },
+    {
+        nome: "Filmes e Entretenimento",
+        emoji: "🎬",
+        itens: [
+            "Assistir um filme antigo que nenhum dos dois viu",
+            "Assistir uma série do começo ao fim",
+            "Maratonar uma trilogia",
+            "Assistir um documentário",
+            "Ir ao cinema",
+        ]
+    },
+    {
+        nome: "Criatividade",
+        emoji: "🎨",
+        itens: [
+            "Pintar telas ou desenhar juntos",
+            "Pintar um quadro juntos",
+            "Personalizar canecas ou camisetas",
+            "Fazer um álbum de fotos",
+            "Fazer um scrapbook do relacionamento",
+            "Montar um mural de fotos",
+            "Decorar um cantinho da casa",
+            "Plantar uma muda juntos",
+            "Montar um terrário",
+        ]
+    },
+    {
+        nome: "Passeios",
+        emoji: "🚶",
+        itens: [
+            "Fazer um piquenique no parque",
+            "Caminhar de mãos dadas sem destino",
+            "Assistir ao pôr do sol",
+            "Ver o nascer do sol com café",
+            "Passear de bicicleta",
+            "Fazer uma trilha leve",
+            "Visitar um museu ou exposição",
+            "Ir ao zoológico ou aquário",
+            "Alimentar peixes ou patos",
+            "Ir a uma cafeteria diferente",
+            "Visitar uma feira de rua",
+            "Fazer uma caminhada em um parque",
+            "Visitar uma praça bonita",
+            "Ver aviões decolando perto do aeroporto",
+            "Ir a um mirante",
+            "Passear sem destino de carro",
+            "Fazer uma viagem bate-volta",
+            "Conhecer uma cidade vizinha",
+            "Ver a chuva da varanda com chocolate quente",
+            "Ir a um escape room",
+            "Visitar uma livraria",
+            "Ir a uma feira de artesanato",
+            "Visitar um brechó",
+        ]
+    },
+    {
+        nome: "Relacionamento",
+        emoji: "💕",
+        itens: [
+            "Fazer um desafio \"Quem conhece melhor o outro?\"",
+            "Escrever cartas um para o outro",
+            "Fazer uma cápsula do tempo",
+            "Tirar fotos estilo \"ensaio de casal\"",
+            "Fazer uma sessão de fotos espontâneas",
+            "Contar histórias engraçadas da infância",
+            "Relembrar fotos e vídeos antigos do relacionamento",
+            "Ver as estrelas e conversar sobre sonhos",
+            "Dormir olhando as estrelas",
+            "Escrever metas para o futuro juntos",
+            "Fazer um quadro de metas do casal",
+            "Planejar uma viagem dos sonhos",
+            "Recriar o primeiro encontro",
+            "Trocar presentes de até R$ 20",
+            "Escolher roupas um para o outro",
+            "Adotar um animal juntos",
+        ]
+    },
+    {
+        nome: "Música",
+        emoji: "🎵",
+        itens: [
+            "Montar uma playlist juntos",
+            "Montar uma playlist de viagem",
+            "Escolher uma música e aprender a tocar ou cantar juntos",
+        ]
+    },
+    {
+        nome: "Aprendizado",
+        emoji: "📚",
+        itens: [
+            "Estudar algo novo juntos",
+            "Aprender palavras em outro idioma",
+            "Aprender a fazer uma sobremesa nova",
+        ]
+    },
+    {
+        nome: "Viagens e Aventuras",
+        emoji: "✈️",
+        itens: [
+            "Viajar para a praia",
+            "Viajar para outro país",
+            "Conhecer outro estado",
+            "Conhecer toda a Região Norte",
+            "Conhecer toda a Região Nordeste",
+            "Conhecer toda a Região Centro-Oeste",
+            "Conhecer toda a Região Sudeste",
+            "Conhecer toda a Região Sul",
+            "Conhecer uma cidade histórica",
+            "Conhecer um cânion",
+            "Ir a uma cachoeira",
+            "Ver a neve pela primeira vez",
+            "Viajar de avião juntos pela primeira vez",
+            "Andar de barco",
+            "Andar de balão",
+            "Andar de helicóptero",
+            "Andar de quadriciclo",
+            "Esquiar na neve",
+            "Ir a um parque de diversões",
+            "Ir a um parque aquático",
+            "Fazer rapel",
+            "Fazer tirolesa",
+            "Fazer rafting",
+            "Fazer um passeio de caiaque",
+            "Acampar em uma montanha",
+            "Assistir ao nascer do sol do topo de um morro",
+            "Fazer uma road trip de carro",
+            "Fazer uma viagem sem destino definido",
+            "Alugar um hotel para um fim de semana",
+            "Fazer uma viagem em família",
+        ]
+    },
 ];
 
 /* ----------------------------------------------------------------------

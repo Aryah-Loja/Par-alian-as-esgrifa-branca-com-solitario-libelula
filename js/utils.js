@@ -41,7 +41,10 @@ function abrirModoVela(eyebrowTexto, textoHtml, assinaturaTexto, opcoes = {}) {
 
     const continuarWrap = document.getElementById('modoVelaContinuarWrap');
     const btnContinuar = document.getElementById('btnModoVelaContinuar');
-    if (opcoes.aoContinuar) {
+    const btnFechar = document.getElementById('btnFecharModoVela');
+    const exigeContinuar = !!opcoes.aoContinuar;
+
+    if (exigeContinuar) {
         continuarWrap.classList.remove('d-none');
         btnContinuar.onclick = opcoes.aoContinuar;
     } else {
@@ -49,9 +52,24 @@ function abrirModoVela(eyebrowTexto, textoHtml, assinaturaTexto, opcoes = {}) {
         btnContinuar.onclick = null;
     }
 
-    const fechar = () => overlay.classList.add('d-none');
-    document.getElementById('btnFecharModoVela').onclick = fechar;
-    overlay.onclick = (evt) => { if (evt.target === overlay) fechar(); };
+    /* CORREÇÃO (item 2 do prompt de correções): quando existe um botão
+       "Continuar" obrigatório (hoje só a carta final usa isso), o X de
+       fechar precisa sumir e clicar fora também não pode fechar — fechar
+       sem apertar "Continuar" pulava o passo que salva o estágio como
+       'final' e leva pro flashback/"Nossa História", deixando o site
+       travado sem conseguir avançar. Nas demais cartas (cápsula do tempo,
+       carta de discussão), que não usam aoContinuar, o X continua
+       funcionando exatamente como antes. */
+    if (exigeContinuar) {
+        btnFechar.classList.add('d-none');
+        btnFechar.onclick = null;
+        overlay.onclick = null;
+    } else {
+        btnFechar.classList.remove('d-none');
+        const fechar = () => overlay.classList.add('d-none');
+        btnFechar.onclick = fechar;
+        overlay.onclick = (evt) => { if (evt.target === overlay) fechar(); };
+    }
 }
 
 /* ---------------- Substituição segura de imagens (placeholders) ---------------- */
@@ -177,19 +195,67 @@ async function marcarEasterEggEncontrado(id) {
     atualizarContadorEasterEggs(encontrados.length);
 }
 
-function atualizarContadorEasterEggs(quantidadeEncontrada) {
-    const el = document.getElementById('contadorEasterEggsTexto');
-    if (!el) return;
-    const total = IDS_TODOS_OS_EASTER_EGGS.length;
-    el.textContent = `${quantidadeEncontrada} de ${total}`;
+/**
+ * CORREÇÃO (item 1 do prompt de correções): o contador só pode aparecer
+ * depois que o pedido de namoro já aconteceu, dentro de "Nossa História" —
+ * nunca na loja inicial nem no checkout/carta. `contadorEasterEggsFaseFinal`
+ * só vira true dentro de ativarContadorEasterEggsFaseFinal(), chamada em
+ * goToRomancePage() (js/romance.js). Antes disso, os easter eggs da loja
+ * continuam sendo contados e persistidos normalmente por baixo dos panos,
+ * só o número não é exibido ainda. Quando todos os 9 já foram encontrados,
+ * o contador some sozinho (não tem mais função depois de completo).
+ */
+let contadorEasterEggsFaseFinal = false;
+let contadorEasterEggsQuantidadeAtual = 0;
+
+function ativarContadorEasterEggsFaseFinal() {
+    contadorEasterEggsFaseFinal = true;
+    aplicarVisibilidadeContadorEasterEggs();
 }
 
-/** Chamado uma vez no carregamento da página pra mostrar o número certo desde o início. */
+function aplicarVisibilidadeContadorEasterEggs() {
+    const wrap = document.getElementById('contadorEasterEggs');
+    if (!wrap) return;
+    const total = IDS_TODOS_OS_EASTER_EGGS.length;
+    const deveAparecer = contadorEasterEggsFaseFinal && contadorEasterEggsQuantidadeAtual < total;
+    wrap.classList.toggle('d-none', !deveAparecer);
+}
+
+function atualizarContadorEasterEggs(quantidadeEncontrada) {
+    contadorEasterEggsQuantidadeAtual = quantidadeEncontrada;
+    const el = document.getElementById('contadorEasterEggsTexto');
+    if (el) {
+        const total = IDS_TODOS_OS_EASTER_EGGS.length;
+        el.textContent = `${quantidadeEncontrada} de ${total}`;
+    }
+    aplicarVisibilidadeContadorEasterEggs();
+}
+
+/** Chamado uma vez no carregamento da página pra ter o número certo desde o início (mesmo com o contador ainda escondido). */
 async function iniciarContadorEasterEggs() {
     let encontrados = [];
     try { encontrados = JSON.parse(await obterConfiguracao('easterEggsEncontrados') || '[]'); } catch (e) { /* nenhum ainda */ }
     if (!Array.isArray(encontrados)) encontrados = [];
     atualizarContadorEasterEggs(encontrados.length);
+}
+
+/**
+ * CORREÇÃO ("espaço vazio/roxo no fim da tela"): força o navegador a
+ * recalcular o layout de verdade (lendo offsetHeight, que obriga um
+ * reflow síncrono) depois de qualquer troca de tela que mexe na altura
+ * do documento. Sem isso, o valor de altura interno do navegador às
+ * vezes fica desatualizado até um reload manual (F5), deixando uma
+ * faixa vazia no fim da página, só com a cor de fundo do body (o
+ * "roxo" escuro de CORES_FUNDO.escuro, ver definirFundoBody()), sem
+ * nenhum conteúdo em cima. Reaproveitada em vários gatilhos diferentes,
+ * ver comentários abaixo de cada um.
+ */
+function forcarRecalculoDeLayout() {
+    requestAnimationFrame(() => {
+        document.body.style.display = 'none';
+        void document.body.offsetHeight; // força o navegador a recalcular o layout de verdade
+        document.body.style.display = '';
+    });
 }
 
 /**
@@ -204,11 +270,22 @@ async function iniciarContadorEasterEggs() {
  */
 document.addEventListener('visibilitychange', () => {
     if (document.visibilityState !== 'visible') return;
-    requestAnimationFrame(() => {
-        document.body.style.display = 'none';
-        void document.body.offsetHeight; // força o navegador a recalcular o layout de verdade
-        document.body.style.display = '';
-    });
+    forcarRecalculoDeLayout();
+});
+
+/**
+ * CORREÇÃO (espaço vazio "roxo" ao sair da galeria.html de volta pro
+ * index.html, ou ao voltar de qualquer outra página pelo gesto/botão
+ * "voltar" do navegador): esses casos são navegação entre PÁGINAS
+ * diferentes (galeria.html <-> index.html), não uma troca de tela dentro
+ * da mesma página, então o listener de visibilitychange acima não é
+ * suficiente sempre - o Safari/Chrome do celular costuma restaurar a
+ * página anterior direto do cache de navegação (bfcache) sem recarregar
+ * nada, o que dispara o evento "pageshow" em vez de visibilitychange. O
+ * mesmo reflow forçado resolve aqui.
+ */
+window.addEventListener('pageshow', () => {
+    forcarRecalculoDeLayout();
 });
 
 /* ---------------- Descoberta de itens da galeria (compartilhado entre galeria.html e "Nossos momentos" em index.html) ---------------- */

@@ -164,6 +164,21 @@ async function salvarConfiguracao(chave, valor, imediato = false, afetaSincroniz
     if (chave !== 'aurora_atualizado_em' && afetaSincronizacao) await marcarAtualizacaoLocal(imediato);
 }
 
+/**
+ * Remove uma configuração pequena (localStorage + IndexedDB) e marca a
+ * atualização local (imediata), para que a remoção também sincronize com
+ * o outro aparelho na próxima vez que o backup for enviado à nuvem —
+ * assim como salvarConfiguracao() faz para uma escrita. Usado para resets
+ * PARCIAIS (ex.: só o contrato de namoro), diferente do reset total do
+ * site (que limpa as tabelas inteiras — ver publicarResetNaNuvem/
+ * limparArmazenamentoLocal em js/sync.js).
+ */
+async function excluirConfiguracao(chave, imediato = true) {
+    try { localStorage.removeItem(chave); } catch (e) { console.error('Falha ao remover do localStorage:', chave, e); }
+    try { await db.configuracoes.delete(chave); } catch (e) { console.error('Falha ao remover configuração do IndexedDB:', chave, e); }
+    await marcarAtualizacaoLocal(imediato);
+}
+
 async function obterConfiguracao(chave) {
     try {
         const local = localStorage.getItem(chave);

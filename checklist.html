@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="checklist-html">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#1c1014">
+<meta name="robots" content="noindex, nofollow">
+<title>Nosso Checklist</title>
+<link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+
+<!-- Bibliotecas de terceiros: Dexie (banco local) e JSZip (backup/sincronização
+     entre aparelhos) para que marcar um item aqui apareça no celular do outro
+     também — mesmo mecanismo usado no resto do site (ver js/sync.js). -->
+<script src="https://unpkg.com/dexie/dist/dexie.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+</head>
+<body class="galeria-body checklist-body">
+
+    <!-- Aviso visível durante o envio para a nuvem (mesmo mecanismo do resto do site). -->
+    <div id="auroraSyncBanner" class="aurora-sync-banner d-none">
+        <span class="spinner-border spinner-border-sm me-2"></span>
+        Salvando na nuvem, não feche o app nem tranque a tela ainda...
+    </div>
+
+    <header class="galeria-header">
+        <a href="index.html" class="voltar-link"><i class="bi bi-arrow-left"></i> voltar</a>
+        <p class="galeria-eyebrow">Coisas para viver juntos</p>
+        <h1 class="galeria-titulo">Nosso Checklist</h1>
+        <p class="galeria-sub">Um mapa de tudo que ainda vamos fazer, comer, ver e viver, um pelo outro. Vamos riscando aos poucos, sem pressa nenhuma.</p>
+    </header>
+
+    <main class="checklist-wrap">
+        <div class="checklist-progresso-card reveal-up">
+            <div class="checklist-progresso-topo">
+                <span id="checklistProgressoTexto" class="checklist-progresso-texto">carregando...</span>
+                <span id="checklistProgressoPercentual" class="checklist-progresso-percentual"></span>
+            </div>
+            <div class="checklist-progresso-barra-fundo">
+                <div id="checklistProgressoBarra" class="checklist-progresso-barra-preenchida" style="width:0%"></div>
+            </div>
+            <p id="checklistProgressoFaltam" class="checklist-progresso-faltam"></p>
+        </div>
+
+        <div id="checklistCarregando" class="checklist-carregando">
+            <div class="spinner-border spinner-border-sm text-rosegold" role="status"></div>
+            <p>Abrindo nossa lista...</p>
+        </div>
+
+        <div id="checklistCategorias" class="checklist-categorias"></div>
+    </main>
+
+    <script src="js/config.js"></script>
+    <script src="js/db.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/desktop-block.js"></script>
+    <script src="js/export.js"></script>
+    <script src="js/sync.js"></script>
+    <script src="js/checklist.js"></script>
+</body>
+</html>
