@@ -1641,7 +1641,7 @@ Eu estou muito feliz por tudo que construímos até aqui, cada momento simples q
 E se hoje eu tenho a certeza de uma coisa, é que esse é só o começo, porque enquanto eu seguro sua mão como seu namorado, eu já imagino todos os capítulos que ainda vamos escrever juntos, e quem sabe, quando menos esperarmos, eu vou estar segurando sua mão como seu marido.
 
 Obrigado por ser você, por ter deixado eu entrar na sua vida e por transformar meus dias em algo muito melhor. ❤️`,
-    encerramentoRomance: `obrigado por topar essa vida comigo, dia após dia, tipo "Amo Noite e Dia", sem exagero nenhum. Isso aqui é só um jeito diferente de dizer o que eu já sinto todos os dias: eu escolho você.`,
+    encerramentoRomance: `Meu amor, obrigado por escolher viver essa vida ao meu lado, dia após dia, "o cordão de três dobras não se rompe com facilidade", quero construir nossa história com Deus no centro, fortalecendo o nosso amor a cada passo. Eu escolho você. Hoje, amanhã e por toda a vida..`,
     digitacaoSuspense: `Cada uma dessas fotos guarda um pedaço da gente. Mas... ainda falta alguma coisa.`,
     assinaturaCartaFinal: `Com muito amor para Ana Júlia Poloni.`,
     polaroidFrasePadrao: `O dia em que tudo começou.`,
