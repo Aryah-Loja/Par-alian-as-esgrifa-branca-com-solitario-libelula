@@ -505,49 +505,153 @@ const PLAYLIST_FAIXAS = [
    REGRAS DO "CONTRATO DE NAMORO"
    ---------------------------------------------------------------------- */
 const OPCOES_REGRAS_CONTRATO = [
-    { id: 'girassol', icon: 'bi-flower1', label: 'Sempre ter um girassol por perto', artigo: 'Girassol é obrigatório, porque combina com você: cheio de luz, alegria e aquele jeitinho único que faz qualquer lugar ficar mais bonito.' },
+    { 
+        id: 'girassol', 
+        icon: 'bi-flower1', 
+        label: 'Sempre ter um girassol por perto', 
+        artigo: 'Fica estabelecido que nunca poderá faltar um girassol nessa história, seja em forma de flor, lembrança ou qualquer detalhe que represente a luz e a alegria que você trouxe para a minha vida.' 
+    },
 
-    { id: 'batata', icon: 'bi-basket2', label: 'Dividir a última batata frita', artigo: 'A última batata frita não é de quem pega primeiro, é de quem ama mais. O combinado é dividir, mesmo que dê aquela vontade de esconder uma.' },
+    { 
+        id: 'batata', 
+        icon: 'bi-basket2', 
+        label: 'Dividir a última batata frita', 
+        artigo: 'Fica acordado que a última batata frita deverá ser dividida igualmente entre as partes, sendo proibido pegar escondido, guardar para depois ou fingir que não viu que era a última.' 
+    },
 
-    { id: 'kovu', icon: 'bi-paw', label: 'O Kovu sempre fazer parte das aventuras', artigo: 'Todo passeio fica melhor com o Kovu por perto. Afinal, ele já faz parte da nossa história e merece participar das próximas lembranças também.' },
+    { 
+        id: 'kovu', 
+        icon: 'bi-paw', 
+        label: 'O Kovu sempre fazer parte das aventuras', 
+        artigo: 'Fica determinado que o Kovu será oficialmente incluído nas aventuras sempre que possível, pois ele já faz parte da nossa história e merece participar das próximas lembranças que ainda vamos criar.' 
+    },
 
-    { id: 'maos_dadas', icon: 'bi-hand-index-thumb', label: 'Nunca soltar a mão um do outro', artigo: 'Seja andando na rua, no shopping ou em qualquer lugar, mão dada continua sendo uma das minhas formas favoritas de lembrar que você está comigo.' },
+    { 
+        id: 'maos_dadas', 
+        icon: 'bi-hand-index-thumb', 
+        label: 'Nunca soltar a mão um do outro', 
+        artigo: 'Fica registrado que, em qualquer caminho, passeio ou momento da vida, as partes deverão se lembrar que andar de mãos dadas continua sendo uma das formas mais simples de dizer "estou aqui com você".' 
+    },
 
-    { id: 'praia', icon: 'bi-sun', label: 'Realizar nosso sonho da praia', artigo: 'Aquela vontade que falei desde o começo continua valendo: um dia vamos ver o pôr do sol juntos, com os pés na areia e uma história nova para guardar.' },
+    { 
+        id: 'praia', 
+        icon: 'bi-sun', 
+        label: 'Realizar nosso sonho da praia', 
+        artigo: 'Fica como compromisso futuro a realização de uma viagem para a praia, com direito a areia nos pés, pôr do sol e uma nova memória para guardar juntos.' 
+    },
 
-    { id: 'musica_sertaneja', icon: 'bi-music-note-beamed', label: 'Cantar nossas músicas sem vergonha', artigo: 'Jorge & Mateus, Zé Neto & Cristiano e todas aquelas músicas que fazem sentido pra gente no volume máximo, principalmente nas viagens.' },
+    { 
+        id: 'musica_sertaneja', 
+        icon: 'bi-music-note-beamed', 
+        label: 'Cantar nossas músicas sem vergonha', 
+        artigo: 'Fica autorizado o uso de Jorge & Mateus, Zé Neto & Cristiano e demais músicas importantes para nossa história em volume elevado durante viagens e momentos especiais.' 
+    },
 
-    { id: 'bomdia', icon: 'bi-sunrise-fill', label: 'Nunca esquecer do bom dia', artigo: 'Mesmo nos dias corridos, sempre vai existir um espaço para lembrar: "bom dia, meu amor". Pequenos detalhes também são provas de amor.' },
+    { 
+        id: 'bomdia', 
+        icon: 'bi-sunrise-fill', 
+        label: 'Nunca esquecer do bom dia', 
+        artigo: 'Fica estabelecido que, mesmo nos dias mais corridos, deverá existir uma demonstração de carinho capaz de lembrar que o amor continua presente em todos os dias.' 
+    },
 
-    { id: 'conchinha', icon: 'bi-moon-stars-fill', label: 'Conchinha sempre que possível', artigo: 'Porque alguns lugares no mundo são melhores que outros, mas nenhum lugar é melhor do que estar abraçado com você.' },
+    { 
+        id: 'conchinha', 
+        icon: 'bi-moon-stars-fill', 
+        label: 'Conchinha sempre que possível', 
+        artigo: 'Fica garantido o direito de solicitar abraços, carinho e momentos de proximidade sempre que uma das partes sentir vontade de estar mais perto da outra.' 
+    },
 
-    { id: 'filmes', icon: 'bi-film', label: 'Continuar nossas sessões de filmes', artigo: 'Filme ruim, filme bom, terror ou comédia, o importante é continuar criando memórias juntos, igual naquela época de Todo Mundo em Pânico 6.' },
+    { 
+        id: 'filmes', 
+        icon: 'bi-film', 
+        label: 'Continuar nossas sessões de filmes', 
+        artigo: 'Fica acordado que filmes, séries e momentos simples juntos continuarão fazendo parte da rotina, independentemente da qualidade da escolha ou da quantidade de comentários durante a sessão.' 
+    },
 
-    { id: 'sonhos', icon: 'bi-stars', label: 'Ser o maior apoio um do outro', artigo: 'Seus sonhos serão meus sonhos também. Quero estar ao seu lado para comemorar cada conquista e ajudar nos momentos difíceis.' },
+    { 
+        id: 'sonhos', 
+        icon: 'bi-stars', 
+        label: 'Ser o maior apoio um do outro', 
+        artigo: 'Fica firmado o compromisso de que ambas as partes deverão apoiar os sonhos, conquistas e desafios uma da outra, comemorando vitórias e segurando a mão nos momentos difíceis.' 
+    },
 
-    { id: 'manha_preguicosa', icon: 'bi-sunrise2', label: 'Ter manhãs sem pressa juntos', artigo: 'Alguns dos melhores momentos não precisam de nada especial, só nós dois, uma cama confortável e a desculpa clássica do "só mais cinco minutos".' },
+    { 
+        id: 'manha_preguicosa', 
+        icon: 'bi-sunrise2', 
+        label: 'Ter manhãs sem pressa juntos', 
+        artigo: 'Fica autorizado o direito de aproveitar manhãs tranquilas, com preguiça, abraços e o famoso pedido de "só mais cinco minutos" sem qualquer reclamação.' 
+    },
 
-    { id: 'banho_dois', icon: 'bi-droplet-fill', label: 'Banho a dois quando der certo', artigo: 'Quando o aquecedor colaborar, esse momento está oficialmente autorizado. Sem pressa, sem relógio e com muita conversa aleatória.' },
+    { 
+        id: 'banho_dois', 
+        icon: 'bi-droplet-fill', 
+        label: 'Banho a dois quando der certo', 
+        artigo: 'Fica previsto que, quando todas as condições técnicas forem favoráveis, momentos de carinho e proximidade deverão ser aproveitados sem pressa.' 
+    },
 
-    { id: 'so_mais_um_pouco', icon: 'bi-fire', label: 'Sempre ter direito a mais um abraço', artigo: 'Antes de dormir, antes de ir embora ou antes de qualquer despedida, sempre existe espaço para "só mais um pouquinho".' },
+    { 
+        id: 'so_mais_um_pouco', 
+        icon: 'bi-fire', 
+        label: 'Sempre ter direito a mais um abraço', 
+        artigo: 'Fica garantido que nenhuma despedida será finalizada sem a possibilidade de pedir mais um abraço, mais um beijo ou mais alguns minutos juntos.' 
+    },
 
-    { id: 'acordar_grudados', icon: 'bi-emoji-heart-eyes-fill', label: 'Acordar perto de você sempre que possível', artigo: 'Porque começar o dia sentindo que a pessoa que você ama está ali é uma das melhores sensações que existem.' },
+    { 
+        id: 'acordar_grudados', 
+        icon: 'bi-emoji-heart-eyes-fill', 
+        label: 'Acordar perto de você sempre que possível', 
+        artigo: 'Fica estabelecido como objetivo futuro aproveitar o máximo possível dos momentos simples, incluindo acordar ao lado de quem torna os dias melhores.' 
+    },
 
-    { id: 'beijo_obrigatorio', icon: 'bi-heart-fill', label: 'Nenhuma discussão termina sem amor', artigo: 'Podemos discordar, ficar bravos ou precisar de um tempo, mas nunca esquecer que estamos do mesmo lado.' },
+    { 
+        id: 'beijo_obrigatorio', 
+        icon: 'bi-heart-fill', 
+        label: 'Nenhuma discussão termina sem amor', 
+        artigo: 'Fica proibido esquecer que, mesmo em momentos de diferença ou dificuldade, as partes continuam estando do mesmo lado e deverão resolver tudo com respeito e carinho.' 
+    },
 
-    { id: 'lava_louca', icon: 'bi-cup-hot', label: 'Dividir as tarefas da vida', artigo: 'O combinado é simples: ninguém carrega tudo sozinho. A gente aprende, ajuda e faz junto, mesmo que um reclame um pouquinho.' },
+    { 
+        id: 'lava_louca', 
+        icon: 'bi-cup-hot', 
+        label: 'Dividir as tarefas da vida', 
+        artigo: 'Fica determinado que nenhuma responsabilidade deverá ser carregada sozinha, sendo dever de ambas as partes construir uma vida baseada em parceria e ajuda mútua.' 
+    },
 
-    { id: 'ela_paga_jantar', icon: 'bi-wallet2', label: 'Um jantar por sua conta de vez em quando', artigo: 'Porque relacionamento justo também tem equilíbrio... e porque vai que um dia você resolve me surpreender, né? Kkkkk.' },
+    { 
+        id: 'ela_paga_jantar', 
+        icon: 'bi-wallet2', 
+        label: 'Um jantar por sua conta de vez em quando', 
+        artigo: 'Fica previsto que, ocasionalmente, a parte responsável poderá surpreender a outra com um jantar, ficando proibidas reclamações sobre escolhas do restaurante.' 
+    },
 
-    { id: 'ele_escolhe_filme', icon: 'bi-joystick', label: 'Escolher o filme sem guerra', artigo: 'Direito de escolha garantido... pelo menos até você argumentar muito bem e ganhar a votação.' },
+    { 
+        id: 'ele_escolhe_filme', 
+        icon: 'bi-joystick', 
+        label: 'Escolher o filme sem guerra', 
+        artigo: 'Fica estabelecido que a escolha do filme deverá ocorrer através de um sistema democrático, justo e totalmente sujeito a negociações e argumentos convincentes.' 
+    },
 
-    { id: 'ela_dirige', icon: 'bi-car-front-fill', label: 'Dividir as aventuras de carro', artigo: 'Uma pessoa dirige, a outra escolhe a música e as duas fazem a viagem valer a pena.' },
+    { 
+        id: 'ela_dirige', 
+        icon: 'bi-car-front-fill', 
+        label: 'Dividir as aventuras de carro', 
+        artigo: 'Fica acordado que todas as viagens deverão ser acompanhadas de boas conversas, músicas favoritas e momentos que façam o caminho valer tanto quanto o destino.' 
+    },
 
-    { id: 'lado_bom_cama', icon: 'bi-moon-fill', label: 'Disputar o melhor lado da cama', artigo: 'Um grande relacionamento também é feito dessas pequenas batalhas... e essa provavelmente nunca terá um vencedor.' },
+    { 
+        id: 'lado_bom_cama', 
+        icon: 'bi-moon-fill', 
+        label: 'Disputar o melhor lado da cama', 
+        artigo: 'Fica registrado que a disputa pelo melhor lado da cama será permitida oficialmente, sendo reconhecido que provavelmente nunca haverá um vencedor definitivo.' 
+    },
 
-    { id: 'aguentar_ronco', icon: 'bi-volume-up-fill', label: 'Aceitar meu ronquinho com amor', artigo: 'O ronco existe, não vamos negar. Mas ele vem junto com todo o pacote: abraços, carinho e muito amor envolvido.' }
+    { 
+        id: 'aguentar_ronco', 
+        icon: 'bi-volume-up-fill', 
+        label: 'Aceitar meu ronquinho com amor', 
+        artigo: 'Fica declarado que pequenos defeitos fazem parte do pacote completo, incluindo eventuais roncos, que deverão ser aceitos junto com todos os momentos de carinho e amor.' 
+    }
 ];
-
 /* ----------------------------------------------------------------------
    CARTA FINAL — escrita na sua voz
    ----------------------------------------------------------------------
