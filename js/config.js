@@ -329,7 +329,7 @@ const TIMELINE_MARCOS = [
         foto: 'imagem_timeline_9'
     },
     {
-        data: null,
+        data: '01 de agosto',
         texto: `E hoje, enquanto escrevo isso, ainda não sei como essa história vai continuar. Estou fazendo tudo às escondidas, sem saber se esse pedido vai acontecer exatamente como imaginei, se você vai se emocionar, se alguma coisa vai sair diferente do planejado ou até se algum detalhe vai dar errado no caminho. Mas, mesmo sem saber o final desse momento, existe uma coisa que eu tenho certeza: tudo isso foi feito com o coração mais sincero que eu poderia ter.
 
 Mesmo com pouco tempo juntos, parece que a gente se conhece há anos. É uma sensação difícil de explicar, como se a vida tivesse preparado o caminho para que nossos mundos se encontrassem no momento certo. Eu tenho a certeza de que encontrei o amor da minha vida, e acredito de verdade que foi Deus quem colocou você no meu caminho.
@@ -354,22 +354,12 @@ const PERGUNTAS_SUSPENSE = [
     },
     {
         texto: `Nosso sistema também perguntou: você tem noção de quando esse pedido vai ser entregue? A pessoa que vai receber deve estar bem ansiosa.`,
-        sim: `Tenho, e a ansiedade é mútua`,
-        nao: `Prefiro ser surpreendida`
-    },
-    {
-        texto: `Confirmando o endereço de entrega: ainda é ali perto daquele lugar do hambúrguer com picles que você tanto gosta?`,
-        sim: `Isso mesmo, pode confirmar`,
-        nao: `Mudei de bairro, não de gosto`
-    },
-    {
-        texto: `Última coisa do formulário: quer alguma frase gravada por dentro da aliança? Temos uma sugestão salva aqui, algo como "tal qual o Chaves ama sanduíche de presunto".`,
-        sim: `Perfeita, pode gravar assim`,
-        nao: `Prefiro deixar sem legenda`
+        sim: `Não faço a minima ideia, e a ansiedade é mútua`,
+        nao: `Sim, já tenho data marcada`
     },
     {
         texto: `Última confirmação antes de fechar esse pedido: você tá certa dessa escolha, nos dias fáceis e principalmente nos difíceis?`,
-        sim: `Tô certa, sem dúvida nenhuma`,
+        sim: `Tô certa(o), sem dúvida nenhuma`,
         nao: `Preciso pensar mais um pouco`
     }
 ];
@@ -394,21 +384,21 @@ const QUIZ_PERGUNTAS = [
     },
     {
         pergunta: 'Eu te amo, tal qual...?',
-        opcoes: ['o Chaves ama sanduíche de presunto', 'o gato ama um cochilo', 'a novela ama final feliz', 'ninguém ama nada'],
+        opcoes: ['o Chaves ama sanduíche de presunto', 'o gato ama um cochilo', 'a novela ama final feliz', 'ninguém ama nada poha'],
         certa: 0,
         certoMsg: 'Isso, sempre foi assim e sempre vai ser 😄',
         erradoMsg: 'Tal qual o Chaves ama sanduíche de presunto. Nosso código, não esquece mais!'
     },
     {
         pergunta: 'Qual é o nosso restaurante preferido?',
-        opcoes: ['O Grill, pelo hambúrguer com picles', 'Um rodízio qualquer', 'Uma pizzaria genérica', 'Lanchonete de posto'],
+        opcoes: ['O Brooks', 'Alô Gordão', 'Alex Lanches', 'Esquinão'],
         certa: 0,
-        certoMsg: 'O Grill! Com picles, sem picles não tem graça 🍔',
-        erradoMsg: 'É o Grill, por causa do hambúrguer com picles. Clássico nosso.'
+        certoMsg: 'O Brooks! 4 opções de lanches veganos, ta doido 🍔',
+        erradoMsg: 'É o Brooks zé mané. Clássico nosso.'
     },
     {
         pergunta: 'Quando o carro atolou naquela estrada de terra, o que eu tentei usar pra tirar o carro do buraco?',
-        opcoes: ['O triângulo do carro', 'Uma pá', 'Só os braços mesmo', 'Chamamos o guincho direto'],
+        opcoes: ['O triângulo do carro', 'Um tábua', 'Cana de Açucar', 'Chamamos o guincho direto'],
         certa: 0,
         certoMsg: 'Isso mesmo, o triângulo, que nem serviu pra muita coisa 😂',
         erradoMsg: 'Tentei com o triângulo do carro, que praticamente não ajudou em nada, mas rimos muito.'
@@ -429,14 +419,14 @@ const QUIZ_PERGUNTAS = [
     },
     {
         pergunta: 'Qual foi a história que eu contei que te conquistou?',
-        opcoes: ['A do maquinista que morreu nos trilhos do trem', 'A do cachorro que virou herói', 'A de uma viagem pra praia', 'Nenhuma, foi só o meu cabelo'],
+        opcoes: ['A do maquinista que morreu nos trilhos do trem', 'De como eu odeio a unip e todos os professores', 'A de uma viagem pra praia', 'Nenhuma das opções'],
         certa: 0,
-        certoMsg: 'Essa mesma, a do maquinista. Quem diria que ia funcionar tão bem 😄',
-        erradoMsg: 'Foi a história do maquinista que morreu nos trilhos do trem. Guardo até hoje o efeito que ela teve.'
+        certoMsg: 'Essa mesma, a do maquinista puramente inventada 😄',
+        erradoMsg: 'Foi a história do maquinista que morreu nos trilhos do trem.'
     },
     {
         pergunta: 'Onde foi o nosso primeiro encontro de verdade?',
-        opcoes: ['Colina, em Orlândia', 'Praia', 'Shopping', 'Uma festa'],
+        opcoes: ['Colina', 'Unip', 'Shopping', 'Praça da Bike'],
         certa: 0,
         certoMsg: 'Colina, 30 de maio. Inesquecível 💛',
         erradoMsg: 'Foi no Colina, em Orlândia, dia 30/05, o dia em que tudo se encaixou.'
