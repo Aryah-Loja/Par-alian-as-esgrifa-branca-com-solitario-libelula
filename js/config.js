@@ -1066,12 +1066,12 @@ const IDS_TODOS_OS_EASTER_EGGS = [
 const LOJA_EASTER_EGGS = {
     imagemPrincipalProduto: {
         titulo: 'Então você percebeu 👀',
-        texto: `Eu sabia que essa foto ia chamar sua atenção. Engraçado pensar que, enquanto você estava olhando uma aliança em uma loja que nem existe, eu já estava olhando para uma aliança que existe de verdade e imaginando o momento em que ela chegaria até você.`
+        texto: `Eu sabia que essa foto ia chamar sua atenção. Engraçado pensar que, enquanto você estava olhando uma aliança em uma loja que nem existe, eu já estava olhando para uma aliança que existe de verdade e imaginando o momento em que ela chegaria até você. - K4QWZ`
     },
 
     reviewGabrielClicavel: {
         titulo: 'Sobre esse tal Gabriel S.',
-        texto: `Sim, sou eu mesmo. Talvez seja a primeira vez na história que alguém deixa uma avaliação da própria compra antes mesmo dela acontecer, viu, sou diferenciado minha loba kkkkkk`
+        texto: `Sim, sou eu mesmo. Talvez seja a primeira vez na história que alguém deixa uma avaliação da própria compra antes mesmo dela acontecer, viu, sou diferenciado minha loba kkkkkk - X7KVM`
     },
 
     lojaLogoClicavel: {
@@ -1090,13 +1090,13 @@ const LOJA_EASTER_EGGS = {
     },
 
     instagramIconeClicavel: {
-        titulo: 'Um Instagram meio suspeito 📱',
+        titulo: 'Instagram?',
         texto: `Infelizmente esse perfil não vai render nenhum seguidor novo. Ele só existe para deixar essa loja convincente. Mas pensando bem, o Instagram real já fez algo muito mais importante: foi onde uma conversa começou e onde uma história nasceu.`
     },
 
     garantiaVitaliciaClicavel: {
         titulo: 'Garantia vitalícia?',
-        texto: `Essa talvez seja a única garantia dessa loja que é verdadeira. Não porque o amor seja perfeito todos os dias, mas porque eu quero continuar escolhendo você em cada fase, em cada capítulo e em cada versão da nossa história.`
+        texto: `Essa talvez seja a única garantia dessa loja que é verdadeira. Não porque o amor seja perfeito todos os dias, mas porque eu quero continuar escolhendo você em cada fase, em cada capítulo e em cada versão da nossa história. - R8NVX`
     }
 };
 
@@ -1221,14 +1221,6 @@ const MAPA_LUGARES = [
         texto: 'Um daqueles momentos simples que ficam especiais. Um passeio tranquilo, nós dois, sem pressa, apenas aproveitando estar juntos.',
         icon: 'bi-tree-fill',
         foto: 'mapa_curupira'
-    },
-
-    {
-        nome: 'O balanço',
-        cidade: 'Sales de Oliveira',
-        texto: 'Aquele fim de dia que parecia cena de filme. Sentados juntos, conversando, e com você talvez imaginando que aquele seria o momento do pedido. Eu também queria, mas as alianças ainda não tinham chegado.',
-        icon: 'bi-flower1',
-        foto: 'mapa_balanco'
     },
 
     {
@@ -1471,7 +1463,7 @@ const CHECKLIST_ENCONTROS = [
    e paraCodigoMorse() em js/utils.js). De propósito SEM botão de
    tradução — a graça é ela mesma decifrar o código.
    ---------------------------------------------------------------------- */
-const MENSAGEM_SECRETA_LUA = 'TALVEZ ESSE CÓDIGO TE AJUDE EM ALGO: K4QWZ';
+const MENSAGEM_SECRETA_LUA = 'TE AMO MUITO MINHA GRACINHA - K4QWZ';
 
 const SENHA_AREA_MEMORIAS = '1406';
 
