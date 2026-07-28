@@ -476,28 +476,28 @@ const QUIZ_PERGUNTAS = [
    ---------------------------------------------------------------------- */
 const PLAYLIST_FAIXAS = [
     {
-        titulo: '[Edite: música da carona]',
-        artista: '[Artista]',
-        motivo: 'Aquela que tocava nas caronas pra faculdade, lá no comecinho, quando eu ainda estava juntando coragem.',
+        titulo: 'Um dia te Levo Comigo',
+        artista: 'Jorge & Mateus',
+        motivo: 'A vida pode até passar sem graça às vezes, mas quando você está perto, tudo fica bem. Essa música sempre vai representar isso para mim: a vontade de ter você ao meu lado em todos os caminhos da vida.',
         src: 'audio_playlist_1'
     },
     {
-        titulo: '[Edite: música do dia do atoleiro]',
-        artista: '[Artista]',
-        motivo: 'Pra lembrar que até carro atolado na lama vira boa lembrança, quando é do seu lado.',
-        src: 'audio_playlist_2'
+       titulo: 'Inesperado',
+       artista: 'Jorge & Mateus',
+       motivo: 'Eu nem conhecia essa música, mas na primeira vez que ouvi, lembrei de nós, principalmente de você. É tão especial quando a gente encontra alguém que parece completar a nossa vida de uma forma que a gente nunca esperava. Você chegou de repente, mudou meus dias e, hoje, eu só quero mais você na minha vida, em todos os momentos.',
+       src: 'audio_playlist_2'
     },
     {
-        titulo: '[Edite: música do dia do pedido]',
-        artista: '[Artista]',
-        motivo: 'Escolhida especialmente pra hoje, pro dia que muda tudo.',
-        src: 'audio_playlist_3'
+       titulo: 'Cor de Ouro',
+       artista: 'Gustavo Lima',
+       motivo: 'Nem preciso explicar muito o motivo dessa música, né? Kkkkk. Esse cabelo cor de ouro sempre foi uma das primeiras coisas que me chamou atenção em você, aquele detalhe que fez eu olhar e pensar: "essa menina é linda". Hoje ela representa muito mais do que isso, representa a pessoa incrível que você é, por dentro e por fora, e claro, a loirinha que conquistou completamente o meu coração.',
+       src: 'audio_playlist_3'
     },
     {
-        titulo: '[Edite: quarta música]',
-        artista: '[Artista]',
-        motivo: 'Essa aqui é livre: bota a que fizer mais sentido pra gente.',
-        src: 'audio_playlist_4'
+       titulo: 'Partilhar',
+       artista: 'Rubel',
+       motivo: 'Essa música representa uma das coisas mais bonitas que eu sinto sobre nós: a vontade de dividir a vida com você. Não apenas os grandes momentos, mas também os dias simples, as conversas sem hora pra acabar, as risadas por coisas bobas e todos aqueles pequenos detalhes que fazem a vida ser melhor quando estamos juntos. Porque no fim, o que eu mais quero é continuar partilhando minha história com você, meus sonhos, meus medos, minhas conquistas e todos os momentos que ainda vamos viver.',
+       src: 'audio_playlist_4'
     }
 ];
 
@@ -505,27 +505,47 @@ const PLAYLIST_FAIXAS = [
    REGRAS DO "CONTRATO DE NAMORO"
    ---------------------------------------------------------------------- */
 const OPCOES_REGRAS_CONTRATO = [
-    { id: 'girassol', icon: 'bi-flower1', label: 'Sempre ter um girassol por perto', artigo: 'Nunca pode faltar um girassol por perto, seja na varanda, na mesa ou só guardado numa lembrança.' },
-    { id: 'batata', icon: 'bi-basket2', label: 'Dividir a última batata frita', artigo: 'Última batata frita do prato é sempre dividida. Comer tudo sozinho(a) na cara dura é quebra de contrato.' },
-    { id: 'kovu', icon: 'bi-paw', label: 'Levar o Kovu pra passear junto', artigo: 'O Kovu vai junto no passeio sempre que der, e sem precisar dar satisfação pra ninguém.' },
-    { id: 'maos_dadas', icon: 'bi-hand-index-thumb', label: 'Andar sempre de mãos dadas', artigo: 'Mão dada é obrigatória em qualquer caminhada, trajeto de carro ou fila de cinema. Sem desculpa de "tô com a mão suada".' },
-    { id: 'praia', icon: 'bi-sun', label: 'Realizar o sonho de ir à praia juntos', artigo: 'Assim que der, a gente vai pra praia juntos de verdade, com pôr do sol e pé na areia incluídos.' },
-    { id: 'musica_sertaneja', icon: 'bi-music-note-beamed', label: 'Cantar Jorge & Mateus no volume máximo', artigo: 'Jorge & Mateus e Zé Neto & Cristiano no talo em qualquer viagem de carro, sem ninguém pedir pra abaixar.' },
-    { id: 'bomdia', icon: 'bi-sunrise-fill', label: 'Mandar mensagem de bom dia', artigo: 'Bom dia todo santo dia, nem que seja só um emoji. Sono não é desculpa.' },
-    { id: 'conchinha', icon: 'bi-moon-stars-fill', label: 'Dormir de conchinha sempre que possível', artigo: 'Cobertor dividido igualzinho, e conchinha garantida sempre que der.' },
-    { id: 'filmes', icon: 'bi-film', label: 'Assistir filmes de terror/comédia juntos', artigo: 'Maratona de filme com pipoca e comentário solto sobre a trama, igualzinho no dia de Todo Mundo em Pânico 6.' },
-    { id: 'sonhos', icon: 'bi-stars', label: 'Apoiar os sonhos um do outro', artigo: 'Sonho, plano ou ideia maluca de um, o outro apoia sem ficar de cara torta.' },
-    { id: 'manha_preguicosa', icon: 'bi-sunrise2', label: 'Manhãs de preguiça bem coladinhos', artigo: 'Manhã de preguiça grudados, sem hora marcada pra levantar e com direito a "só mais 5 minutinhos" quantas vezes precisar.' },
-    { id: 'banho_dois', icon: 'bi-droplet-fill', label: 'Banho a dois quando o aquecedor cooperar', artigo: 'Sempre que o aquecedor deixar, banho a dois liberado, sem pressa nenhuma de sair do box.' },
-    { id: 'so_mais_um_pouco', icon: 'bi-fire', label: 'Direito a "só mais um pouquinho" antes de dormir', artigo: 'Quando alguém falar "vamos dormir", o outro tem todo direito de responder "só mais um pouquinho", sem julgamento sobre o que vem depois.' },
-    { id: 'acordar_grudados', icon: 'bi-emoji-heart-eyes-fill', label: 'Acordar se agarrando todo santo dia', artigo: 'Acordar se agarrando, com mão boba e tudo, é rotina fixa por aqui. Feriado incluso.' },
-    { id: 'beijo_obrigatorio', icon: 'bi-heart-fill', label: 'Beijo de reconciliação obrigatório', artigo: 'Proibido dormir de biquinho fechado: toda discussão exige, no mínimo, um beijo de reconciliação antes do boa noite.' },
-    { id: 'lava_louca', icon: 'bi-cup-hot', label: 'Ela lava a louça pra sempre', artigo: 'Fica combinado (por mim, e só por mim) que a louça é sempre com você. Eu fico só na moral, torcendo e elogiando.' },
-    { id: 'ela_paga_jantar', icon: 'bi-wallet2', label: 'Ela paga o jantar sempre', artigo: 'A partir de hoje o jantar é sempre por sua conta. Prometo escolher bem o restaurante em troca.' },
-    { id: 'ele_escolhe_filme', icon: 'bi-joystick', label: 'Ele escolhe o filme sem votação', artigo: 'Escolha do filme é sempre minha, sem plebiscito, sem recurso e sem enquete no Instagram.' },
-    { id: 'ela_dirige', icon: 'bi-car-front-fill', label: 'Ela dirige em toda viagem', artigo: 'Direção é sempre com você. Eu cuido do som, do lanche e da conversa, com muito orgulho da minha função.' },
-    { id: 'lado_bom_cama', icon: 'bi-moon-fill', label: 'Ele fica com o lado bom da cama', artigo: 'O lado bom da cama é meu, sempre foi e sempre vai ser. Isso aqui é inegociável, mesmo sem argumento nenhum que sustente.' },
-    { id: 'aguentar_ronco', icon: 'bi-volume-up-fill', label: 'Ela finge que não liga pro meu ronco', artigo: 'Fica combinado que o ronco existe, é meu, e você finge educadamente que não incomoda nadinha.' }
+    { id: 'girassol', icon: 'bi-flower1', label: 'Sempre ter um girassol por perto', artigo: 'Girassol é obrigatório, porque combina com você: cheio de luz, alegria e aquele jeitinho único que faz qualquer lugar ficar mais bonito.' },
+
+    { id: 'batata', icon: 'bi-basket2', label: 'Dividir a última batata frita', artigo: 'A última batata frita não é de quem pega primeiro, é de quem ama mais. O combinado é dividir, mesmo que dê aquela vontade de esconder uma.' },
+
+    { id: 'kovu', icon: 'bi-paw', label: 'O Kovu sempre fazer parte das aventuras', artigo: 'Todo passeio fica melhor com o Kovu por perto. Afinal, ele já faz parte da nossa história e merece participar das próximas lembranças também.' },
+
+    { id: 'maos_dadas', icon: 'bi-hand-index-thumb', label: 'Nunca soltar a mão um do outro', artigo: 'Seja andando na rua, no shopping ou em qualquer lugar, mão dada continua sendo uma das minhas formas favoritas de lembrar que você está comigo.' },
+
+    { id: 'praia', icon: 'bi-sun', label: 'Realizar nosso sonho da praia', artigo: 'Aquela vontade que falei desde o começo continua valendo: um dia vamos ver o pôr do sol juntos, com os pés na areia e uma história nova para guardar.' },
+
+    { id: 'musica_sertaneja', icon: 'bi-music-note-beamed', label: 'Cantar nossas músicas sem vergonha', artigo: 'Jorge & Mateus, Zé Neto & Cristiano e todas aquelas músicas que fazem sentido pra gente no volume máximo, principalmente nas viagens.' },
+
+    { id: 'bomdia', icon: 'bi-sunrise-fill', label: 'Nunca esquecer do bom dia', artigo: 'Mesmo nos dias corridos, sempre vai existir um espaço para lembrar: "bom dia, meu amor". Pequenos detalhes também são provas de amor.' },
+
+    { id: 'conchinha', icon: 'bi-moon-stars-fill', label: 'Conchinha sempre que possível', artigo: 'Porque alguns lugares no mundo são melhores que outros, mas nenhum lugar é melhor do que estar abraçado com você.' },
+
+    { id: 'filmes', icon: 'bi-film', label: 'Continuar nossas sessões de filmes', artigo: 'Filme ruim, filme bom, terror ou comédia, o importante é continuar criando memórias juntos, igual naquela época de Todo Mundo em Pânico 6.' },
+
+    { id: 'sonhos', icon: 'bi-stars', label: 'Ser o maior apoio um do outro', artigo: 'Seus sonhos serão meus sonhos também. Quero estar ao seu lado para comemorar cada conquista e ajudar nos momentos difíceis.' },
+
+    { id: 'manha_preguicosa', icon: 'bi-sunrise2', label: 'Ter manhãs sem pressa juntos', artigo: 'Alguns dos melhores momentos não precisam de nada especial, só nós dois, uma cama confortável e a desculpa clássica do "só mais cinco minutos".' },
+
+    { id: 'banho_dois', icon: 'bi-droplet-fill', label: 'Banho a dois quando der certo', artigo: 'Quando o aquecedor colaborar, esse momento está oficialmente autorizado. Sem pressa, sem relógio e com muita conversa aleatória.' },
+
+    { id: 'so_mais_um_pouco', icon: 'bi-fire', label: 'Sempre ter direito a mais um abraço', artigo: 'Antes de dormir, antes de ir embora ou antes de qualquer despedida, sempre existe espaço para "só mais um pouquinho".' },
+
+    { id: 'acordar_grudados', icon: 'bi-emoji-heart-eyes-fill', label: 'Acordar perto de você sempre que possível', artigo: 'Porque começar o dia sentindo que a pessoa que você ama está ali é uma das melhores sensações que existem.' },
+
+    { id: 'beijo_obrigatorio', icon: 'bi-heart-fill', label: 'Nenhuma discussão termina sem amor', artigo: 'Podemos discordar, ficar bravos ou precisar de um tempo, mas nunca esquecer que estamos do mesmo lado.' },
+
+    { id: 'lava_louca', icon: 'bi-cup-hot', label: 'Dividir as tarefas da vida', artigo: 'O combinado é simples: ninguém carrega tudo sozinho. A gente aprende, ajuda e faz junto, mesmo que um reclame um pouquinho.' },
+
+    { id: 'ela_paga_jantar', icon: 'bi-wallet2', label: 'Um jantar por sua conta de vez em quando', artigo: 'Porque relacionamento justo também tem equilíbrio... e porque vai que um dia você resolve me surpreender, né? Kkkkk.' },
+
+    { id: 'ele_escolhe_filme', icon: 'bi-joystick', label: 'Escolher o filme sem guerra', artigo: 'Direito de escolha garantido... pelo menos até você argumentar muito bem e ganhar a votação.' },
+
+    { id: 'ela_dirige', icon: 'bi-car-front-fill', label: 'Dividir as aventuras de carro', artigo: 'Uma pessoa dirige, a outra escolhe a música e as duas fazem a viagem valer a pena.' },
+
+    { id: 'lado_bom_cama', icon: 'bi-moon-fill', label: 'Disputar o melhor lado da cama', artigo: 'Um grande relacionamento também é feito dessas pequenas batalhas... e essa provavelmente nunca terá um vencedor.' },
+
+    { id: 'aguentar_ronco', icon: 'bi-volume-up-fill', label: 'Aceitar meu ronquinho com amor', artigo: 'O ronco existe, não vamos negar. Mas ele vem junto com todo o pacote: abraços, carinho e muito amor envolvido.' }
 ];
 
 /* ----------------------------------------------------------------------
@@ -538,17 +558,21 @@ const OPCOES_REGRAS_CONTRATO = [
    ---------------------------------------------------------------------- */
 function textoVersiculoBase() {
     if (CARTA_USAR_TEXTO_TESTE) return TEXTO_CARTA_TESTE;
-    return `Eu queria saber escrever bonito do jeito que você merece, {AMOR}, mas a verdade é bem mais simples do que qualquer verso: desde o dia que te vi andando com a Vitória, antes mesmo de ter coragem de puxar assunto, alguma coisa em mim já sabia que ia ser você.
+    return `Eu queria saber escrever bonito do jeito que você merece, {AMOR}, mas a verdade é que o que eu sinto por você é muito maior do que qualquer frase bonita. A história mais bonita que eu poderia contar começou de um jeito simples, com você andando pelo refeitório da UNIP com a Vitória e eu criando coragem até para admitir que aquela menina de cabelo loiro tinha chamado minha atenção. Naquele momento eu ainda não fazia ideia, mas alguma coisa dentro de mim já parecia querer me aproximar de você.
 
-Tem tanta música por aí que fala de amor de um jeito que parece exagero, até a gente viver e descobrir que não é exagero nenhum. Sei lá quantas vezes já ouvi "Pra Sempre Com Você" no rádio do carro sem prestar muita atenção, e hoje não consigo mais escutar sem pensar em você, sem pensar que é exatamente isso que eu quero: ficar. Sem enrolação, sem plano B, só ficar.
+Existem tantas músicas que falam sobre amor de um jeito que parece exagerado, até a gente viver algo que faz a gente entender que, na verdade, elas nem estavam exagerando. "Pra Sempre Com Você" sempre foi uma música bonita, mas hoje ela tem outro significado, porque quando eu escuto eu não penso apenas em uma música, eu penso em nós, penso nessa vontade simples de permanecer, de escolher você todos os dias, sem plano B, sem dúvidas, só ficar.
 
-Um dia você me perguntou o que é o amor, do nada, meio de brincadeira, meio séria. Não soube responder direito na hora, e a verdade é que ainda não sei explicar direito por que te amo tanto. Só sei que não é sobre entender o motivo. É sobre escolher, todo santo dia, mesmo sem essa resposta pronta.
+Um dia você me perguntou o que era o amor, meio de brincadeira, meio querendo saber de verdade. Eu não consegui responder direito naquela hora, e a verdade é que talvez eu ainda não saiba explicar completamente. Acho que o amor não é uma coisa que a gente entende por completo, é uma coisa que a gente sente. É escolher a mesma pessoa todos os dias, mesmo quando o dia não é perfeito, mesmo quando a vida aperta, mesmo quando existem dificuldades pelo caminho.
 
-Não sei explicar direito por que deu certo entre a gente, só sei que deu, e que em qualquer dia dessa vida, com qualquer versão de mim, eu ia escolher ficar do seu lado de novo, {AMOR}. Nem a distância que a gente já viveu, nem os dias ruins, nem o tempo que ainda vem por aí muda isso.
+Eu não sei explicar exatamente por que deu tão certo entre a gente, só sei que deu. Em qualquer versão da minha vida, em qualquer caminho que eu pudesse seguir, eu escolheria encontrar você de novo. Escolheria nossas conversas, nossas risadas, nossos momentos simples, nossos perrengues que viram histórias e até aqueles dias difíceis que só fizeram a gente ficar mais perto.
 
-Antes de te conhecer, minha vida seguia bem sem graça nenhuma, tocando quase no automático. Eu nem percebia que faltava alguma coisa até você aparecer e virar tudo do avesso, do jeito bom. Tem um motivo de "Um Dia Te Levo Comigo" ter grudado tanto em mim: fala exatamente disso, de como um dia comum vira o dia que muda todos os outros depois dele.
+Antes de você aparecer, minha vida seguia normalmente, quase no automático. Eu nem sabia que faltava alguma coisa até você chegar e mudar tudo de um jeito que eu nem sabia que precisava. Talvez seja por isso que "Um Dia Te Levo Comigo" significa tanto para mim, porque ela representa exatamente isso: alguém que chega e transforma dias comuns em momentos que a gente nunca mais esquece.
 
-Então guarda esse tanto comigo, {AMOR}: você carrega o dia inteiro guardado nos olhos, e a noite inteira guardada no sorriso.`;
+Então guarda isso comigo, {AMOR}: você chegou de repente, mudou meus dias e trouxe uma felicidade que eu nem sabia que estava procurando. Você tem esse jeito único de iluminar os lugares, de cuidar das pessoas e dos animais que ama, de sorrir e fazer tudo parecer mais leve.
+
+Se um dia você esquecer o tamanho do espaço que ocupa na minha vida, lembra disso: desde que você chegou, meus dias ficaram melhores, e eu só quero continuar escrevendo essa história ao seu lado.
+
+Porque no fim, é isso que eu vejo quando olho para você: você não carrega apenas o sol nos olhos, você carrega o dia inteiro. Não carrega apenas a lua no sorriso, carrega todo o universo. Eu amo você!`;
 }
 
 /* ----------------------------------------------------------------------
@@ -609,7 +633,7 @@ const VIDEO_PROCESSO_YOUTUBE_URL = '';
 /* ----------------------------------------------------------------------
    EASTER EGG — brincadeira do sobrenome
    ---------------------------------------------------------------------- */
-const TEXTO_EASTER_EGG_SOBRENOME = `Aviso nada oficial: a partir de hoje você deixa de ser "do Vale", e não, isso não tem nada a ver com "não vale a pena". Muito pelo contrário: agora você vale um "Schmeisk" inteiro. 💍`;
+const TEXTO_EASTER_EGG_SOBRENOME = `O amor é paciente, o amor é bondoso. Não inveja, não se vangloria, não se orgulha. Não maltrata, não procura seus interesses, não se ira facilmente, não guarda rancor. O amor não se alegra com a injustiça, mas se alegra com a verdade. Tudo sofre, tudo crê, tudo espera, tudo suporta`;
 
 /* ----------------------------------------------------------------------
    "COISAS QUE A POLONI AMA" — pequena seção da página de memórias
@@ -618,16 +642,25 @@ const TEXTO_EASTER_EGG_SOBRENOME = `Aviso nada oficial: a partir de hoje você d
    Edite livremente; cada item vira um pequeno cartão na seção.
    ---------------------------------------------------------------------- */
 const COISAS_QUE_ELA_AMA = [
-    { icon: 'bi-flower1', texto: 'Girassol. Não é só gostar, é amor mesmo, e eu reparei nisso desde muito cedo.' },
-    { icon: 'bi-cup-straw', texto: 'Hambúrguer do Grill, com picles, sem exceção. Se deixasse, você comia isso todo santo dia.' },
-    { icon: 'bi-egg-fried', texto: 'Arroz, feijão preto, batata frita e rúcula. Simples assim, e é o seu favorito.' },
-    { icon: 'bi-heart-fill', texto: 'KitKat, Kinder Ovo e Ovomaltine em qualquer versão que existir.' },
-    { icon: 'bi-bag-fill', texto: 'Pringles, Doritos, Cheetos requeijão e Fandangos, pra quando bate aquela vontade de salgadinho.' },
-    { icon: 'bi-tree-fill', texto: 'Mato e bicho, sempre. Um lugar calmo, sem muita gente, é onde você relaxa de verdade.' },
-    { icon: 'bi-bag-heart-fill', texto: 'E ao mesmo tempo ama um shopping, e conhecer lugar novo, tipo achar uma hamburgueria diferente por aí.' },
-    { icon: 'bi-airplane-fill', texto: 'Viajar. Conhecer lugar que você nunca viu é uma das coisas que mais te deixam animada, eu percebo no seu jeito de falar.' },
-    { icon: 'bi-gift-fill', texto: 'Seu aniversário é sagrado. É o seu dia, e ponto final, e eu levo isso a sério.' },
-    { icon: 'bi-chat-heart-fill', texto: 'É caladinha até ganhar confiança, e quando ganha, não para mais de falar. Eu amo quando você fala demais comigo.' }
+    { icon: 'bi-flower1', texto: 'Girassol. Não é apenas uma flor que você gosta, é algo que combina com você: cheio de luz, alegria e aquela energia que faz qualquer lugar ficar mais bonito. Eu percebi isso desde cedo.' },
+
+    { icon: 'bi-cup-straw', texto: 'Hambúrguer do Grill, com picles e sem discussão. Se pudesse, provavelmente escolheria esse toda semana sem pensar duas vezes.' },
+
+    { icon: 'bi-egg-fried', texto: 'Arroz, feijão preto, batata frita e rúcula. Uma comida simples, mas que tem aquele jeito de comida que traz conforto e lembra casa.' },
+
+    { icon: 'bi-heart-fill', texto: 'KitKat, Kinder Ovo e Ovomaltine. Qualquer coisa com chocolate tem grandes chances de ganhar seu coração.' },
+
+    { icon: 'bi-bag-fill', texto: 'Pringles, Doritos, Cheetos de requeijão e Fandangos. O verdadeiro kit oficial para aqueles momentos em que bate vontade de um salgadinho.' },
+
+    { icon: 'bi-tree-fill', texto: 'Natureza, mato e bichos. Um lugar tranquilo, longe da bagunça, é onde você parece encontrar paz de verdade.' },
+
+    { icon: 'bi-bag-heart-fill', texto: 'Mas também existe seu lado que ama descobrir lugares novos, passear no shopping, conhecer restaurantes diferentes e transformar qualquer saída em uma lembrança.' },
+
+    { icon: 'bi-airplane-fill', texto: 'Viajar. Eu amo ver o brilho no seu olhar quando você fala sobre conhecer lugares novos, criar histórias e viver experiências diferentes.' },
+
+    { icon: 'bi-gift-fill', texto: 'Seu aniversário é uma data especial de verdade. É o seu dia, e eu sei o quanto isso importa para você, por isso sempre vai ser um dia que merece ser cuidado.' },
+
+    { icon: 'bi-chat-heart-fill', texto: 'No começo você era mais quietinha, mas depois que ganhou confiança mostrou esse seu lado que fala, conta histórias e compartilha tudo. Eu amo ouvir você falando, até quando você nem percebe que está falando demais.' }
 ];
 
 /* ----------------------------------------------------------------------
@@ -706,7 +739,7 @@ const IMPRIMIVEL_ALTURA_PX = 1772;  // 15cm a 300dpi
 const MOMENTO_LENTO_ARQUIVO_BASE = 'momento-camera-lenta';
 const MOMENTO_LENTO_VELOCIDADE = 0.45; // 1 = velocidade normal, quanto menor, mais lento
 const MOMENTO_LENTO_FRASES = [
-    'Esse instante não durou nem três segundos.',
+    'Esse instante nem durou muito.',
     'Mas eu quis guardar ele pra sempre, bem devagar.',
     'Às vezes o amor cabe inteiro num segundo esticado.'
 ];
@@ -722,11 +755,13 @@ const ANIVERSARIO_MES = 8; // agosto
 function textoAniversario() {
     return `Hoje é diferente de todos os outros dias: hoje é o seu dia.
 
-Espero que 8 de agosto sempre te encontre cercada de girassol, do jeitinho que você merece, rodeada de quem te ama de verdade, com a vida te tratando tão bem quanto você trata todo mundo ao redor.
+Espero que todo 8 de agosto te encontre cercada de amor, com aquele sorriso lindo que eu tanto amo e com pessoas que reconhecem a pessoa incrível que você é. Que a vida te devolva em dobro todo o carinho, cuidado e amor que você entrega para o mundo.
 
-Que esse ano novo te traga viagem, foto nova pra guardar, bicho novo pra cuidar, e principalmente muita saúde e paz. E que em algum canto desse ano que começa hoje, a gente colecione mais um punhado de lugares novos, só nossos.
+Que esse novo ciclo venha cheio de momentos que façam seus olhos brilharem: novas viagens, novos lugares para conhecer, novas histórias para guardar, novos bichinhos para amar e muitos motivos para sorrir. Que nunca falte saúde, paz e coragem para correr atrás de tudo aquilo que faz seu coração feliz.
 
-Feliz aniversário, meu amor. Hoje o mundo gira um pouquinho mais em volta de você, e eu não podia estar mais feliz de fazer parte disso.`;
+E eu espero poder estar ao seu lado em todos esses momentos, colecionando memórias, descobrindo lugares novos, vivendo nossas pequenas aventuras e criando uma história que seja só nossa.
+
+Feliz aniversário, meu amor. Hoje o dia é seu, mas eu que ganhei o presente de ter você na minha vida. Te amo ❤️`;
 }
 
 /* Vídeo especial que aparece junto com a mensagem de aniversário, dentro
@@ -760,86 +795,250 @@ const ANIVERSARIO_CHUVA_ITENS = ['❤️', '🎈', '💛', '🎈', '💕', '🎈
    objetos dessa lista.
    ---------------------------------------------------------------------- */
 const ADJETIVOS_PARA_ELA = [
-    { adjetivo: 'Linda', motivo: 'principalmente quando nem percebe que está sendo observada, sem arrumar nada, do jeito mais natural do mundo.' },
-    { adjetivo: 'Inteligente', motivo: 'do jeito que resolve as coisas sem precisar de ajuda de ninguém, mesmo quando finge que precisa só pra me ter por perto.' },
-    { adjetivo: 'Forte', motivo: 'porque mesmo em dia difícil, você segue cuidando de nove bichos, de você mesma e ainda sobra carinho pra mim.' },
-    { adjetivo: 'Engraçada', motivo: 'sem nem tentar. Você me faz rir só de contar como foi seu dia.' },
-    { adjetivo: 'Especial', motivo: 'porque nunca conheci alguém que trata tão bem quem ama e tão bem os bichos que cruzam o seu caminho.' },
-    { adjetivo: 'Magnífica', motivo: 'sim, magnífica mesmo. Existem pessoas boas, e existe você, que é diferente de todas elas.' },
-    { adjetivo: 'Corajosa', motivo: 'porque abriu esse seu silêncio todo pra mim, mesmo sabendo que isso não é fácil pra você.' },
-    { adjetivo: 'Amada', motivo: 'mais do que você imagina, mais do que eu consigo colocar em palavras, todos os dias, sem exceção.' },
+const mensagensTristeza = [
+    {
+        adjetivo: 'Meu girassol 🌻',
+        motivo: 'Porque você tem uma luz que é só sua. Do mesmo jeito que um girassol procura o sol, eu sinto que você sempre procura espalhar amor, cuidado e alegria por onde passa.'
+    },
+    {
+        adjetivo: 'Linda',
+        motivo: 'Não só pela beleza que todo mundo consegue ver, mas principalmente pelo jeito que você é quando ninguém está olhando, sendo você mesma, sem precisar provar nada para ninguém.'
+    },
+    {
+        adjetivo: 'Amada',
+        motivo: 'Se algum dia você esquecer o quanto é importante, lembra disso: existe alguém que agradece a Deus por ter colocado você no caminho dele.'
+    },
+    {
+        adjetivo: 'Forte',
+        motivo: 'Eu vi de perto que você é muito mais forte do que imagina. Mesmo nos dias difíceis, você continua cuidando, amando e tentando fazer o melhor.'
+    },
+    {
+        adjetivo: 'Especial',
+        motivo: 'Porque eu nunca conheci alguém que sente tanto, cuida tanto e ama tanto os animais e as pessoas que fazem parte da sua vida.'
+    },
+    {
+        adjetivo: 'Única',
+        motivo: 'Porque não existe outra Ana Poloni no mundo. O seu jeito de rir, olhar, falar e cuidar é algo que ninguém consegue copiar.'
+    },
+    {
+        adjetivo: 'Minha escolha',
+        motivo: 'Entre tantas pessoas nesse mundo, foi você quem apareceu no meu caminho. E se eu tivesse que escolher novamente, eu escolheria você.'
+    },
+    {
+        adjetivo: 'Encantadora',
+        motivo: 'Porque até nas coisas mais simples você consegue deixar tudo mais bonito. Às vezes você nem percebe, mas eu percebo.'
+    },
+    {
+        adjetivo: 'Carinhosa',
+        motivo: 'No jeito que você cuida dos seus bichinhos, da sua família e das pessoas que ama. Seu coração aparece nos pequenos detalhes.'
+    },
+    {
+        adjetivo: 'Corajosa',
+        motivo: 'Porque você deixou alguém conhecer seu coração, mesmo sendo alguém que demora para criar confiança. Obrigado por ter deixado eu conhecer esse seu lado.'
+    },
+    {
+        adjetivo: 'Meu lugar favorito',
+        motivo: 'Porque eu descobri que meu lugar favorito não é um lugar específico, é qualquer lugar onde eu esteja com você.'
+    },
+    {
+        adjetivo: 'Aventureira',
+        motivo: 'Porque até uma estrada de terra, um carro atolado e um monte de barro viraram uma das lembranças mais engraçadas da nossa história.'
+    },
+    {
+        adjetivo: 'Companheira',
+        motivo: 'Porque você não esteve comigo apenas nos momentos fáceis, você esteve presente quando a vida mostrou que amar também é permanecer.'
+    },
+    {
+        adjetivo: 'Doce',
+        motivo: 'No seu jeito de falar, no seu jeito de olhar e principalmente nesse coração enorme que você tenta esconder às vezes.'
+    },
+    {
+        adjetivo: 'Autêntica',
+        motivo: 'Porque você não precisa ser igual a ninguém. Uma das coisas que eu mais amo é ver você sendo exatamente quem você é.'
+    },
+    {
+        adjetivo: 'Meu sorriso favorito',
+        motivo: 'Porque existe algo no seu sorriso que muda completamente o meu dia, mesmo quando eu estava tendo um dia difícil.'
+    },
+    {
+        adjetivo: 'Amorosa',
+        motivo: 'Porque você ama de verdade. Não pela metade, não só quando é fácil, mas com aquele coração gigante que você tem.'
+    },
+    {
+        adjetivo: 'Preciosa',
+        motivo: 'Porque algumas pessoas passam pela nossa vida, mas poucas deixam uma marca que muda tudo. Você é uma delas.'
+    },
+    {
+        adjetivo: 'Minha paz',
+        motivo: 'Porque no meio da correria da vida, estar com você sempre parece deixar tudo um pouco mais tranquilo.'
+    },
+    {
+        adjetivo: 'Incrível',
+        motivo: 'Não porque você precisa ser perfeita, mas porque você consegue ser exatamente você, e isso já é uma das coisas mais bonitas que existem.'
+    },
+    {
+        adjetivo: 'Brilhante',
+        motivo: 'Porque existe uma luz em você que aparece no jeito que você fala, cuida e ama. Às vezes você nem percebe, mas quem está perto percebe.'
+    },
+    {
+        adjetivo: 'Gentil',
+        motivo: 'Porque mesmo quando ninguém está olhando, você continua escolhendo ser boa com as pessoas e principalmente com os animais.'
+    },
+    {
+        adjetivo: 'Generosa',
+        motivo: 'Porque você sempre encontra um jeito de cuidar, ajudar e entregar carinho para quem faz parte da sua vida.'
+    },
+    {
+        adjetivo: 'Meu porto seguro',
+        motivo: 'Porque perto de você eu sinto que posso ser exatamente quem eu sou, sem precisar fingir nada.'
+    },
+    {
+        adjetivo: 'Sensível',
+        motivo: 'Porque você sente tudo com intensidade, e apesar de às vezes isso machucar, é também uma das coisas mais bonitas em você.'
+    },
+    {
+        adjetivo: 'Observadora',
+        motivo: 'Porque você percebe detalhes que muitas pessoas deixam passar, e isso mostra o tamanho do seu coração.'
+    },
+    {
+        adjetivo: 'Cuidadosa',
+        motivo: 'Porque o amor aparece nos pequenos detalhes, e você demonstra isso todos os dias.'
+    },
+    {
+        adjetivo: 'Meu presente',
+        motivo: 'Porque eu ainda acho incrível que, em meio a tantas pessoas, foi você quem apareceu na minha vida.'
+    },
+    {
+        adjetivo: 'Extraordinária',
+        motivo: 'Porque comum nunca foi uma palavra que combinou com você. Desde o começo eu percebi que tinha algo diferente aí.'
+    },
+    {
+        adjetivo: 'Rara',
+        motivo: 'Porque pessoas com um coração como o seu não aparecem todos os dias.'
+    },
+    {
+        adjetivo: 'Minha alegria',
+        motivo: 'Porque até os dias mais comuns ficam melhores quando têm um pouco de você.'
+    },
+    {
+        adjetivo: 'A pessoa certa',
+        motivo: 'Porque algumas pessoas chegam e parecem encaixar em lugares da nossa vida que nem sabíamos que estavam vazios.'
+    },
+    {
+        adjetivo: 'Minha calmaria',
+        motivo: 'Porque seu abraço, sua presença e seu jeito têm uma forma de deixar tudo mais leve.'
+    },
+    {
+        adjetivo: 'Especial demais',
+        motivo: 'Porque você consegue amar coisas que muita gente esquece, como os animais, pequenos momentos e pessoas importantes.'
+    },
+    {
+        adjetivo: 'Encantadora',
+        motivo: 'Porque até quando você está brava, com sono ou distraída, ainda existe algo em você que me encanta.'
+    },
+    {
+        adjetivo: 'Minha lembrança favorita',
+        motivo: 'Porque eu tenho muitos momentos bons na vida, mas vários dos meus favoritos agora têm você neles.'
+    },
+    {
+        adjetivo: 'Linda por dentro',
+        motivo: 'Porque sua beleza mais bonita não é a que aparece no espelho, é a que aparece nas suas atitudes.'
+    },
+    {
+        adjetivo: 'Minha companheira de aventuras',
+        motivo: 'Porque até um carro atolado na lama virou uma lembrança que eu guardo com carinho, simplesmente porque era com você.'
+    },
+    {
+        adjetivo: 'Corajosa demais',
+        motivo: 'Porque amar, confiar e deixar alguém conhecer seu coração também exige coragem.'
+    },
+    {
+        adjetivo: 'Minha melhor coincidência',
+        motivo: 'Porque tudo começou de um jeito tão inesperado, e hoje eu não consigo imaginar minha história sem você.'
+    },
+    {
+        adjetivo: 'Minha oração respondida',
+        motivo: 'Porque eu acredito que Deus escreve histórias que a gente não entende no começo, mas agradece depois.'
+    },
+    {
+        adjetivo: 'Minha inspiração',
+        motivo: 'Porque ver a forma como você luta, ama e cuida me faz querer ser uma pessoa melhor.'
+    },
+    {
+        adjetivo: 'Cheia de amor',
+        motivo: 'Porque até quando você fala dos seus bichinhos, dá para perceber o tamanho do coração que você tem.'
+    },
+    {
+        adjetivo: 'Minha casa',
+        motivo: 'Porque algumas pessoas fazem a gente sentir que chegou em um lugar seguro, e você é uma delas.'
+    },
+    {
+        adjetivo: 'Linda até distraída',
+        motivo: 'Porque muitas vezes você nem percebe que está sendo observada, mas eu percebo todos os detalhes.'
+    },
+    {
+        adjetivo: 'Minha escolha diária',
+        motivo: 'Porque amar você não é só sobre um momento bonito, é sobre escolher você todos os dias.'
+    },
+    {
+        adjetivo: 'Meu motivo de sorrir',
+        motivo: 'Porque existem sorrisos que aparecem sem esforço, e muitos dos meus têm você como motivo.'
+    },
+    {
+        adjetivo: 'Minha pessoa favorita',
+        motivo: 'Porque entre tantas conversas, lugares e pessoas, ainda é com você que eu mais gosto de dividir meus momentos.'
+    },
+    {
+        adjetivo: 'A menina do cabelo loiro',
+        motivo: 'Porque tudo começou com uma frase simples para a Vitória: "sua amiga de cabelo loiro é muito linda". Eu não fazia ideia de onde aquilo ia chegar.'
+    },
+    {
+        adjetivo: 'Minha história favorita',
+        motivo: 'Porque nossa história ainda está no começo, mas já tem capítulos que eu nunca vou esquecer.'
+    },
+    {
+        adjetivo: 'Meu futuro',
+        motivo: 'Porque quando penso nos próximos anos, nos sonhos e nos planos, é impossível não imaginar você comigo.'
+    },
+    {
+        adjetivo: 'Minha certeza',
+        motivo: 'Porque mesmo sem saber tudo que o futuro guarda, uma coisa eu sei: sou muito feliz por ter encontrado você.'
+    },
+    // Mensagens especiais para dias difíceis
 
-    // A partir daqui, uma lista bem grande de adjetivos (pelo menos 50
-    // novos, item do prompt de melhorias), cada um com uma frasezinha
-    // própria embaixo, no mesmo espírito dos 8 primeiros.
-    { adjetivo: 'Incrível', motivo: 'de um jeito que eu nem sei explicar direito, só sei que é verdade.' },
-    { adjetivo: 'Doce', motivo: 'no jeito de falar, no jeito de cuidar, em quase tudo que você faz.' },
-    { adjetivo: 'Carinhosa', motivo: 'com todo mundo ao seu redor, principalmente com quem você ama.' },
-    { adjetivo: 'Gentil', motivo: 'mesmo com quem não merece tanto assim.' },
-    { adjetivo: 'Generosa', motivo: 'sempre pronta a dividir o que tem, mesmo quando é pouco.' },
-    { adjetivo: 'Leal', motivo: 'até o fim, com quem conquista essa lealdade.' },
-    { adjetivo: 'Sincera', motivo: 'até quando dói, porque prefere a verdade a qualquer mentira bonita.' },
-    { adjetivo: 'Autêntica', motivo: 'você é você mesma, sem se render a moldes de ninguém.' },
-    { adjetivo: 'Alegre', motivo: 'mesmo nos dias em que teria todo motivo pra não ser.' },
-    { adjetivo: 'Divertida', motivo: 'do jeito mais inesperado, bem na hora que eu menos espero.' },
-    { adjetivo: 'Espontânea', motivo: 'nas suas reações mais sinceras, sem filtro nenhum.' },
-    { adjetivo: 'Cativante', motivo: 'sem nem precisar tentar, as pessoas simplesmente gostam de você.' },
-    { adjetivo: 'Encantadora', motivo: 'de um jeito que ninguém explica direito, só sente.' },
-    { adjetivo: 'Radiante', motivo: 'principalmente quando está feliz de verdade, e isso contagia.' },
-    { adjetivo: 'Luminosa', motivo: 'você ilumina qualquer ambiente que entra, sem nem perceber.' },
-    { adjetivo: 'Serena', motivo: 'mesmo quando tudo ao redor é caos.' },
-    { adjetivo: 'Calma', motivo: 'você tem um jeito de acalmar o que está tenso, inclusive eu.' },
-    { adjetivo: 'Paciente', motivo: 'até comigo, principalmente comigo.' },
-    { adjetivo: 'Dedicada', motivo: 'em tudo que se propõe a fazer, sem meio-termo.' },
-    { adjetivo: 'Batalhadora', motivo: 'lutando pelo que quer, do seu jeito, sem desistir.' },
-    { adjetivo: 'Determinada', motivo: 'quando decide alguma coisa, ninguém segura.' },
-    { adjetivo: 'Persistente', motivo: 'insiste até dar certo, e quase sempre dá.' },
-    { adjetivo: 'Guerreira', motivo: 'já passou por muita coisa e continua de pé.' },
-    { adjetivo: 'Resiliente', motivo: 'levanta de qualquer queda, sempre mais forte.' },
-    { adjetivo: 'Confiante', motivo: 'no seu próprio jeito, mesmo quando ninguém mais acredita.' },
-    { adjetivo: 'Segura', motivo: 'de quem você é, o que é raro de ver.' },
-    { adjetivo: 'Sensível', motivo: 'sente tudo intensamente, e isso é bonito de ver.' },
-    { adjetivo: 'Empática', motivo: 'se coloca no lugar do outro antes de julgar.' },
-    { adjetivo: 'Compreensiva', motivo: 'mesmo quando eu erro, você entende antes de cobrar.' },
-    { adjetivo: 'Acolhedora', motivo: 'quem chega perto de você se sente em casa.' },
-    { adjetivo: 'Protetora', motivo: 'com quem você ama, sem pensar duas vezes.' },
-    { adjetivo: 'Cuidadosa', motivo: 'em cada detalhe, com cada pessoa, com cada bicho.' },
-    { adjetivo: 'Atenciosa', motivo: 'percebe as coisas que ninguém mais percebe.' },
-    { adjetivo: 'Companheira', motivo: 'nos dias bons e, principalmente, nos ruins.' },
-    { adjetivo: 'Parceira', motivo: 'de verdade, dessas que ficam.' },
-    { adjetivo: 'Presente', motivo: 'mesmo quando a vida tá corrida, você sempre acha um jeito.' },
-    { adjetivo: 'Sonhadora', motivo: 'com planos e vontades que eu adoro ouvir você contar.' },
-    { adjetivo: 'Curiosa', motivo: 'sempre querendo aprender e entender mais sobre tudo.' },
-    { adjetivo: 'Aventureira', motivo: 'topa qualquer plano do nada, sem pensar duas vezes.' },
-    { adjetivo: 'Livre', motivo: 'do jeito que só quem não precisa provar nada pra ninguém consegue ser.' },
-    { adjetivo: 'Leve', motivo: 'você tem um jeito de deixar tudo mais fácil de carregar.' },
-    { adjetivo: 'Delicada', motivo: 'no trato, mesmo sendo forte por dentro.' },
-    { adjetivo: 'Meiga', motivo: 'de um jeito que desarma qualquer um.' },
-    { adjetivo: 'Fofa', motivo: 'sem nem perceber, principalmente quando fica com sono.' },
-    { adjetivo: 'Charmosa', motivo: 'nem precisa se esforçar pra isso.' },
-    { adjetivo: 'Elegante', motivo: 'no jeito de ser, não só no de se vestir.' },
-    { adjetivo: 'Única', motivo: 'não existe ninguém parecido com você, e olha que eu já reparei.' },
-    { adjetivo: 'Rara', motivo: 'gente boa desse jeito não se encontra todo dia.' },
-    { adjetivo: 'Preciosa', motivo: 'pra mim, e pra quem mais tem a sorte de te conhecer.' },
-    { adjetivo: 'Valiosa', motivo: 'muito mais do que qualquer coisa que se possa comprar.' },
-    { adjetivo: 'Verdadeira', motivo: 'em tudo que fala e em tudo que sente.' },
-    { adjetivo: 'Justa', motivo: 'mesmo quando seria bem mais fácil não ser.' },
-    { adjetivo: 'Humilde', motivo: 'apesar de ter todo motivo pra não ser.' },
-    { adjetivo: 'Grata', motivo: 'por coisas pequenas que a maioria nem repara.' },
-    { adjetivo: 'Otimista', motivo: 'mesmo quando o dia começa torto.' },
-    { adjetivo: 'Positiva', motivo: 'sua energia muda o ambiente inteiro.' },
-    { adjetivo: 'Animada', motivo: 'contagia todo mundo ao redor, inclusive eu.' },
-    { adjetivo: 'Espirituosa', motivo: 'sempre com uma resposta na ponta da língua.' },
-    { adjetivo: 'Esperta', motivo: 'enxerga o que os outros deixam passar.' },
-    { adjetivo: 'Sábia', motivo: 'você entende de gente e de vida de um jeito que impressiona.' },
-    { adjetivo: 'Observadora', motivo: 'repara em detalhes que eu nem imaginava que existiam.' },
-    { adjetivo: 'Criativa', motivo: 'sempre com uma ideia diferente pra tudo.' },
-    { adjetivo: 'Talentosa', motivo: 'em mais coisas do que você mesma acredita.' },
-    { adjetivo: 'Capaz', motivo: 'de fazer tudo que decide fazer, sem exceção.' },
-    { adjetivo: 'Admirável', motivo: 'do jeito que encara a vida, sempre de cabeça erguida.' },
-    { adjetivo: 'Inspiradora', motivo: 'só de ver você lutando pelo que quer, já dá vontade de fazer o mesmo.' },
-    { adjetivo: 'Marcante', motivo: 'quem te conhece não esquece de você fácil.' },
-    { adjetivo: 'Inesquecível', motivo: 'do primeiro encontro até hoje, e vai continuar sendo.' }
+    {
+        adjetivo: 'Um lembrete ❤️',
+        motivo: 'A menina que eu vi andando com a Vitória na faculdade nem imaginava que um dia seria a pessoa mais importante da minha vida.'
+    },
+    {
+        adjetivo: 'Respira 🌻',
+        motivo: 'Nem todo dia vai ser fácil, mas lembra que nenhum dia difícil muda o quanto você é incrível.'
+    },
+    {
+        adjetivo: 'Nunca esqueça',
+        motivo: 'Você é muito mais do que seus dias ruins, seus erros ou suas preocupações. Você é alguém que merece todo amor do mundo.'
+    },
+    {
+        adjetivo: 'Para quando sentir saudade',
+        motivo: 'Lembra do nosso começo, das caronas, das risadas e de como uma história tão bonita começou de um jeito tão simples.'
+    },
+    {
+        adjetivo: 'Minha sorte 🍀',
+        motivo: 'Até hoje eu acho incrível pensar que, entre tantas pessoas no mundo, Deus colocou justamente você no meu caminho.'
+    },
+    {
+        adjetivo: 'Meu amor',
+        motivo: 'Se esse dia estiver difícil, lembra que existe alguém aqui que ama seu sorriso, seu olhar, seu jeito e tudo aquilo que faz você ser você.'
+    },
+    {
+        adjetivo: 'Para sempre',
+        motivo: 'Porque eu não quero apenas viver momentos bonitos com você, eu quero construir uma história inteira ao seu lado.'
+    },
+    {
+        adjetivo: 'Minha pessoa favorita',
+        motivo: 'Porque conversar com você, rir com você e simplesmente estar perto de você são algumas das minhas coisas favoritas.'
+    }
+];
 ];
 
 /* ----------------------------------------------------------------------
@@ -866,32 +1065,38 @@ const IDS_TODOS_OS_EASTER_EGGS = [
 
 const LOJA_EASTER_EGGS = {
     imagemPrincipalProduto: {
-        titulo: 'Achou 👀',
-        texto: `Já que você reparou tanto nessa foto, deixa eu confessar uma coisa: essa aliança não é de mentirinha. Ela é de verdade, e já foi escolhida. Só falta chegar até você.`
+        titulo: 'Então você percebeu 👀',
+        texto: `Eu sabia que essa foto ia chamar sua atenção. Engraçado pensar que, enquanto você estava olhando uma aliança em uma loja que nem existe, eu já estava olhando para uma aliança que existe de verdade e imaginando o momento em que ela chegaria até você.`
     },
+
     reviewGabrielClicavel: {
-        titulo: 'Sobre o "Gabriel P." aqui de cima',
-        texto: `Pois é, sou eu mesmo, deixando review antes até de fazer o pedido de verdade. Se essa review de 5 estrelas já falava sério sobre uma aliança que ainda nem tinha chegado, imagina o quanto eu falo sério sobre você.`
+        titulo: 'Sobre esse tal Gabriel S.',
+        texto: `Sim, sou eu mesmo. Talvez seja a primeira vez na história que alguém deixa uma avaliação da própria compra antes mesmo dela acontecer, viu, sou diferenciado minha loba kkkkkk`
     },
+
     lojaLogoClicavel: {
-        titulo: 'A Aryah nem existe',
-        texto: `Confesso: essa loja inteira é de mentira, criada só pra te trazer até aqui sem estragar a surpresa. A única coisa 100% real nessa história toda é o quanto eu te amo.`
+        titulo: 'A Aryah guarda um segredo',
+        texto: `Acho que ja deu pra entender que é tudo falso né? kkkkkk, mas essa loja nunca existiu de verdade. Cada detalhe dela foi criado só para te trazer até esse momento. A loja é falsa, as joias são uma história, mas a pessoa que pensou em tudo isso e o sentimento por trás dela são completamente reais.`
     },
+
     destaquePrataCard: {
-        titulo: 'Prata 950, é?',
-        texto: `A prata é só enfeite dessa história. O que vale mesmo aqui não se mede em gramas nem em pureza de metal, é o que eu sinto por você, e isso não tem tabela de preço.`
+        titulo: 'Prata 950? Interessante...',
+        texto: `No fim, nenhum número gravado em uma joia conseguiria explicar o valor desse dia. Porque algumas coisas não têm medida: o primeiro olhar, as risadas, as conversas no carro e tudo que fez você se tornar tão importante para mim.`
     },
+
     pulseiraEsgrifaCard: {
-        titulo: 'Reparou na pulseira?',
-        texto: `Essa aqui nem é bem o presente. O presente de verdade tá esperando você lá no final dessa história toda.`
+        titulo: 'Você reparou nisso também?',
+        texto: `Você sempre foi boa em perceber detalhes, talvez seja por isso que percebeu essa também, um dia te dou uma pulseira assim kkkk`
     },
+
     instagramIconeClicavel: {
-        titulo: 'Achou o Instagram falso',
-        texto: `Relaxa, ninguém vai te seguir de volta por aqui. Esse ícone só existe pra loja parecer de verdade. O que é de verdade mesmo é a gente.`
+        titulo: 'Um Instagram meio suspeito 📱',
+        texto: `Infelizmente esse perfil não vai render nenhum seguidor novo. Ele só existe para deixar essa loja convincente. Mas pensando bem, o Instagram real já fez algo muito mais importante: foi onde uma conversa começou e onde uma história nasceu.`
     },
+
     garantiaVitaliciaClicavel: {
-        titulo: 'Garantia vitalícia, hein?',
-        texto: `Essa palavra aí não é só marketing de loja não. É bem literal: o que eu sinto por você vem com garantia vitalícia mesmo, sem letrinha miúda escondendo nada.`
+        titulo: 'Garantia vitalícia?',
+        texto: `Essa talvez seja a única garantia dessa loja que é verdadeira. Não porque o amor seja perfeito todos os dias, mas porque eu quero continuar escolhendo você em cada fase, em cada capítulo e em cada versão da nossa história.`
     }
 };
 
@@ -954,12 +1159,102 @@ async function resolverAudioPorBase(arquivoBase) {
      (usado no card de próximo destino, mas pode usar em qualquer outro)
    ---------------------------------------------------------------------- */
 const MAPA_LUGARES = [
-    { nome: 'Colina', cidade: 'Orlândia', texto: 'Onde tudo começou de verdade, no nosso primeiro encontro.', icon: 'bi-cup-hot-fill', foto: 'mapa_colina' },
-    { nome: 'Santa Rosa de Viterbo', cidade: 'Casa dos meus avós', texto: 'Onde te apresentei pra minha família.', icon: 'bi-house-heart-fill', foto: 'mapa_santa_rosa' },
-    { nome: 'Parque Curupira', cidade: 'Ribeirão Preto', texto: 'Um passeio tranquilo, só a gente, sem pressa nenhuma.', icon: 'bi-tree-fill', foto: 'mapa_curupira' },
-    { nome: 'Um balanço', cidade: 'Sales de Oliveira', texto: 'Onde a gente sentou no fim daquele dia e o tempo pareceu parar um pouco.', icon: 'bi-flower1', foto: 'mapa_balanco' },
-    { nome: 'Nuporanga', cidade: 'Onde acabei conhecendo seu tio e sua tia', texto: 'Um dia que era só de passagem e virou mais um lugar nosso.', icon: 'bi-signpost-2-fill', foto: 'mapa_nuporanga' },
-    { nome: 'Próximo destino', cidade: 'A definir, com você', texto: 'Ainda temos o mundo inteiro pra conhecer juntos.', icon: 'bi-airplane-fill', futuro: true, foto: 'mapa_proximo' }
+    {
+        nome: 'Faculdade UNIP',
+        cidade: 'Ribeirão Preto',
+        texto: 'O lugar onde tudo começou sem a gente imaginar. Primeiro um olhar, depois uma carona com a Vitória, algumas conversas e uma história que estava só esperando começar.',
+        icon: 'bi-mortarboard-fill',
+        foto: 'mapa_unip'
+    },
+
+    {
+        nome: 'As primeiras caronas',
+        cidade: 'Caminho da faculdade',
+        texto: 'Onde começaram nossas primeiras conversas. Teve power bank "esquecido", mensagens no Instagram e aquela tentativa minha de arrumar qualquer desculpa para falar com você.',
+        icon: 'bi-car-front-fill',
+        foto: 'mapa_caronas'
+    },
+
+    {
+        nome: 'Colina',
+        cidade: 'Orlândia',
+        texto: 'O nosso primeiro encontro de verdade. Aquele dia que começou com uma espera de quase uma hora e meia, terminou com conversas no carro, risadas e o beijo que mudou tudo.',
+        icon: 'bi-heart-fill',
+        foto: 'mapa_colina'
+    },
+
+    {
+        nome: 'Brooks',
+        cidade: 'Orlândia',
+        texto: 'O lugar onde uma conversa no carro virou um dos momentos mais importantes da nossa história. Foi ali que saiu o primeiro "eu te amo" e que o nosso amor ganhou nome.',
+        icon: 'bi-chat-heart-fill',
+        foto: 'mapa_brooks'
+    },
+
+    {
+        nome: 'A estrada de terra',
+        cidade: 'Nosso pequeno caos',
+        texto: 'O dia em que o carro resolveu parar no pior lugar possível, eu saí cheio de barro e perdi até o triângulo tentando resolver tudo. No fim, virou uma das lembranças que eu mais gosto, porque era com você.',
+        icon: 'bi-signpost-fill',
+        foto: 'mapa_estrada'
+    },
+
+    {
+        nome: 'Nuporanga',
+        cidade: 'FearteM',
+        texto: 'Era só uma parada rápida para pegar uma blusa antes de irmos para a feira, mas acabou virando mais uma história nossa. Você precisou usar o banheiro, ficou com vergonha da minha casa e, no fim, acabamos conhecendo seu tio e sua tia de um jeito totalmente inesperado.',
+        icon: 'bi-shop',
+        foto: 'mapa_nuporanga'
+    },
+
+    {
+        nome: 'Santa Rosa de Viterbo',
+        cidade: 'Casa dos meus avós',
+        texto: 'O dia em que você conheceu uma parte importante da minha história. Te apresentei para meus avós e guardei comigo a felicidade de ver você fazendo parte da minha vida.',
+        icon: 'bi-house-heart-fill',
+        foto: 'mapa_santa_rosa'
+    },
+
+    {
+        nome: 'Parque Curupira',
+        cidade: 'Ribeirão Preto',
+        texto: 'Um daqueles momentos simples que ficam especiais. Um passeio tranquilo, nós dois, sem pressa, apenas aproveitando estar juntos.',
+        icon: 'bi-tree-fill',
+        foto: 'mapa_curupira'
+    },
+
+    {
+        nome: 'O balanço',
+        cidade: 'Sales de Oliveira',
+        texto: 'Aquele fim de dia que parecia cena de filme. Sentados juntos, conversando, e com você talvez imaginando que aquele seria o momento do pedido. Eu também queria, mas as alianças ainda não tinham chegado.',
+        icon: 'bi-flower1',
+        foto: 'mapa_balanco'
+    },
+
+    {
+        nome: 'Minha casa',
+        cidade: 'Um lugar que agora também é seu',
+        texto: 'O dia em que você conheceu minha casa de verdade. Um momento simples, mas importante, porque aos poucos nossas vidas começaram a se misturar.',
+        icon: 'bi-house-fill',
+        foto: 'mapa_minha_casa'
+    },
+
+    {
+        nome: 'A família',
+        cidade: 'Casa do seu tio',
+        texto: 'Dessa vez sem surpresa no caminho. Conheci sua prima, sua avó e consegui conversar melhor com sua mãe. Foi o momento certo, do jeito que deveria ser.',
+        icon: 'bi-people-fill',
+        foto: 'mapa_familia'
+    },
+
+    {
+        nome: 'Próximo destino',
+        cidade: 'Onde a vida levar a gente',
+        texto: 'Ainda existem muitos lugares esperando por nós. Inclusive aquele que eu falei desde o começo: a praia, com você do meu lado, pé na areia e mais histórias para guardar.',
+        icon: 'bi-airplane-fill',
+        futuro: true,
+        foto: 'mapa_proximo'
+    }
 ];
 
 /* ----------------------------------------------------------------------
@@ -1176,7 +1471,7 @@ const CHECKLIST_ENCONTROS = [
    e paraCodigoMorse() em js/utils.js). De propósito SEM botão de
    tradução — a graça é ela mesma decifrar o código.
    ---------------------------------------------------------------------- */
-const MENSAGEM_SECRETA_LUA = 'EU AMO MUITO VOCE ANA JULIA POLONI';
+const MENSAGEM_SECRETA_LUA = 'TALVEZ ESSE CÓDIGO TE AJUDE EM ALGO: K4QWZ';
 
 const SENHA_AREA_MEMORIAS = '1406';
 
@@ -1209,11 +1504,19 @@ const SENHA_RESET_SITE = '13046700';
    TEXTOS-CHAVE (fáceis de localizar e editar)
    ---------------------------------------------------------------------- */
 const TEXTOS = {
-    heroTituloRomance: 'Nossa Trajetória',
-    heroSubRomance: `tudo que você acabou de passar foi só uma desculpa boba pra te trazer até aqui. Não tinha aliança nenhuma chegando pelo correio, a única coisa que eu realmente queria entregar era isso: tudo que a gente construiu até hoje, contado do meu jeito, sem enfeite.`,
+    heroTituloRomance: 'Nós',
+    heroSubRomance: `Tudo isso que você acabou de viver foi a minha forma de te trazer até aqui, mas a verdade é que nunca foi sobre uma loja, uma compra ou uma aliança chegando pelo correio. Era sobre chegar nesse momento.
+
+Hoje eu tenho a felicidade de olhar para você e poder dizer oficialmente: você é minha namorada. A pessoa que começou como uma menina que eu vi andando pela faculdade e que, sem perceber, virou a pessoa mais importante da minha vida.
+
+Eu estou muito feliz por tudo que construímos até aqui, por cada conversa, cada risada, cada momento simples que virou uma lembrança enorme. Cada detalhe dessa história me trouxe até esse instante.
+
+E se hoje eu tenho a certeza de uma coisa, é que esse é só o começo. Porque enquanto eu seguro sua mão como seu namorado, eu já imagino todos os capítulos que ainda vamos escrever juntos, e quem sabe, quando menos esperarmos, eu vou estar segurando sua mão como seu marido.
+
+Obrigado por ser você, por ter deixado eu entrar na sua vida e por transformar meus dias em algo muito melhor. ❤️`,
     encerramentoRomance: `obrigado por topar essa vida comigo, dia após dia, tipo "Amo Noite e Dia", sem exagero nenhum. Isso aqui é só um jeito diferente de dizer o que eu já sinto todos os dias: eu escolho você.`,
-    digitacaoSuspense: `Cada uma dessas fotos guarda um pedaço da gente. E o pedido que você acabou de "fazer" também guarda um segredo...`,
+    digitacaoSuspense: `Cada uma dessas fotos guarda um pedaço da gente. Mas... ainda falta alguma coisa.`,
     assinaturaCartaFinal: `Assim eu quero te amar, ${NOME_DELA}, pra sempre com você.`,
     polaroidFrasePadrao: `O dia em que tudo começou, ${NOME_DELA}.`,
-    brigamosMensagemFofa: `Que bom que não. Deixa essa carta guardadinha aí, pro dia em que a gente realmente precisar dela. Até lá, só saiba de uma coisa: eu te amo.`
+    brigamosMensagemFofa: `Que bom que não sua curiosa. Deixa essa carta guardadinha aí, pro dia em que a gente realmente precisar dela. Até lá, só saiba de uma coisa: eu te amo.`
 };
