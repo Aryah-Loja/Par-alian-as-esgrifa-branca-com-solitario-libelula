@@ -704,37 +704,35 @@ return `28 de julho de 2026.
 
 Oi, meu amor.
 
-Se você está lendo esta carta comigo agora, significa que ela ficou guardada durante um ano inteiro. Neste momento em que escrevo, ainda é dia 28 de julho de 2026 e eu nem sequer fiz o pedido de namoro. Faltam apenas alguns dias e, para falar a verdade, estou com aquele frio na barriga que aparece quando a gente sabe que está prestes a viver um dos momentos mais importantes da vida.
+Se você está lendo esta carta comigo agora, significa que ela ficou guardada durante um ano inteiro. Neste momento em que escrevo, ainda é dia 28 de julho de 2026 e eu nem sequer fiz o pedido de namoro, faltam apenas alguns dias e, para falar a verdade, estou com aquele frio na barriga, bem parecido com o que senti a primeira vez que te vi... E pensando agora, é engraçado escrever para um futuro que eu ainda não conheço.
 
-É engraçado escrever para um futuro que eu ainda não conheço.
+Enquanto você lê estas palavras, nós já sabemos como essa história continuou, mas eu... ainda não. Neste instante eu só consigo imaginar, mas tenho certeza que somos muito felizes.
 
-Enquanto você lê estas palavras, nós já sabemos como essa história continuou. Mas eu... ainda não. Neste instante eu só consigo imaginar.
-
-Eu ainda não sei onde vou fazer o pedido. Tenho algumas ideias na cabeça, mas nenhuma decisão tomada. Também não sei se o site que passei tanto tempo criando vai funcionar exatamente como planejei ou se ele vai decidir travar justamente na hora mais importante. Não sei se você vai seguir cada etapa do roteiro que preparei com tanto carinho ou se vai simplesmente pular tudo porque a curiosidade falou mais alto. Muito menos sei qual vai ser a sua reação quando chegar ao final.
+Eu ainda não sei onde vou fazer o pedido, tenho algumas ideias na cabeça, mas nenhuma decisão tomada, talvez brooks? Talvez em Ribeirão? Talvez numa praça aleatória de Sales, também não sei se o site que passei tanto tempo criando vai funcionar exatamente como planejei ou se ele vai decidir travar justamente na hora mais importante. Não sei se você vai seguir cada etapa do roteiro ou se vai simplesmente pular tudo porque a curiosidade falou mais alto. Muito menos sei qual vai ser a sua reação quando chegar ao final.
 
 O que eu sei é que, desde que comecei a preparar tudo isso, cada detalhe tem um único propósito: fazer você se sentir tão amada quanto eu me sinto feliz por ter você na minha vida.
 
-Neste exato momento, você provavelmente nem imagina que existe uma carta escrita para ser aberta daqui a um ano. Talvez esteja vivendo um dia completamente normal, enquanto eu estou aqui pensando em mil possibilidades, imaginando como vai ser olhar nos seus olhos e fazer a pergunta que pode mudar completamente a nossa história.
+Neste exato momento, você provavelmente nem imagina que existe uma carta escrita para ser aberta daqui a um ano, provavelmente está vivendo um dia completamente normal, enquanto eu estou aqui, sentado no meu trabalho pensando em mil possibilidades, imaginando como vai ser olhar nos seus olhos e entregar a aliança que mudar completamente a nossa história.
 
 Confesso que estou ansioso.
 
-Ansioso para ver o seu sorriso quando perceber o que está acontecendo. Ansioso para saber se você vai rir, chorar ou fazer os dois ao mesmo tempo. Ansioso para descobrir se vou conseguir dizer tudo o que ensaiei ou se, quando chegar a hora, vou esquecer completamente as palavras e deixar que o coração fale por mim.
+Ansioso para ver o seu sorriso quando perceber o que está acontecendo, ansioso para saber se você vai rir, chorar ou fazer os dois ao mesmo tempo, ansioso para descobrir se vou conseguir dizer tudo o que ensaiei ou se, quando chegar a hora, vou esquecer completamente as palavras.
 
-Mas existe uma coisa da qual eu tenho absoluta certeza, mesmo antes de qualquer resposta.
+Mas existe uma coisa da qual eu tenho absoluta certeza, mesmo antes de qualquer coisa, eu te amo com todo o meu coração.
 
-Eu te amo com todo o meu coração.
-
-Se tudo aconteceu como eu sonhei, então você disse "sim". E, sinceramente, acho que essa é a parte mais bonita desta carta. Porque quem está escrevendo ainda não sabe o final da história, mas quem está lendo já sabe.
+Se tudo ocorreu bem, hoje faz exatamente 1 ano do seu "sim". E, sinceramente, acho que essa é a parte mais bonita desta carta, porque eu que estou escrevendo ainda não sei tudo que aconteceu, mas você que está lendo agora já sabe, doidera.
 
 Agora que estamos aqui, um ano depois, significa que o tempo fez o que ele sempre faz: passou. E eu espero, de verdade, que ele tenha sido gentil com a gente.
 
-Quando escrevi estas palavras, eu ainda não sabia como seria o nosso amanhã. Não sabia quantas histórias viveríamos depois daquele dia, nem quantas vezes ainda iríamos rir, viajar, discutir por bobagens e fazer as pazes. Não sabia quais sonhos realizaríamos, nem quantas memórias construiríamos juntos. A única certeza que eu tinha era uma: eu queria viver tudo isso ao seu lado.
+Quando escrevi estas palavras, eu ainda não sabia como seria o nosso amanhã, não sabia quantas histórias viveríamos depois daquele dia, nem quantas vezes ainda iríamos rir, viajar, discutir por bobagens e fazer as pazes, não sabia quais sonhos realizaríamos, nem quantas memórias construiríamos juntos. A única certeza que eu tinha era uma: eu queria viver tudo isso ao seu lado.
 
 Não sei explicar exatamente o que você fez comigo. Só sei que, antes de você, meus dias tinham uma forma... e depois de você essa forma mudou, quase sem que eu percebesse. Você trouxe leveza para partes da minha vida que eu nem sabia que estavam pesadas. Trouxe paz. Trouxe risadas sinceras. Trouxe aquele seu jeito único de olhar para mim, de cuidar de quem ama e de transformar momentos simples em lembranças que eu quero guardar para sempre.
 
 Um ano parece pouco perto do tamanho do que eu sinto, mas foi tempo suficiente para eu ter certeza de uma coisa: não existe versão de mim que não escolheria você de novo, sabendo de tudo o que viveríamos, dos dias fáceis e dos difíceis. Se eu pudesse voltar para os próximos dias, sentindo novamente toda essa ansiedade que estou vivendo agora, eu faria exatamente tudo outra vez.
 
-E sim... continua tal qual o Chaves ama sanduíche de presunto. Isso, com certeza, nunca vai mudar. Com tudo o que eu sou, Gabriel`;
+E sim... continua tal qual o Chaves ama sanduíche de presunto. Isso, com certeza, nunca vai mudar. 
+
+Do seu amor, Gabriel`;
 }
 
 /* ID do vídeo do YouTube com a mensagem em vídeo pra cápsula do tempo (o
