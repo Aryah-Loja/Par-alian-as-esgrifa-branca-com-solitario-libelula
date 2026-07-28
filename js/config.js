@@ -1643,7 +1643,7 @@ E se hoje eu tenho a certeza de uma coisa, é que esse é só o começo, porque 
 Obrigado por ser você, por ter deixado eu entrar na sua vida e por transformar meus dias em algo muito melhor. ❤️`,
     encerramentoRomance: `obrigado por topar essa vida comigo, dia após dia, tipo "Amo Noite e Dia", sem exagero nenhum. Isso aqui é só um jeito diferente de dizer o que eu já sinto todos os dias: eu escolho você.`,
     digitacaoSuspense: `Cada uma dessas fotos guarda um pedaço da gente. Mas... ainda falta alguma coisa.`,
-    assinaturaCartaFinal: `Assim eu quero te amar, ${NOME_DELA}, pra sempre com você.`,
-    polaroidFrasePadrao: `O dia em que tudo começou, ${NOME_DELA}.`,
+    assinaturaCartaFinal: `Com muito amor para Ana Júlia Poloni.`,
+    polaroidFrasePadrao: `O dia em que tudo começou.`,
     brigamosMensagemFofa: `Que bom que não sua curiosa. Deixa essa carta guardadinha aí, pro dia em que a gente realmente precisar dela. Até lá, só saiba de uma coisa: eu te amo.`
 };
