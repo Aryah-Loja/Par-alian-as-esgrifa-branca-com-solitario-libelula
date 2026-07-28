@@ -795,7 +795,6 @@ const ANIVERSARIO_CHUVA_ITENS = ['❤️', '🎈', '💛', '🎈', '💕', '🎈
    objetos dessa lista.
    ---------------------------------------------------------------------- */
 const ADJETIVOS_PARA_ELA = [
-const mensagensTristeza = [
     {
         adjetivo: 'Meu girassol 🌻',
         motivo: 'Porque você tem uma luz que é só sua. Do mesmo jeito que um girassol procura o sol, eu sinto que você sempre procura espalhar amor, cuidado e alegria por onde passa.'
