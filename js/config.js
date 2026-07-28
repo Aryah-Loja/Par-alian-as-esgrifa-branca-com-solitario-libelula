@@ -1038,7 +1038,6 @@ const ADJETIVOS_PARA_ELA = [
         motivo: 'Porque conversar com você, rir com você e simplesmente estar perto de você são algumas das minhas coisas favoritas.'
     }
 ];
-];
 
 /* ----------------------------------------------------------------------
    EASTER EGGS DA LOJA — 5 toques no mesmo elemento revelam uma mensagem
