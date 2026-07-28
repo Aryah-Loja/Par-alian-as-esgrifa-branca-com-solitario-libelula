@@ -384,22 +384,22 @@ const QUIZ_PERGUNTAS = [
     },
     {
         pergunta: 'Eu te amo, tal qual...?',
-        opcoes: ['o Chaves ama sanduíche de presunto', 'o gato ama um cochilo', 'a novela ama final feliz', 'ninguém ama nada poha'],
+        opcoes: ['O Chaves ama sanduíche de presunto', 'o gato ama um cochilo', 'a novela ama final feliz', 'ninguém ama nada poha'],
         certa: 0,
         certoMsg: 'Isso, sempre foi assim e sempre vai ser 😄',
         erradoMsg: 'Tal qual o Chaves ama sanduíche de presunto. Nosso código, não esquece mais!'
     },
     {
         pergunta: 'Qual é o nosso restaurante preferido?',
-        opcoes: ['O Brooks', 'Alô Gordão', 'Alex Lanches', 'Esquinão'],
-        certa: 0,
+        opcoes: ['Esquinão', 'Alô Gordão', 'Alex Lanches', 'O Brooks'],
+        certa: 3,
         certoMsg: 'O Brooks! 4 opções de lanches veganos, ta doido 🍔',
         erradoMsg: 'É o Brooks zé mané. Clássico nosso.'
     },
     {
         pergunta: 'Quando o carro atolou naquela estrada de terra, o que eu tentei usar pra tirar o carro do buraco?',
-        opcoes: ['O triângulo do carro', 'Um tábua', 'Cana de Açucar', 'Chamamos o guincho direto'],
-        certa: 0,
+        opcoes: ['Cana de Açucar', 'Um tábua', 'O triângulo do carro', 'Chamamos o guincho direto'],
+        certa: 2,
         certoMsg: 'Isso mesmo, o triângulo, que nem serviu pra muita coisa 😂',
         erradoMsg: 'Tentei com o triângulo do carro, que praticamente não ajudou em nada, mas rimos muito.'
     },
@@ -419,8 +419,8 @@ const QUIZ_PERGUNTAS = [
     },
     {
         pergunta: 'Qual foi a história que eu contei que te conquistou?',
-        opcoes: ['A do maquinista que morreu nos trilhos do trem', 'De como eu odeio a unip e todos os professores', 'A de uma viagem pra praia', 'Nenhuma das opções'],
-        certa: 0,
+        opcoes: ['De como eu odeio a unip e todos os professores', 'A do maquinista que morreu nos trilhos do trem', 'A de uma viagem pra praia', 'Nenhuma das opções'],
+        certa: 1,
         certoMsg: 'Essa mesma, a do maquinista puramente inventada 😄',
         erradoMsg: 'Foi a história do maquinista que morreu nos trilhos do trem.'
     },
@@ -433,8 +433,8 @@ const QUIZ_PERGUNTAS = [
     },
     {
         pergunta: 'Onde a gente se conheceu, antes de tudo começar de verdade?',
-        opcoes: ['Na UNIP', 'Numa festa', 'Pelo Instagram', 'Através de amigos em comum'],
-        certa: 0,
+        opcoes: ['Pelo Instagram', 'Numa festa', 'Na UNIP', 'Através de amigos em comum'],
+        certa: 2,
         certoMsg: 'Isso, na UNIP. De lá pra cá olha onde a gente chegou 💛',
         erradoMsg: 'Foi na UNIP. O comecinho de tudo, bem antes da gente imaginar onde isso ia dar.'
     },
@@ -447,8 +447,8 @@ const QUIZ_PERGUNTAS = [
     },
     {
         pergunta: 'Qual foi o primeiro lugar que eu falei que queria te levar?',
-        opcoes: ['A praia', 'Uma cachoeira', 'Outro estado', 'Um show'],
-        certa: 0,
+        opcoes: ['Um show', 'Uma cachoeira', 'Outro estado', 'A praia'],
+        certa: 3,
         certoMsg: 'A praia! Ainda vamos riscar isso da lista juntos 🌊',
         erradoMsg: 'Foi a praia. Um sonho nosso que ainda vamos realizar.'
     }
@@ -642,9 +642,9 @@ const TEXTO_EASTER_EGG_SOBRENOME = `O amor é paciente, o amor é bondoso. Não 
    Edite livremente; cada item vira um pequeno cartão na seção.
    ---------------------------------------------------------------------- */
 const COISAS_QUE_ELA_AMA = [
-    { icon: 'bi-flower1', texto: 'Girassol. Não é apenas uma flor que você gosta, é algo que combina com você: cheio de luz, alegria e aquela energia que faz qualquer lugar ficar mais bonito. Eu percebi isso desde cedo.' },
+    { icon: 'bi-flower1', texto: 'Girassol. Não é apenas uma flor que você gosta, é algo que combina com você: cheio de luz, alegria e aquela energia que faz qualquer lugar ficar mais bonito.' },
 
-    { icon: 'bi-cup-straw', texto: 'Hambúrguer do Grill, com picles e sem discussão. Se pudesse, provavelmente escolheria esse toda semana sem pensar duas vezes.' },
+    { icon: 'bi-cup-straw', texto: 'Hambúrguer do Grill, com picles. Se pudesse, provavelmente escolheria esse toda semana sem pensar duas vezes.' },
 
     { icon: 'bi-egg-fried', texto: 'Arroz, feijão preto, batata frita e rúcula. Uma comida simples, mas que tem aquele jeito de comida que traz conforto e lembra casa.' },
 
