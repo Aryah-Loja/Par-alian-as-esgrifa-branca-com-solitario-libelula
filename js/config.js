@@ -1495,13 +1495,11 @@ const SENHA_RESET_SITE = '13046700';
    ---------------------------------------------------------------------- */
 const TEXTOS = {
     heroTituloRomance: 'Nós',
-    heroSubRomance: `Tudo isso que você acabou de viver foi a minha forma de te trazer até aqui, mas a verdade é que nunca foi sobre uma loja, uma compra ou uma aliança chegando pelo correio. Era sobre chegar nesse momento.
+    heroSubRomance: `Hoje eu tenho a felicidade de olhar para você e poder dizer oficialmente: você é minha namorada, a pessoa que começou como uma menina que eu vi andando pela faculdade e que, sem perceber, virou a pessoa mais importante da minha vida.
 
-Hoje eu tenho a felicidade de olhar para você e poder dizer oficialmente: você é minha namorada. A pessoa que começou como uma menina que eu vi andando pela faculdade e que, sem perceber, virou a pessoa mais importante da minha vida.
+Eu estou muito feliz por tudo que construímos até aqui, cada momento simples que virou uma lembrança enorme, cada detalhe dessa história me trouxe até esse instante.
 
-Eu estou muito feliz por tudo que construímos até aqui, por cada conversa, cada risada, cada momento simples que virou uma lembrança enorme. Cada detalhe dessa história me trouxe até esse instante.
-
-E se hoje eu tenho a certeza de uma coisa, é que esse é só o começo. Porque enquanto eu seguro sua mão como seu namorado, eu já imagino todos os capítulos que ainda vamos escrever juntos, e quem sabe, quando menos esperarmos, eu vou estar segurando sua mão como seu marido.
+E se hoje eu tenho a certeza de uma coisa, é que esse é só o começo, porque enquanto eu seguro sua mão como seu namorado, eu já imagino todos os capítulos que ainda vamos escrever juntos, e quem sabe, quando menos esperarmos, eu vou estar segurando sua mão como seu marido.
 
 Obrigado por ser você, por ter deixado eu entrar na sua vida e por transformar meus dias em algo muito melhor. ❤️`,
     encerramentoRomance: `obrigado por topar essa vida comigo, dia após dia, tipo "Amo Noite e Dia", sem exagero nenhum. Isso aqui é só um jeito diferente de dizer o que eu já sinto todos os dias: eu escolho você.`,
