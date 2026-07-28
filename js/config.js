@@ -698,7 +698,7 @@ const TEXTO_CARTA_TESTE = `[CARTA_TESTE] Este é um texto provisório só para t
 /* ----------------------------------------------------------------------
    CÁPSULA DO TEMPO — carta que se abre sozinha 1 ano após o pedido
    ---------------------------------------------------------------------- */
-const CAPSULA_DIAS_PARA_DESBLOQUEIO = 365;
+const CAPSULA_DIAS_PARA_DESBLOQUEIO = 1;
 function textoCapsulaDoTempo() {
     return `Se você está lendo isso, já faz um ano inteiro que eu te pedi em namoro.
 
