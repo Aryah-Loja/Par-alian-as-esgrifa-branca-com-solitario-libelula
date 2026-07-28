@@ -780,6 +780,9 @@
         <div class="mt-5 reveal-up" style="max-width: 440px; margin: 0 auto;">
             <p class="romance-section-title"><i class="bi bi-signpost-split-fill me-2"></i>Nosso mapa</p>
             <div class="mapa-trilha" id="mapaTrilhaGrid"></div>
+            <div class="text-center mt-3 d-none" id="mapaVerTodosWrap">
+                <button id="btnMapaVerTodos" class="btn btn-outline-light btn-sm rounded-pill"><i class="bi bi-map me-1"></i>Ver todos os lugares</button>
+            </div>
         </div>
 
         <div class="mt-5 reveal-up" style="max-width: 440px; margin: 0 auto;">
@@ -938,9 +941,7 @@
                                 <p class="letter-text versiculo-visivel" id="capsulaTexto"></p>
                                 <p class="letter-signoff visivel" id="capsulaAssinatura"></p>
                             </div>
-                            <div class="letter-paper-rodape">
-                                <button id="btnModoVelaCapsula" class="btn-modo-vela d-none" aria-label="Ler à luz de vela"><i class="bi bi-fire"></i> Ler à luz de vela</button>
-                            </div>
+
                         </div>
                         <div class="envelope-flap"></div>
                         <div class="envelope-seal"><i class="bi bi-heart-fill"></i></div>
@@ -960,19 +961,7 @@
             <p class="romance-section-title">O que eu sinto por você</p>
 
             <p class="sentimentos-texto">
-                Não sei explicar direito o que você fez comigo. Só sei que, antes de você, meus dias tinham uma forma e, depois de você, essa forma mudou para melhor, sem que eu nem percebesse exatamente quando isso aconteceu. Você trouxe leveza para coisas que eu nem sabia que estavam pesadas, trouxe risadas fáceis, trouxe colo, trouxe esse seu silêncio que eu aprendi a entender como carinho e, sem perceber, trouxe também uma versão de mim que fala demais quando o assunto é você.
-            
-                <br><br>
-            
-                Se um dia você perguntar de novo se eu te amo muito, a resposta continua sendo a mesma de sempre: sim, tal qual o Chaves ama sanduíche de presunto, mas hoje eu queria ir além dessa resposta, porque eu te amo do jeito que se ama aquilo que a gente não troca por nada, do jeito que se escolhe todos os dias, mesmo quando já tem certeza da escolha, do jeito que faz o coração encontrar paz só por saber que você existe.
-            
-                <br><br>
-            
-                Porque amar você nunca foi um esforço, foi acontecendo aos poucos, nas conversas, nas brincadeiras, nos momentos simples e até nos dias difíceis, e, quando eu percebi, você já tinha se tornado o meu lugar favorito, a pessoa que eu mais queria ter por perto, aquela com quem eu quero dividir as minhas vitórias, os meus medos, os meus sonhos e toda a minha vida.
-            
-                <br><br>
-            
-                Se existe uma certeza que eu tenho, é esta: enquanto eu puder, vou continuar escolhendo você, hoje, amanhã e em todos os dias que Deus nos permitir viver juntos.
+                Não sei explicar direito o que você fez comigo. Só sei que, antes de você, meus dias tinham uma forma e, depois de você, essa forma mudou para melhor, sem que eu nem percebesse exatamente quando isso aconteceu. Você trouxe leveza para coisas que eu nem sabia que estavam pesadas, trouxe risadas fáceis, trouxe colo, trouxe esse seu silêncio que eu aprendi a entender como carinho e, sem perceber, trouxe também uma versão de mim que fala demais quando o assunto é você. Se um dia você perguntar de novo se eu te amo muito, a resposta continua sendo a mesma de sempre: sim, tal qual o Chaves ama sanduíche de presunto, mas hoje eu queria ir além dessa resposta, porque eu te amo do jeito que se ama aquilo que a gente não troca por nada, do jeito que se escolhe todos os dias, mesmo quando já tem certeza da escolha, do jeito que faz o coração encontrar paz só por saber que você existe. Porque amar você nunca foi um esforço, foi acontecendo aos poucos, nas conversas, nas brincadeiras, nos momentos simples e até nos dias difíceis, e, quando eu percebi, você já tinha se tornado o meu lugar favorito, a pessoa que eu mais queria ter por perto, aquela com quem eu quero dividir as minhas vitórias, os meus medos, os meus sonhos e toda a minha vida. Se existe uma certeza que eu tenho, é esta: enquanto eu puder, vou continuar escolhendo você, hoje, amanhã e em todos os dias que Deus nos permitir viver juntos.
             </p>
         </div>
 
@@ -980,7 +969,7 @@
             <i class="bi bi-heart-fill text-rosegold" style="font-size: 1.8rem;"></i>
             <p class="fs-5 fw-light mt-3" style="max-width: 420px; margin: 0 auto;"><span class="js-nome"></span>, <span id="encerramentoRomanceTexto"></span></p>
 
-            <button id="btnCompartilhar" class="btn btn-share mt-4"><i class="bi bi-share-fill me-2"></i>Compartilhar</button>
+            <button id="btnCompartilhar" class="btn btn-share mt-4"><i class="bi bi-arrow-repeat me-2"></i>Sincronizar</button>
             <p id="compartilharStatus" class="save-status"></p>
 
             <button id="btnMaisOpcoes" class="btn btn-outline-light btn-sm rounded-pill mt-3"><i class="bi bi-three-dots me-1"></i>Mais opções</button>
@@ -1024,7 +1013,6 @@
         <div class="carta-discussao-papel mais-opcoes-papel">
             <p class="letter-eyebrow visivel">Mais opções</p>
             <div class="d-flex gap-2 justify-content-center flex-wrap">
-                <button id="btnExportarCartaoPostal" class="btn btn-outline-dark btn-sm rounded-pill"><i class="bi bi-postcard me-1"></i>Cartão postal do mapa</button>
                 <button id="btnExportarConstelacao" class="btn btn-outline-dark btn-sm rounded-pill"><i class="bi bi-stars me-1"></i>Constelação</button>
                 <button id="btnExportarCartaFisica" class="btn btn-outline-dark btn-sm rounded-pill"><i class="bi bi-envelope-paper-fill me-1"></i>Carta física com QR</button>
                 <button id="btnExportarPolaroid" class="btn btn-outline-dark btn-sm rounded-pill"><i class="bi bi-camera me-1"></i>Polaroid do momento</button>
@@ -1075,7 +1063,7 @@
     <!-- ===================== ELEMENTOS OCULTOS USADOS SÓ PARA EXPORTAÇÃO =====================
          CORREÇÃO: antes cada `.exportavel-oculto` era jogado pra fora da tela
          sozinho com `position:fixed; left:-9999px`. Isso deixava um bloco de
-         1181x1772px (o cartão postal do mapa, por exemplo) flutuando bem
+         1181x1772px (a constelação, por exemplo) flutuando bem
          longe à esquerda, mas ainda tecnicamente "no viewport" — em alguns
          navegadores/momentos (troca de orientação, teclado abrindo, o
          html2canvas manipulando o elemento pra gerar a imagem) isso podia
@@ -1087,20 +1075,6 @@
          recortado/escondido de verdade, sem depender de um deslocamento
          gigante em pixels. -->
     <div class="area-exportavel-oculta" aria-hidden="true">
-        <!-- Cartão postal do "Nosso mapa" — gerado NA HORA a partir de MAPA_LUGARES
-             (js/config.js), então sempre reflete o que estiver la, sem precisar
-             editar nada aqui quando um lugar novo for adicionado. A grade de
-             colunas e o tamanho das fotos são calculados em JS (ver
-             calcularGradeParaCaber em js/export.js), então sempre cabe tudo
-             direitinho, não importa quantos lugares existam. -->
-        <div id="cartaoPostalExportavel" class="exportavel-oculto cartao-postal-exportavel">
-            <span class="cartao-postal-girassol cartao-postal-girassol-1">🌻</span>
-            <span class="cartao-postal-girassol cartao-postal-girassol-2">🌻</span>
-            <span class="cartao-postal-girassol cartao-postal-girassol-3">🌻</span>
-            <p class="cartao-postal-titulo">Nosso mapa</p>
-            <div class="cartao-postal-lista" id="cartaoPostalLista"></div>
-        </div>
-
         <!-- Constelação pra imprimir — gerada a partir de TIMELINE_MARCOS
              (js/config.js), sempre no visual escuro/estrelado (a versão clara
              foi removida). Fundo com nebulosas, planeta e estrelas, tudo em
@@ -1168,6 +1142,15 @@
             <img id="estrelaModalFoto" class="estrela-modal-foto" alt="Foto do momento">
             <p class="estrela-modal-data" id="estrelaModalData"></p>
             <p class="estrela-modal-texto" id="estrelaModalTexto"></p>
+        </div>
+    </div>
+
+    <!-- Modal com a trilha completa do "Nosso mapa" — a página principal mostra só os primeiros lugares pra não ficar poluída, e esse modal abre com a lista inteira -->
+    <div id="mapaModalOverlay" class="carta-discussao-overlay d-none">
+        <button id="btnFecharMapaModal" class="modo-vela-fechar" aria-label="Fechar"><i class="bi bi-x-lg"></i></button>
+        <div class="mapa-modal-caixa">
+            <p class="mapa-modal-titulo"><i class="bi bi-signpost-split-fill me-2"></i>Todos os nossos lugares</p>
+            <div class="mapa-trilha" id="mapaTrilhaGridCompleto"></div>
         </div>
     </div>
 

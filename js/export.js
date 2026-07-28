@@ -13,11 +13,11 @@
  */
 
 /* ----------------------------------------------------------------------
-   LEMBRANÇAS PRA IMPRIMIR — cartão postal do mapa, constelação (clara e
-   escura) e carta física com QR code. As três leem MAPA_LUGARES /
-   TIMELINE_MARCOS / textoVersiculoBase() DIRETO na hora de gerar a
-   imagem — nada fica "gravado" com antecedência, então qualquer lugar ou
-   marco novo adicionado em js/config.js já aparece no próximo download,
+   LEMBRANÇAS PRA IMPRIMIR — constelação (clara e escura) e carta física
+   com QR code. Ambas leem TIMELINE_MARCOS / textoVersiculoBase() DIRETO
+   na hora de gerar a imagem — nada fica "gravado" com antecedência,
+   então qualquer marco novo adicionado em js/config.js já aparece no
+   próximo download,
    sem precisar mexer em mais nada.
    ---------------------------------------------------------------------- */
 
@@ -47,48 +47,6 @@ function calcularGradeParaCaber(quantidade, larguraDisponivel, alturaDisponivel,
     }
     melhor.tamanhoFoto = Math.max(tamanhoMinimoFoto, melhor.tamanhoFoto);
     return melhor;
-}
-
-async function gerarCartaoPostal() {
-    if (typeof html2canvas !== 'function') { mostrarStatusExportar('Não foi possível carregar o exportador de imagem. Verifique sua conexão.', 'err'); return; }
-    mostrarStatusExportar('Gerando o cartão postal do mapa...', 'pending');
-
-    try {
-        const lista = document.getElementById('cartaoPostalLista');
-        lista.innerHTML = '';
-
-        // Área útil dentro do papel, descontando título, respiro e os
-        // próprios girassóis decorativos do rodapé.
-        const larguraUtil = IMPRIMIVEL_LARGURA_PX - 112;
-        const alturaUtil = IMPRIMIVEL_ALTURA_PX - 340;
-        const { colunas, tamanhoFoto } = calcularGradeParaCaber(MAPA_LUGARES.length, larguraUtil, alturaUtil, 240, 70);
-        lista.style.gridTemplateColumns = `repeat(${colunas}, 1fr)`;
-
-        const fonteNome = Math.max(18, Math.min(30, tamanhoFoto * 0.16));
-        const fonteCidade = Math.max(13, fonteNome * 0.6);
-
-        for (const lugar of MAPA_LUGARES) {
-            const card = document.createElement('div');
-            card.className = 'cartao-postal-item';
-            const fotoSrc = await resolverFotoPlaceholder(lugar.foto); // já cai num SVG "adicione esta foto" se o arquivo ainda não existir
-            card.innerHTML = `
-                <img src="${fotoSrc}" alt="${lugar.nome}" style="width:${tamanhoFoto}px; height:${tamanhoFoto}px;">
-                <div class="cartao-postal-item-texto">
-                    <p class="cartao-postal-nome" style="font-size:${fonteNome}px;">${lugar.nome}</p>
-                    <p class="cartao-postal-cidade" style="font-size:${fonteCidade}px;">${lugar.cidade || ''}</p>
-                </div>`;
-            lista.appendChild(card);
-        }
-
-        const canvas = await html2canvas(document.getElementById('cartaoPostalExportavel'), {
-            backgroundColor: '#FBF7F0', width: IMPRIMIVEL_LARGURA_PX, height: IMPRIMIVEL_ALTURA_PX, scale: 1
-        });
-        await baixarCanvasComoPng(canvas, 'nosso-mapa.png');
-        mostrarStatusExportar('Cartão postal exportado com sucesso. Pode imprimir no tamanho 10x15cm.', 'ok');
-    } catch (err) {
-        console.error('Falha ao exportar o cartão postal do mapa', err);
-        mostrarStatusExportar('Não foi possível exportar o cartão postal.', 'err');
-    }
 }
 
 /** Constelação pra imprimir — reaproveita TIMELINE_MARCOS, sempre no visual escuro/estrelado. */
@@ -701,7 +659,6 @@ function iniciarModuloExport() {
     document.getElementById('btnFecharMaisOpcoes').addEventListener('click', () => { maisOpcoesOverlay.classList.add('d-none'); desbloquearScrollFundoLembranca(); });
     maisOpcoesOverlay.addEventListener('click', (evt) => { if (evt.target === maisOpcoesOverlay) { maisOpcoesOverlay.classList.add('d-none'); desbloquearScrollFundoLembranca(); } });
 
-    document.getElementById('btnExportarCartaoPostal').addEventListener('click', gerarCartaoPostal);
     document.getElementById('btnExportarConstelacao').addEventListener('click', () => gerarConstelacao());
     document.getElementById('btnExportarCartaFisica').addEventListener('click', gerarCartaFisica);
 

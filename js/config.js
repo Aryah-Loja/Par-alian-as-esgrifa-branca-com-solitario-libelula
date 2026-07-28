@@ -127,12 +127,15 @@ const PLACEHOLDERS = {
     bicho_tommy: { arquivoBase: 'bicho-tommy', tipo: 'imagem', descricao: 'Tommy (em memória)' },
     bicho_anne: { arquivoBase: 'bicho-anne', tipo: 'imagem', descricao: 'Anne (em memória)' },
 
-    // ---- Fotos de cada local do "Nosso mapa" (usadas no cartão postal e na constelação pra imprimir) ----
+    // ---- Fotos de cada local do "Nosso mapa" ----
     mapa_colina: { arquivoBase: 'mapa-colina', tipo: 'imagem', descricao: 'Colina, Orlândia' },
     mapa_santa_rosa: { arquivoBase: 'mapa-santa-rosa', tipo: 'imagem', descricao: 'Santa Rosa de Viterbo' },
     mapa_curupira: { arquivoBase: 'mapa-curupira', tipo: 'imagem', descricao: 'Parque Curupira' },
     mapa_balanco: { arquivoBase: 'mapa-balanco', tipo: 'imagem', descricao: 'O balanço em Sales de Oliveira' },
     mapa_nuporanga: { arquivoBase: 'mapa-nuporanga', tipo: 'imagem', descricao: 'Nuporanga' },
+    mapa_verace: { arquivoBase: 'mapa-verace', tipo: 'imagem', descricao: 'Verace, Ribeirão Preto' },
+    mapa_praca_bike: { arquivoBase: 'mapa-praca-bike', tipo: 'imagem', descricao: 'Praça da Bike, Ribeirão Preto' },
+    mapa_cruzeiro: { arquivoBase: 'mapa-cruzeiro', tipo: 'imagem', descricao: 'Cruzeiro, São Simão' },
     mapa_proximo: { arquivoBase: 'mapa-proximo', tipo: 'imagem', descricao: 'Próximo destino' },
 
     // ---- Áudio ----
@@ -834,12 +837,11 @@ Com amor, até nos dias difíceis,`;
 }
 
 /* ----------------------------------------------------------------------
-   LEMBRANÇAS PRA IMPRIMIR — cartão postal do mapa, constelação (clara e
-   escura) e carta física com QR code. Tudo gerado NA HORA a partir dos
-   dados que já existem (MAPA_LUGARES, TIMELINE_MARCOS, a carta final) —
-   ou seja, sempre que você adicionar um lugar novo no mapa ou um marco
-   novo na timeline, o próximo download já sai atualizado, sem precisar
-   editar nada além desses arrays.
+   LEMBRANÇAS PRA IMPRIMIR — constelação (clara e escura) e carta física
+   com QR code. Tudo gerado NA HORA a partir dos dados que já existem
+   (TIMELINE_MARCOS, a carta final) — ou seja, sempre que você adicionar
+   um marco novo na timeline, o próximo download já sai atualizado, sem
+   precisar editar nada além desse array.
    ---------------------------------------------------------------------- */
 
 // Link do site pra virar QR code na carta física. Deixe vazio ('') até
@@ -847,7 +849,7 @@ Com amor, até nos dias difíceis,`;
 // física não mostra QR nenhum (só o texto), sem quebrar nada.
 const URL_DO_SITE = '';
 
-// Tamanho de impressão do cartão postal e da constelação: formato "foto
+// Tamanho de impressão da constelação: formato "foto
 // revelada" (10x15cm), o padrão de qualquer revelação de foto em loja ou
 // farmácia — barato e fácil de imprimir. Em pixels, numa resolução boa
 // o bastante pra imprimir sem serrilhado (~300 DPI).
@@ -1284,22 +1286,6 @@ async function resolverAudioPorBase(arquivoBase) {
    ---------------------------------------------------------------------- */
 const MAPA_LUGARES = [
     {
-        nome: 'Faculdade UNIP',
-        cidade: 'Ribeirão Preto',
-        texto: 'O lugar onde tudo começou sem a gente imaginar. Primeiro um olhar, depois uma carona com a Vitória, algumas conversas e uma história que estava só esperando começar.',
-        icon: 'bi-mortarboard-fill',
-        foto: 'mapa_unip'
-    },
-
-    {
-        nome: 'As primeiras caronas',
-        cidade: 'Caminho da faculdade',
-        texto: 'Onde começaram nossas primeiras conversas. Teve power bank "esquecido", mensagens no Instagram e aquela tentativa minha de arrumar qualquer desculpa para falar com você.',
-        icon: 'bi-car-front-fill',
-        foto: 'mapa_caronas'
-    },
-
-    {
         nome: 'Colina',
         cidade: 'Orlândia',
         texto: 'O nosso primeiro encontro de verdade. Aquele dia que começou com uma espera de quase uma hora e meia, terminou com conversas no carro, risadas e o beijo que mudou tudo.',
@@ -1309,7 +1295,7 @@ const MAPA_LUGARES = [
 
     {
         nome: 'Brooks',
-        cidade: 'Orlândia',
+        cidade: 'Franca',
         texto: 'O lugar onde uma conversa no carro virou um dos momentos mais importantes da nossa história. Foi ali que saiu o primeiro "eu te amo" e que o nosso amor ganhou nome.',
         icon: 'bi-chat-heart-fill',
         foto: 'mapa_brooks'
@@ -1332,8 +1318,8 @@ const MAPA_LUGARES = [
     },
 
     {
-        nome: 'Santa Rosa de Viterbo',
-        cidade: 'Casa dos meus avós',
+        nome: 'Casa da minha vó',
+        cidade: 'Santa Rosa de Viterbo',
         texto: 'O dia em que você conheceu uma parte importante da minha história. Te apresentei para meus avós e guardei comigo a felicidade de ver você fazendo parte da minha vida.',
         icon: 'bi-house-heart-fill',
         foto: 'mapa_santa_rosa'
@@ -1361,6 +1347,33 @@ const MAPA_LUGARES = [
         texto: 'Dessa vez sem surpresa no caminho. Conheci sua prima, sua avó e consegui conversar melhor com sua mãe. Foi o momento certo, do jeito que deveria ser.',
         icon: 'bi-people-fill',
         foto: 'mapa_familia'
+    },
+
+    {
+        nome: 'Verace',
+        cidade: 'Ribeirão Preto',
+        // Texto de exemplo — troque pelo que esse lugar realmente significa pra vocês.
+        texto: 'Um jantar gostoso, boa conversa e mais uma lembrança boa pra guardar da nossa história.',
+        icon: 'bi-cup-hot-fill',
+        foto: 'mapa_verace'
+    },
+
+    {
+        nome: 'Praça da Bike',
+        cidade: 'Ribeirão Preto',
+        // Texto de exemplo — troque pelo que esse lugar realmente significa pra vocês.
+        texto: 'Um passeio tranquilo por ali, sem pressa, só aproveitando o tempo bom ao seu lado.',
+        icon: 'bi-bicycle',
+        foto: 'mapa_praca_bike'
+    },
+
+    {
+        nome: 'Cruzeiro',
+        cidade: 'São Simão',
+        // Texto de exemplo — troque pelo que esse lugar realmente significa pra vocês.
+        texto: 'Mais um lugar que virou parte da nossa história, guardado com carinho junto com todos os outros.',
+        icon: 'bi-geo-alt-fill',
+        foto: 'mapa_cruzeiro'
     },
 
     {

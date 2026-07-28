@@ -515,22 +515,34 @@ async function iniciarEnvelopeCapsula() {
         }
     }
 
-    let jaAbriu = false;
+    // CORREÇÃO (carta ficando "flutuando" na tela depois de fechar): esta
+    // carta pode ser aberta e fechada várias vezes (ao contrário da carta
+    // final, que só abre uma vez e segue direto pro flashback). Por isso
+    // ela precisa VOLTAR ao estado fechado sempre que o modo vela for
+    // fechado — tanto visualmente (o envelope fecha de novo) quanto no
+    // controle interno (`emAnimacao`), senão um segundo toque no envelope
+    // não fazia nada (ficava travado como "já abriu" pra sempre).
+    let emAnimacao = false;
+    function fecharEnvelopeCapsula() {
+        emAnimacao = false;
+        envelope.classList.remove('aberto');
+        hint.classList.remove('visivel');
+        setTimeout(() => hint.classList.add('visivel'), 600);
+    }
+
     envelope.addEventListener('click', () => {
-        if (jaAbriu) return; jaAbriu = true;
+        if (emAnimacao) return; emAnimacao = true;
         hint.classList.remove('visivel');
         envelope.classList.add('aberto');
 
-        // A carta já abre direto no modo "luz de vela" (pedido explícito):
-        // antes exigia um toque extra num botão separado pra entrar nesse
-        // modo, e esse botão às vezes falhava. Agora é automático.
-        setTimeout(() => abrirModoVela('Um ano depois', textoEl.innerHTML, assinaturaEl.textContent), 900);
-
-        const btnVela = document.getElementById('btnModoVelaCapsula');
-        if (btnVela) {
-            btnVela.classList.remove('d-none');
-            btnVela.onclick = () => abrirModoVela('Um ano depois', textoEl.innerHTML, assinaturaEl.textContent);
-        }
+        // A carta abre direto no modo "luz de vela" (pedido explícito) — não
+        // existe mais nenhuma versão "solta" da carta fora desse modo, então
+        // ela nunca fica flutuando por cima da tela depois de fechada.
+        setTimeout(() => {
+            abrirModoVela('Um ano depois', textoEl.innerHTML, assinaturaEl.textContent, {
+                aoFechar: fecharEnvelopeCapsula
+            });
+        }, 900);
     });
 
     requestAnimationFrame(() => { envelope.classList.add('envelope-visivel'); setTimeout(() => hint.classList.add('visivel'), 500); });
@@ -813,6 +825,7 @@ async function goToRomancePage(primeiraVez) {
     renderizarCoisasQueElaAma();
     renderizarSeusBichos();
     renderizarMapaDaRelacao();
+    iniciarMapaModal();
     iniciarCartaDiscussao();
     iniciarAdjetivosParaEla();
 
@@ -1197,11 +1210,15 @@ function iniciarCartaDiscussao() {
 }
 
 /* ---------------- "Nosso mapa" ---------------- */
-function renderizarMapaDaRelacao() {
-    const grid = document.getElementById('mapaTrilhaGrid');
-    if (!grid || !Array.isArray(MAPA_LUGARES)) return;
+// A página principal mostra só os primeiros lugares (pra não ficar poluída
+// se a lista crescer); a trilha inteira fica disponível no modal "Ver todos
+// os lugares" (ver iniciarMapaModal() logo abaixo).
+const MAPA_QUANTIDADE_PREVIA = 4;
+
+function preencherGridDoMapa(grid, lugares) {
+    if (!grid) return;
     grid.innerHTML = '';
-    MAPA_LUGARES.forEach(lugar => {
+    lugares.forEach(lugar => {
         const card = document.createElement('div');
         card.className = 'mapa-card' + (lugar.futuro ? ' mapa-card-futuro' : '');
         card.innerHTML = `
@@ -1214,6 +1231,38 @@ function renderizarMapaDaRelacao() {
             </div>`;
         grid.appendChild(card);
     });
+}
+
+function renderizarMapaDaRelacao() {
+    const gridPrevia = document.getElementById('mapaTrilhaGrid');
+    const gridCompleto = document.getElementById('mapaTrilhaGridCompleto');
+    const verTodosWrap = document.getElementById('mapaVerTodosWrap');
+    if (!gridPrevia || !Array.isArray(MAPA_LUGARES)) return;
+
+    const temMais = MAPA_LUGARES.length > MAPA_QUANTIDADE_PREVIA;
+    preencherGridDoMapa(gridPrevia, temMais ? MAPA_LUGARES.slice(0, MAPA_QUANTIDADE_PREVIA) : MAPA_LUGARES);
+    preencherGridDoMapa(gridCompleto, MAPA_LUGARES);
+
+    if (verTodosWrap) verTodosWrap.classList.toggle('d-none', !temMais);
+}
+
+function iniciarMapaModal() {
+    const overlay = document.getElementById('mapaModalOverlay');
+    const btnAbrir = document.getElementById('btnMapaVerTodos');
+    const btnFechar = document.getElementById('btnFecharMapaModal');
+    if (!overlay || !btnAbrir || overlay.dataset.iniciado === '1') return;
+    overlay.dataset.iniciado = '1';
+
+    const abrir = () => {
+        overlay.classList.remove('d-none');
+        overlay.scrollTop = 0;
+        bloquearScrollFundoLembranca();
+    };
+    const fechar = () => { overlay.classList.add('d-none'); desbloquearScrollFundoLembranca(); };
+
+    btnAbrir.addEventListener('click', abrir);
+    btnFechar.addEventListener('click', fechar);
+    overlay.addEventListener('click', (evt) => { if (evt.target === overlay) fechar(); });
 }
 function renderizarCoisasQueElaAma() {
     const grid = document.getElementById('coisasQueElaAmaGrid');

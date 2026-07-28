@@ -99,7 +99,15 @@ function abrirModoVela(eyebrowTexto, textoHtml, assinaturaTexto, opcoes = {}) {
         overlay.onclick = null;
     } else {
         btnFechar.classList.remove('d-none');
-        const fechar = () => { overlay.classList.add('d-none'); desbloquearScrollFundoLembranca(); };
+        // `opcoes.aoFechar`, se fornecido, roda depois de fechar o modo vela
+        // (usado pela cápsula do tempo pra fechar o envelope de novo e
+        // deixar pronto pra abrir do zero na próxima vez — ver
+        // iniciarEnvelopeCapsula em romance.js).
+        const fechar = () => {
+            overlay.classList.add('d-none');
+            desbloquearScrollFundoLembranca();
+            if (typeof opcoes.aoFechar === 'function') opcoes.aoFechar();
+        };
         btnFechar.onclick = fechar;
         overlay.onclick = (evt) => { if (evt.target === overlay) fechar(); };
     }
@@ -701,8 +709,8 @@ async function carregarFonteDeImagem(arquivo) {
 }
 
 /**
- * CORREÇÃO: os botões de exportar (cartão postal, constelação, carta em
- * PDF) usavam só um link com atributo "download" — isso funciona bem no
+ * CORREÇÃO: os botões de exportar (constelação, carta em PDF) usavam só
+ * um link com atributo "download" — isso funciona bem no
  * computador e no Android, mas no Safari do iPhone (o navegador que essa
  * pessoa realmente vai usar) o atributo "download" é praticamente
  * ignorado quando o link aponta pra uma data URI: o toque não faz nada

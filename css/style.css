@@ -244,7 +244,7 @@ img { max-width: 100%; }
 .envelope-back::after { right: 0; clip-path: polygon(100% 0, 0 50%, 100% 100%); }
 .envelope-flap { position: absolute; top: 0; left: 0; width: 100%; height: 58%; background: linear-gradient(150deg, #eaddc4, #d7c39c); clip-path: polygon(0 0, 100% 0, 50% 92%); transform-origin: top center; transform-style: preserve-3d; transition: transform 1.15s cubic-bezier(0.65, 0, 0.35, 1); z-index: 4; border-radius: 6px 6px 0 0; }
 .envelope.aberto .envelope-flap { transform: rotateX(180deg); }
-.envelope-seal { position: absolute; top: 34%; left: 50%; width: 42px; height: 42px; transform: translate(-50%, -50%); border-radius: 50%; background: var(--rosegold); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1.15rem; box-shadow: 0 6px 14px rgba(0,0,0,0.45); z-index: 6; transition: opacity 0.35s ease, transform 0.35s ease; }
+.envelope-seal { position: absolute; top: 50%; left: 50%; width: 42px; height: 42px; transform: translate(-50%, -50%); border-radius: 50%; background: var(--rosegold); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1.15rem; box-shadow: 0 6px 14px rgba(0,0,0,0.45); z-index: 6; transition: opacity 0.35s ease, transform 0.35s ease; }
 .envelope.aberto .envelope-seal { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
 .letter-paper {
     position: absolute; left: 50%; bottom: 4%; width: 86%;
@@ -285,6 +285,20 @@ img { max-width: 100%; }
     max-height: 78vh;
     transform: translate(-50%, -50%) scale(1);
     opacity: 1; z-index: 9000;
+}
+/* CORREÇÃO (carta da cápsula do tempo ficando "flutuando" na tela mesmo
+   depois de fechar o modo vela): a carta final (#envelope) nunca fecha
+   sozinha antes de "Continuar" ser clicado, então virar um cartão fixo é
+   seguro pra ela. Já a cápsula do tempo (#capsulaEnvelope) pode ser aberta
+   e fechada várias vezes, e o modo vela é a ÚNICA forma como o texto dela
+   deve aparecer — por isso essa regra mais específica cancela o cartão
+   fixo só pra ela, mesmo com a classe "aberto" (usada apenas para a
+   animação do envelope abrindo/fechando). */
+#capsulaEnvelope.aberto .letter-paper {
+    position: absolute;
+    top: auto; left: 50%; bottom: 4%;
+    transform: translate(-50%, 6%) scale(0.82);
+    opacity: 0; z-index: 3; pointer-events: none;
 }
 .letter-paper::before { content: ''; position: absolute; inset: 6px; border: 1px solid #e3d5ba; pointer-events: none; }
 .letter-eyebrow { font-family: 'Jost', sans-serif; font-size: 0.65rem; letter-spacing: 3px; text-transform: uppercase; color: var(--rosegold-dark); text-align: center; margin-bottom: 10px; opacity: 0; transition: opacity 0.8s ease; }
@@ -471,6 +485,10 @@ img { max-width: 100%; }
 .mapa-card-futuro .mapa-pin { background: rgba(122,144,101,0.18); border-color: rgba(122,144,101,0.5); color: #a9c48d; }
 .mapa-card-futuro .mapa-nome { color: #d9e8c8; }
 .mapa-card-futuro .mapa-texto { font-style: italic; opacity: 0.9; }
+
+/* ---------------- Modal "todos os nossos lugares" (trilha completa do mapa) ---------------- */
+.mapa-modal-caixa { max-width: 440px; width: 100%; background: rgba(20,14,17,0.97); border: 1px solid rgba(183,110,121,0.4); border-radius: 12px; padding: 24px 20px; margin: auto; max-height: 85vh; overflow-y: auto; }
+.mapa-modal-titulo { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.15rem; font-weight: 600; color: #fff; text-align: center; margin-bottom: 18px; }
 
 /* Botão visível pra abrir a carta escondida — antes era um ponto quase
    invisível no rodapé; agora é um botão de verdade, fácil de achar. */
@@ -754,7 +772,7 @@ html.aurora-scroll-lock body { position: fixed; left: 0; right: 0; width: 100%; 
 /* ---------------- Elementos usados apenas para exportação ----------------
    CORREÇÃO: antes cada `.exportavel-oculto` usava `position:fixed;
    left:-9999px` pra sumir da tela sozinho. Um bloco de mais de 1000px de
-   largura (o cartão postal do mapa, a constelação etc) só deslocado pra
+   largura (a constelação, por exemplo) só deslocado pra
    longe ainda contava como conteúdo "no viewport" em alguns cenários
    (rotação, teclado abrindo, o próprio html2canvas manipulando o elemento
    pra gerar a imagem), podendo aparecer entrando/saindo pela lateral da
@@ -766,31 +784,17 @@ html.aurora-scroll-lock body { position: fixed; left: 0; right: 0; width: 100%; 
 .area-exportavel-oculta { position: fixed; top: 0; left: 0; width: 0; height: 0; overflow: hidden; pointer-events: none; z-index: -1; }
 .exportavel-oculto { position: relative; }
 
-/* Cartão postal do "Nosso mapa" e constelação pra imprimir: tamanho fixo
-   em pixels batendo com IMPRIMIVEL_LARGURA_PX/ALTURA_PX (js/config.js),
-   formato "foto revelada" 10x15cm a ~300dpi.
-   CORREÇÃO: as duas listas agora são um GRID com número de colunas e
-   tamanho de foto calculados dinamicamente em JS (calcularGradeParaCaber,
-   em js/export.js) — antes era uma coluna única com tamanho fixo, que
-   cabia certinho com a quantidade de itens de quando foi criado, mas
-   cortava/estourava a página assim que a lista crescesse (mais lugares no
-   mapa, mais marcos na timeline). Agora sempre cabe tudo, não importa
-   quantos itens existam. */
-.cartao-postal-exportavel, .constelacao-exportavel { position: relative; width: 1181px; height: 1772px; background: #FBF7F0; padding: 70px 56px; box-sizing: border-box; font-family: 'Cormorant Garamond', Georgia, serif; color: #2b2523; display: flex; flex-direction: column; overflow: hidden; }
-.cartao-postal-titulo, .constelacao-titulo { position: relative; z-index: 1; text-align: center; font-size: 52px; font-weight: 600; margin: 0 0 44px; }
-
-/* Papel do mapa: girassóis grandes e discretos nos cantos, dando um clima
-   de caderno de viagem sem atrapalhar a leitura do conteúdo. */
-.cartao-postal-girassol { position: absolute; font-size: 210px; opacity: 0.1; line-height: 1; z-index: 0; filter: saturate(0.85); }
-.cartao-postal-girassol-1 { top: -50px; left: -60px; transform: rotate(-12deg); }
-.cartao-postal-girassol-2 { bottom: -70px; right: -50px; transform: rotate(18deg); }
-.cartao-postal-girassol-3 { bottom: 40%; left: -90px; font-size: 150px; transform: rotate(-6deg); opacity: 0.07; }
-
-.cartao-postal-lista { position: relative; z-index: 1; display: grid; gap: 22px; flex: 1; align-content: center; justify-items: center; }
-.cartao-postal-item { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; width: 100%; }
-.cartao-postal-item img { object-fit: cover; border-radius: 14px; border: 3px solid rgba(183,110,121,0.5); }
-.cartao-postal-nome { font-weight: 600; margin: 0; }
-.cartao-postal-cidade { letter-spacing: 0.5px; text-transform: uppercase; color: #8f4d57; margin: 2px 0 0; }
+/* Constelação pra imprimir: tamanho fixo em pixels batendo com
+   IMPRIMIVEL_LARGURA_PX/ALTURA_PX (js/config.js), formato "foto revelada"
+   10x15cm a ~300dpi.
+   CORREÇÃO: a lista agora é um GRID com número de colunas e tamanho de
+   foto calculados dinamicamente em JS (calcularGradeParaCaber, em
+   js/export.js) — antes era uma coluna única com tamanho fixo, que cabia
+   certinho com a quantidade de itens de quando foi criado, mas
+   cortava/estourava a página assim que a lista crescesse (mais marcos na
+   timeline). Agora sempre cabe tudo, não importa quantos itens existam. */
+.constelacao-exportavel { position: relative; width: 1181px; height: 1772px; background: #FBF7F0; padding: 70px 56px; box-sizing: border-box; font-family: 'Cormorant Garamond', Georgia, serif; color: #2b2523; display: flex; flex-direction: column; overflow: hidden; }
+.constelacao-titulo { position: relative; z-index: 1; text-align: center; font-size: 52px; font-weight: 600; margin: 0 0 44px; }
 
 /* Constelação: fundo de galáxia (nebulosas + planeta + estrelinhas), tudo
    em CSS puro, sempre no visual escuro/estrelado (a versão clara, que
