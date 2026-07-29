@@ -878,7 +878,9 @@ const MOMENTO_LENTO_VELOCIDADE = 0.45; // 1 = velocidade normal, quanto menor, m
 const MOMENTO_LENTO_FRASES = [
     'Esse instante nem durou muito.',
     'Mas eu quis guardar ele pra sempre, bem devagar.',
-    'Às vezes o amor cabe inteiro num segundo esticado.'
+    'Pra sempre voltar e ver a mulher linda.',
+    'Que está ao meu lado hoje, e para sempre.',
+    'Eu te amo!.'
 ];
 
 /* ----------------------------------------------------------------------
@@ -1611,7 +1613,7 @@ const CHECKLIST_ENCONTROS = [
    e paraCodigoMorse() em js/utils.js). De propósito SEM botão de
    tradução — a graça é ela mesma decifrar o código.
    ---------------------------------------------------------------------- */
-const MENSAGEM_SECRETA_LUA = 'TE AMO MUITO MINHA GRACINHA - K4QWZ';
+const MENSAGEM_SECRETA_LUA = 'O sol ama tanto a lua que morre todas as noites para deixá-la respirar - K4QWZ';
 
 const SENHA_AREA_MEMORIAS = '1406';
 
