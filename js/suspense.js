@@ -46,8 +46,8 @@ const MENSAGENS_BOTAO_FUJAO = [
     'Esse botão parece que não quer ser encontrado...',
     'Quase! Mas não foi dessa vez 🏃',
     'Ele é rápido, hein?',
-    'Acho que esse botão só existe de mentirinha 👀',
-    'Vai por mim: tenta o outro 💛'
+    'Acho que esse botão nem existe',
+    'Desiste dessa opção zé mané'
 ];
 let tentativasBotaoNao = 0;
 
@@ -117,9 +117,9 @@ function avancarPergunta() {
 
 /* ---------------- Galeria de fotos (polaroids) ---------------- */
 function carregarImagensPolaroid() {
-    aplicarImagemPlaceholder(document.getElementById('foto1img'), 'imagem_casal_1', 'Nosso início');
-    aplicarImagemPlaceholder(document.getElementById('foto2img'), 'imagem_casal_2', 'Nossos sorrisos');
-    aplicarImagemPlaceholder(document.getElementById('foto3img'), 'imagem_casal_3', 'Nosso amor');
+    aplicarImagemPlaceholder(document.getElementById('foto1img'), 'imagem_casal_1', 'A amizade');
+    aplicarImagemPlaceholder(document.getElementById('foto2img'), 'imagem_casal_2', 'A beleza');
+    aplicarImagemPlaceholder(document.getElementById('foto3img'), 'imagem_casal_3', 'Ao amor');
 }
 
 function iniciarGaleriaFotos() {
@@ -550,7 +550,7 @@ function iniciarFlashback(aoTerminar) {
     const label = document.getElementById('flashbackLabel');
     const btnContinuar = document.getElementById('btnFlashbackContinuar');
     const fotos = ['fbFoto1', 'fbFoto2', 'fbFoto3', 'fbFoto4', 'fbFoto5'];
-    const legendas = ['onde tudo começou', 'as risadinhas de sempre', 'os perrengues que resolvemos juntos', 'os dias mais simples', 'e hoje, mais um capítulo'];
+    const legendas = ['A mais linda.', 'A mais amorosa', 'A mais incrível', 'A mais inteligente', 'e hoje a mais um passo de ser minha esposa'];
 
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) { aoTerminar(); return; }
 
