@@ -277,11 +277,13 @@ function iniciarLoja() {
     document.getElementById('freteBtn').addEventListener('click', () => {
         const cepDigitado = (document.getElementById('freteCepInput').value || '').replace(/\D/g, '');
         const resultado = document.getElementById('freteResult');
-        if (cepDigitado === '140626') {
-            resultado.innerHTML = 'Esse "CEP" não existe em lugar nenhum, só na nossa história: 14/06, o dia do nosso primeiro "eu te amo". Feliz por você ter digitado justo esse aqui 💛';
+        if (cepDigitado === '140626') or  (cepDigitado === '14062026'){
+            resultado.innerHTML = 'Mais um segredinho bobo, mas lembre-se que nunca irei esquecer essa data, podem se passar dias, semanas, meses, anos, você se tornou única em minha vida. Eu amo você meu amor!';
             marcarEasterEggEncontrado('freteData');
+        if else (cepDigitado === '01082026') or  (cepDigitado === '010826'){
+            resultado.innerHTML = 'Data do nosso pedido, também nunca esquecerei, em ver seus olhos brilharem, sentir seu abraço, seu beijo, ficará para sempre em meu coração, amo você!';
         } else {
-            resultado.textContent = 'Sedex Expresso - Frete Grátis (Chega em 2 a 3 dias úteis)';
+            resultado.textContent = 'Sedex Expresso - Frete Grátis (Chega em 2 a 3 dias úteis). 2 datas importantes podem ser digitadas.';
         }
         resultado.classList.remove('d-none');
     });
