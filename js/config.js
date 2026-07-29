@@ -126,11 +126,15 @@ const PLACEHOLDERS = {
     bicho_slinky: { arquivoBase: 'bicho-slinky', tipo: 'imagem', descricao: 'Slinky (em memória)' },
     bicho_tommy: { arquivoBase: 'bicho-tommy', tipo: 'imagem', descricao: 'Tommy (em memória)' },
     bicho_anne: { arquivoBase: 'bicho-anne', tipo: 'imagem', descricao: 'Anne (em memória)' },
+    bicho_iris: { arquivoBase: 'bicho-iris', tipo: 'imagem', descricao: 'Iris (em memória)' },
 
     // ---- Fotos de cada local do "Nosso mapa" ----
     mapa_colina: { arquivoBase: 'mapa-colina', tipo: 'imagem', descricao: 'Colina, Orlândia' },
+    mapa_brooks: { arquivoBase: 'mapa-brooks', tipo: 'imagem', descricao: 'Brooks, Franca' },
+    mapa_estrada: { arquivoBase: 'mapa-estrada', tipo: 'imagem', descricao: 'A estrada de terra' },
     mapa_santa_rosa: { arquivoBase: 'mapa-santa-rosa', tipo: 'imagem', descricao: 'Santa Rosa de Viterbo' },
     mapa_curupira: { arquivoBase: 'mapa-curupira', tipo: 'imagem', descricao: 'Parque Curupira' },
+    mapa_familia: { arquivoBase: 'mapa-familia', tipo: 'imagem', descricao: 'A família, casa do tio dela' },
     mapa_balanco: { arquivoBase: 'mapa-balanco', tipo: 'imagem', descricao: 'O balanço em Sales de Oliveira' },
     mapa_nuporanga: { arquivoBase: 'mapa-nuporanga', tipo: 'imagem', descricao: 'Nuporanga' },
     mapa_verace: { arquivoBase: 'mapa-verace', tipo: 'imagem', descricao: 'Verace, Ribeirão Preto' },
@@ -817,7 +821,8 @@ const BICHOS_EM_MEMORIA = [
         textoEspecial: 'Confesso que não cheguei a te conhecer direito, Slinky, mas sei o quanto você ajudou ela em uma fase difícil, e isso te tornou especial pra mim também, mesmo à distância. Obrigado por ter cuidado dela antes de mim.'
     },
     { nome: 'Tommy', emoji: '🦜', foto: 'bicho_tommy' },
-    { nome: 'Anne', emoji: '🦜', foto: 'bicho_anne' }
+    { nome: 'Anne', emoji: '🦜', foto: 'bicho_anne' },
+    { nome: 'Iris', emoji: '🦜', foto: 'bicho_iris' }
 ];
 
 /* ----------------------------------------------------------------------

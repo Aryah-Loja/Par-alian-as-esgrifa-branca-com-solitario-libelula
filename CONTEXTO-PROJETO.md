@@ -62,7 +62,7 @@ sendo lido por ela, não por ele.
   por ela, apesar de fingir neutralidade), Yuk, Ahadi, Shury (gatos), Sol
   e Lua (calopsitas). Em memória: Negão, **Slinky** (ajudou muito ela numa
   fase difícil; o Gabriel não chegou a conhecê-lo direito, mas conheceu a
-  família dela de verdade nesse momento difícil), Tommy, Anne.
+  família dela de verdade nesse momento difícil), Tommy, Anne, Iris.
 - Aniversário dela: **8 de agosto**.
 - Primeiro encontro: **30 de maio**, no Colina, em Orlândia.
 - Data oficial ("nosso data", primeiro "eu te amo"): **14 de junho**, no
@@ -609,6 +609,49 @@ controle/manutenção (ela nunca vê essa página). **Pendente:** o vídeo
 de verdade em `secret/assets/video-secreto.mp4` (mostra aviso enquanto
 não existir).
 
+## Mapa da relação: prévia + modal "Ver todos os lugares" (novo, 29/07/2026)
+
+`MAPA_LUGARES` (`js/config.js`) cresceu de 8 para **13 lugares**: os 4 novos
+são **Verace** (Ribeirão Preto), **Praça da Bike** (Ribeirão Preto),
+**Cruzeiro** (São Simão) e **Mostarda** (São Joaquim da Barra) — todos com
+`texto: ''` e um comentário `// Texto de exemplo — troque pelo que esse
+lugar realmente significa pra vocês.` no código, ou seja, **ainda faltam as
+frases de verdade pra cada um** (só o nome/cidade/ícone já foram
+preenchidos). Fotos já registradas em `PLACEHOLDERS` (`mapa_verace`,
+`mapa_praca_bike`, `mapa_cruzeiro`, `mapa_mostarda`), esperando os arquivos
+`mapa-verace.*`, `mapa-praca-bike.*`, `mapa-cruzeiro.*`, `mapa-mostarda.*`
+em `assets/img/`.
+
+Como a lista cresceu, a seção "Nosso mapa" (dentro de "Nossa História",
+`index.html`) agora mostra só uma **prévia** (os 4 primeiros lugares,
+`MAPA_QUANTIDADE_PREVIA` em `js/romance.js`) com um botão "Ver todos os
+lugares" que abre um **modal** com a trilha completa:
+
+```
+js/romance.js → preencherGridDoMapa(grid, lugares)   — função genérica que
+                 já existia, agora reaproveitada pra preencher tanto o grid
+                 da prévia (#mapaTrilhaGrid) quanto o do modal
+                 (#mapaTrilhaGridCompleto)
+              → renderizarMapaDaRelacao()             — decide o que entra
+                 na prévia (só corta se `MAPA_LUGARES.length >
+                 MAPA_QUANTIDADE_PREVIA`) e mostra/esconde o botão
+                 (#mapaVerTodosWrap)
+              → iniciarMapaModal()                    — abre/fecha o modal
+                 (#mapaModalOverlay), mesma trava de rolagem de fundo
+                 (bloquearScrollFundoLembranca/desbloquearScrollFundoLembranca)
+                 usada pelos outros overlays do site
+index.html    → #mapaVerTodosWrap / #btnMapaVerTodos (botão da prévia),
+                 #mapaModalOverlay / #btnFecharMapaModal / #mapaTrilhaGridCompleto
+                 (modal em si, reaproveita a classe .carta-discussao-overlay)
+css/style.css → seção "Modal 'todos os nossos lugares' (trilha completa do
+                 mapa)" (.mapa-modal-caixa, .mapa-modal-titulo)
+```
+
+Se a lista de lugares cair para `MAPA_QUANTIDADE_PREVIA` (4) ou menos, o
+botão "Ver todos os lugares" fica escondido automaticamente e a prévia já
+mostra a trilha inteira — não precisa de nenhum ajuste manual ao
+adicionar/remover lugares no futuro, só editar `MAPA_LUGARES` como sempre.
+
 ## Pendências / sugestões em aberto
 
 - Sincronização de reset entre aparelhos foi reportada como
@@ -620,6 +663,11 @@ não existir).
   chaves, cota do plano gratuito) antes de suspeitar de bug.
 - Adicionar as fotos/vídeos reais nas pastas (ver os `LEIA-ME*.md`
   espalhados em `assets/`).
+- Escrever a frase (`texto:`) de verdade dos 4 lugares novos do mapa
+  (Verace, Praça da Bike, Cruzeiro, Mostarda) em `MAPA_LUGARES`
+  (`js/config.js`) — hoje estão vazios com um comentário de placeholder.
+  Adicionar também as 4 fotos correspondentes (ver seção "Mapa da relação"
+  acima).
 - Preencher `URL_DO_SITE` em `config.js` assim que decidir onde hospedar.
 - Testar tudo de verdade num iPhone físico — boa parte dos bugs
   encontrados até aqui só aparecem no aparelho real, não em simulação.

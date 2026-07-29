@@ -742,6 +742,12 @@ function fecharLembrancaAmpliada() {
     lightboxItensAtuais = [];
     lightboxLegendasAtuais = null;
     desbloquearScrollFundoLembranca();
+    // Mesma correção do "espaço vazio/roxo no fim da tela" (ver
+    // forcarRecalculoDeLayout() em js/utils.js): fechar o lightbox tira o
+    // body do position:fixed do scroll-lock, e sem forçar esse reflow o
+    // navegador às vezes mantém a altura antiga calculada, sobrando uma
+    // faixa vazia com a cor de fundo escura até um F5 manual.
+    forcarRecalculoDeLayout();
 }
 
 /* ---------------- Navegação para "Nossa História" ---------------- */
@@ -1215,20 +1221,48 @@ function iniciarCartaDiscussao() {
 // os lugares" (ver iniciarMapaModal() logo abaixo).
 const MAPA_QUANTIDADE_PREVIA = 4;
 
-function preencherGridDoMapa(grid, lugares) {
+// resolverFotoPlaceholder devolve um caminho real em "assets/img/..." quando
+// a foto já foi adicionada, ou um SVG gerado na hora (data:image/svg+xml...)
+// quando ainda não existe — assim dá pra saber qual dos dois caso a caso.
+function lugarTemFotoReal(caminho) {
+    return typeof caminho === 'string' && caminho.startsWith('assets/img/');
+}
+
+async function preencherGridDoMapa(grid, lugares) {
     if (!grid) return;
     grid.innerHTML = '';
-    lugares.forEach(lugar => {
+
+    // Resolve a foto de cada lugar em paralelo (mesma lógica usada em
+    // "Seus bichos") pra já nascer sabendo quais pins mostram foto de
+    // verdade e quais ainda caem no ícone.
+    const fotosResolvidas = await Promise.all(lugares.map(lugar => lugar.foto ? resolverFotoPlaceholder(lugar.foto) : Promise.resolve(null)));
+
+    lugares.forEach((lugar, i) => {
+        const foto = fotosResolvidas[i];
+        const temFoto = lugarTemFotoReal(foto);
+
         const card = document.createElement('div');
         card.className = 'mapa-card' + (lugar.futuro ? ' mapa-card-futuro' : '');
         card.innerHTML = `
-            <div class="mapa-pin"><i class="bi ${lugar.icon || 'bi-geo-alt-fill'}"></i></div>
+            <div class="mapa-pin${temFoto ? ' mapa-pin-foto' : ''}">${
+                temFoto
+                    ? `<img src="${foto}" alt="${lugar.nome}">`
+                    : `<i class="bi ${lugar.icon || 'bi-geo-alt-fill'}"></i>`
+            }</div>
             <div class="mapa-linha"></div>
             <div class="mapa-conteudo">
                 <p class="mapa-nome">${lugar.nome}</p>
                 <p class="mapa-cidade">${lugar.cidade || ''}</p>
                 <p class="mapa-texto">${lugar.texto || ''}</p>
             </div>`;
+
+        // Só abre o visor de foto ampliada se já existir uma foto de
+        // verdade pra esse lugar (sem sentido abrir o SVG de placeholder).
+        if (temFoto) {
+            card.classList.add('mapa-card-clicavel');
+            card.addEventListener('click', () => abrirLightboxGaleria(fotosResolvidas.filter(lugarTemFotoReal), fotosResolvidas.filter(lugarTemFotoReal).indexOf(foto), lugares.filter((_, j) => lugarTemFotoReal(fotosResolvidas[j])).map(l => l.nome)));
+        }
+
         grid.appendChild(card);
     });
 }
