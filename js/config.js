@@ -92,16 +92,19 @@ const PLACEHOLDERS = {
     imagem_flashback_5: { arquivo: 'flashback-5.jpg', tipo: 'imagem', descricao: 'Flashback — "e a partir de hoje, minha namorada' },
 
     // ---- Timeline (Nossa História) ----
-    imagem_timeline_1: { arquivo: 'timeline-1.jpg', tipo: 'imagem', descricao: 'Timeline — quando você comentou com a Vitória / dias antes de se conhecerem' },
-    imagem_timeline_2: { arquivo: 'timeline-2.jpg', tipo: 'imagem', descricao: 'Timeline — 11/05, carona e primeira conversa de verdade' },
-    imagem_timeline_3: { arquivo: 'timeline-3.jpg', tipo: 'imagem', descricao: 'Timeline — 30/05, primeiro encontro no Colina (Orlândia) e o beijo' },
-    imagem_timeline_4: { arquivo: 'timeline-4.jpg', tipo: 'imagem', descricao: 'Timeline — o dia do atoleiro na estrada de terra' },
-    imagem_timeline_5: { arquivo: 'timeline-5.jpg', tipo: 'imagem', descricao: 'Timeline — despedida do Slinky / acolhimento da família dela' },
-    imagem_timeline_6: { arquivo: 'timeline-6.jpg', tipo: 'imagem', descricao: 'Timeline — 14/06, o "eu te amo" depois da Brooks' },
-    imagem_timeline_7: { arquivo: 'timeline-7.jpg', tipo: 'imagem', descricao: 'Timeline — 20/07, apresentação pros avós em Santa Rosa de Viterbo, Parque Curupira e o balanço em Sales de Oliveira' },
-    imagem_timeline_8: { arquivo: 'timeline-8.jpg', tipo: 'imagem', descricao: 'Timeline — 12/07, o dia em Nuporanga que acabei conhecendo o tio e a tia dela' },
-    imagem_timeline_9: { arquivo: 'timeline-9.jpg', tipo: 'imagem', descricao: 'Timeline — 26/07, o dia que ela conheceu minha casa de verdade e eu voltei na casa do tio dela' },
-    imagem_timeline_hoje: { arquivo: 'timeline-hoje.jpg', tipo: 'imagem', descricao: 'Timeline — foto de hoje, marcando o dia do pedido' },
+    // Extensão flexível (igual bichos/mapa): aceita .jpg, .jpeg, .png ou
+    // .webp sem precisar editar nada aqui, só salvar o arquivo com esse
+    // nome base em assets/img/.
+    imagem_timeline_1: { arquivoBase: 'timeline-1', tipo: 'imagem', descricao: 'Timeline — quando você comentou com a Vitória / dias antes de se conhecerem' },
+    imagem_timeline_2: { arquivoBase: 'timeline-2', tipo: 'imagem', descricao: 'Timeline — 11/05, carona e primeira conversa de verdade' },
+    imagem_timeline_3: { arquivoBase: 'timeline-3', tipo: 'imagem', descricao: 'Timeline — 30/05, primeiro encontro no Colina (Orlândia) e o beijo' },
+    imagem_timeline_4: { arquivoBase: 'timeline-4', tipo: 'imagem', descricao: 'Timeline — o dia do atoleiro na estrada de terra' },
+    imagem_timeline_5: { arquivoBase: 'timeline-5', tipo: 'imagem', descricao: 'Timeline — despedida do Slinky / acolhimento da família dela' },
+    imagem_timeline_6: { arquivoBase: 'timeline-6', tipo: 'imagem', descricao: 'Timeline — 14/06, o "eu te amo" depois da Brooks' },
+    imagem_timeline_7: { arquivoBase: 'timeline-7', tipo: 'imagem', descricao: 'Timeline — 20/07, apresentação pros avós em Santa Rosa de Viterbo, Parque Curupira e o balanço em Sales de Oliveira' },
+    imagem_timeline_8: { arquivoBase: 'timeline-8', tipo: 'imagem', descricao: 'Timeline — 12/07, o dia em Nuporanga que acabei conhecendo o tio e a tia dela' },
+    imagem_timeline_9: { arquivoBase: 'timeline-9', tipo: 'imagem', descricao: 'Timeline — 26/07, o dia que ela conheceu minha casa de verdade e eu voltei na casa do tio dela' },
+    imagem_timeline_hoje: { arquivoBase: 'timeline-hoje', tipo: 'imagem', descricao: 'Timeline — foto de hoje, marcando o dia do pedido' },
 
     // ---- Nossos momentos (mesa de fotos) ----
     imagem_momento_1: { arquivo: 'momento-1.jpg', tipo: 'imagem', descricao: 'Foto solta na "mesa de fotos"' },
