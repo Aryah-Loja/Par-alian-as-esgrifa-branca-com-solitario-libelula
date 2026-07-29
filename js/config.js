@@ -136,6 +136,7 @@ const PLACEHOLDERS = {
     mapa_verace: { arquivoBase: 'mapa-verace', tipo: 'imagem', descricao: 'Verace, Ribeirão Preto' },
     mapa_praca_bike: { arquivoBase: 'mapa-praca-bike', tipo: 'imagem', descricao: 'Praça da Bike, Ribeirão Preto' },
     mapa_cruzeiro: { arquivoBase: 'mapa-cruzeiro', tipo: 'imagem', descricao: 'Cruzeiro, São Simão' },
+    mapa_mostarda: { arquivoBase: 'mapa-mostarda', tipo: 'imagem', descricao: 'Mostarda, São Joaquim da Barra' },
     mapa_proximo: { arquivoBase: 'mapa-proximo', tipo: 'imagem', descricao: 'Próximo destino' },
 
     // ---- Áudio ----
@@ -1288,7 +1289,7 @@ const MAPA_LUGARES = [
     {
         nome: 'Colina',
         cidade: 'Orlândia',
-        texto: 'O nosso primeiro encontro de verdade. Aquele dia que começou com uma espera de quase uma hora e meia, terminou com conversas no carro, risadas e o beijo que mudou tudo.',
+        texto: '',
         icon: 'bi-heart-fill',
         foto: 'mapa_colina'
     },
@@ -1296,7 +1297,7 @@ const MAPA_LUGARES = [
     {
         nome: 'Brooks',
         cidade: 'Franca',
-        texto: 'O lugar onde uma conversa no carro virou um dos momentos mais importantes da nossa história. Foi ali que saiu o primeiro "eu te amo" e que o nosso amor ganhou nome.',
+        texto: '',
         icon: 'bi-chat-heart-fill',
         foto: 'mapa_brooks'
     },
@@ -1304,15 +1305,15 @@ const MAPA_LUGARES = [
     {
         nome: 'A estrada de terra',
         cidade: 'Nosso pequeno caos',
-        texto: 'O dia em que o carro resolveu parar no pior lugar possível, eu saí cheio de barro e perdi até o triângulo tentando resolver tudo. No fim, virou uma das lembranças que eu mais gosto, porque era com você.',
+        texto: '',
         icon: 'bi-signpost-fill',
         foto: 'mapa_estrada'
     },
 
     {
-        nome: 'Nuporanga',
-        cidade: 'FearteM',
-        texto: 'Era só uma parada rápida para pegar uma blusa antes de irmos para a feira, mas acabou virando mais uma história nossa. Você precisou usar o banheiro, ficou com vergonha da minha casa e, no fim, acabamos conhecendo seu tio e sua tia de um jeito totalmente inesperado.',
+        nome: 'Minha Casa',
+        cidade: 'Nuporanga',
+        texto: '',
         icon: 'bi-shop',
         foto: 'mapa_nuporanga'
     },
@@ -1320,7 +1321,7 @@ const MAPA_LUGARES = [
     {
         nome: 'Casa da minha vó',
         cidade: 'Santa Rosa de Viterbo',
-        texto: 'O dia em que você conheceu uma parte importante da minha história. Te apresentei para meus avós e guardei comigo a felicidade de ver você fazendo parte da minha vida.',
+        texto: '',
         icon: 'bi-house-heart-fill',
         foto: 'mapa_santa_rosa'
     },
@@ -1328,23 +1329,16 @@ const MAPA_LUGARES = [
     {
         nome: 'Parque Curupira',
         cidade: 'Ribeirão Preto',
-        texto: 'Um daqueles momentos simples que ficam especiais. Um passeio tranquilo, nós dois, sem pressa, apenas aproveitando estar juntos.',
+        texto: '',
         icon: 'bi-tree-fill',
         foto: 'mapa_curupira'
     },
 
-    {
-        nome: 'Minha casa',
-        cidade: 'Um lugar que agora também é seu',
-        texto: 'O dia em que você conheceu minha casa de verdade. Um momento simples, mas importante, porque aos poucos nossas vidas começaram a se misturar.',
-        icon: 'bi-house-fill',
-        foto: 'mapa_minha_casa'
-    },
 
     {
         nome: 'A família',
         cidade: 'Casa do seu tio',
-        texto: 'Dessa vez sem surpresa no caminho. Conheci sua prima, sua avó e consegui conversar melhor com sua mãe. Foi o momento certo, do jeito que deveria ser.',
+        texto: '',
         icon: 'bi-people-fill',
         foto: 'mapa_familia'
     },
@@ -1353,7 +1347,7 @@ const MAPA_LUGARES = [
         nome: 'Verace',
         cidade: 'Ribeirão Preto',
         // Texto de exemplo — troque pelo que esse lugar realmente significa pra vocês.
-        texto: 'Um jantar gostoso, boa conversa e mais uma lembrança boa pra guardar da nossa história.',
+        texto: '',
         icon: 'bi-cup-hot-fill',
         foto: 'mapa_verace'
     },
@@ -1362,7 +1356,7 @@ const MAPA_LUGARES = [
         nome: 'Praça da Bike',
         cidade: 'Ribeirão Preto',
         // Texto de exemplo — troque pelo que esse lugar realmente significa pra vocês.
-        texto: 'Um passeio tranquilo por ali, sem pressa, só aproveitando o tempo bom ao seu lado.',
+        texto: '',
         icon: 'bi-bicycle',
         foto: 'mapa_praca_bike'
     },
@@ -1371,15 +1365,24 @@ const MAPA_LUGARES = [
         nome: 'Cruzeiro',
         cidade: 'São Simão',
         // Texto de exemplo — troque pelo que esse lugar realmente significa pra vocês.
-        texto: 'Mais um lugar que virou parte da nossa história, guardado com carinho junto com todos os outros.',
+        texto: '',
         icon: 'bi-geo-alt-fill',
         foto: 'mapa_cruzeiro'
     },
 
     {
+        nome: 'Mostarda',
+        cidade: 'São Joaquim da Barra',
+        // Texto de exemplo — troque pelo que esse lugar realmente significa pra vocês.
+        texto: '',
+        icon: 'bi-geo',
+        foto: 'mapa_mostarda'
+    },
+
+    {
         nome: 'Próximo destino',
         cidade: 'Onde a vida levar a gente',
-        texto: 'Ainda existem muitos lugares esperando por nós. Inclusive aquele que eu falei desde o começo: a praia, com você do meu lado, pé na areia e mais histórias para guardar.',
+        texto: '',
         icon: 'bi-airplane-fill',
         futuro: true,
         foto: 'mapa_proximo'
