@@ -889,8 +889,8 @@ const MOMENTO_LENTO_FRASES = [
    cápsula do tempo — ver js/sync.js), essa seção aparece na página de
    memórias, acima de tudo o mais, com uma mensagem só desse dia.
    ---------------------------------------------------------------------- */
-const ANIVERSARIO_DIA = 8;
-const ANIVERSARIO_MES = 8; // agosto
+const ANIVERSARIO_DIA = 29;
+const ANIVERSARIO_MES = 7; // agosto
 function textoAniversario() {
     return `Hoje é diferente de todos os outros dias: hoje é o seu dia.
 
