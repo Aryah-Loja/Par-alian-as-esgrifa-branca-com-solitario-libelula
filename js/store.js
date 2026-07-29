@@ -280,7 +280,7 @@ function iniciarLoja() {
         if (cepDigitado === '140626' || cepDigitado === '14062026') {
             resultado.innerHTML = 'Mais um segredinho bobo, mas lembre-se que nunca irei esquecer essa data, podem se passar dias, semanas, meses, anos, você se tornou única em minha vida. Eu amo você meu amor!';
             marcarEasterEggEncontrado('freteData');
-        if else (cepDigitado === '140626' || cepDigitado === '14062026') {
+        else if (cepDigitado === '010826' || cepDigitado === '01082026') {
             resultado.innerHTML = 'Data do nosso pedido, também nunca esquecerei, em ver seus olhos brilharem, sentir seu abraço, seu beijo, ficará para sempre em meu coração, amo você!';
         } else {
             resultado.textContent = 'Sedex Expresso - Frete Grátis (Chega em 2 a 3 dias úteis). 2 datas importantes podem ser digitadas.';
