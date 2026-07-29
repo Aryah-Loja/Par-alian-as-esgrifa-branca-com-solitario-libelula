@@ -219,7 +219,7 @@ function iniciarFechamentoEstrelaModal() {
     overlay.addEventListener('click', (evt) => { if (evt.target === overlay) fecharEstrelaModal(); });
 }
 
-function abrirEstrelaModal(indice) {
+async function abrirEstrelaModal(indice) {
     const marco = TIMELINE_MARCOS[indice];
     if (!marco) return;
     const overlay = document.getElementById('estrelaModalOverlay');
@@ -227,7 +227,17 @@ function abrirEstrelaModal(indice) {
     const dataEl = document.getElementById('estrelaModalData');
     const textoEl = document.getElementById('estrelaModalTexto');
 
-    aplicarImagemPlaceholder(foto, marco.foto, 'Foto do momento');
+    // resolverFotoPlaceholderOuAsset (js/export.js) resolve a extensão real
+    // do arquivo (.jpg/.jpeg/.png/.webp) em vez de assumir .jpg fixo.
+    const fotoSrc = await resolverFotoPlaceholderOuAsset(marco.foto);
+    foto.dataset.placeholderId = marco.foto;
+    foto.onerror = function () {
+        if (this.dataset.fallbackAplicado) return;
+        this.dataset.fallbackAplicado = '1';
+        this.src = gerarSvgPlaceholderComLegenda('Foto do momento');
+    };
+    foto.src = fotoSrc;
+
     const nomeEstrela = marco.ehPedido ? (document.getElementById('dataPedidoTimeline')?.textContent || 'Hoje') : (marco.data || '');
     dataEl.textContent = nomeEstrela;
     textoEl.textContent = marco.texto || '';
@@ -235,8 +245,8 @@ function abrirEstrelaModal(indice) {
     overlay.scrollTop = 0; // sempre abre mostrando o começo do texto, nunca no meio
     bloquearScrollFundoLembranca();
 
-    foto.onclick = () => {
-        const todasFotos = TIMELINE_MARCOS.map(m => getAsset(m.foto));
+    foto.onclick = async () => {
+        const todasFotos = await Promise.all(TIMELINE_MARCOS.map(m => resolverFotoPlaceholderOuAsset(m.foto)));
         const todasLegendas = TIMELINE_MARCOS.map(m => m.ehPedido ? (document.getElementById('dataPedidoTimeline')?.textContent || 'Hoje') : (m.data || ''));
         abrirLightboxGaleria(todasFotos, indice, todasLegendas);
     };
