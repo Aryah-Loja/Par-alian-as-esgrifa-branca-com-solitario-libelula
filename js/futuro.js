@@ -18,7 +18,7 @@ let futuroMimePendente = null;
 let futuroTimerIntervalo = null;
 let futuroTimerSegundos = 0;
 let futuroTimeoutMaximo = null;
-const FUTURO_VIDEO_DURACAO_MAXIMA_SEGUNDOS = 60; // limite pra não encher o banco de dados com vídeos longos (ver prompt de correções)
+const FUTURO_VIDEO_DURACAO_MAXIMA_SEGUNDOS = 30; // limite pra não encher o banco de dados com vídeos longos (ver prompt de correções)
 
 function pararStreamFuturo() {
     if (futuroStream) { futuroStream.getTracks().forEach(t => t.stop()); futuroStream = null; }
