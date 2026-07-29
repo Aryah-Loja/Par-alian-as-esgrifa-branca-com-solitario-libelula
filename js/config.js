@@ -880,10 +880,10 @@ const MOMENTO_LENTO_FRASES = [
     'Mas eu quis guardar ele pra sempre, bem devagar.',
     'Pra sempre voltar e ver a mulher linda.',
     'Que está ao meu lado hoje, e para sempre.',
-    'Eu te amo!.'
-    'Ana Júlia Poloni.'
-    'Sempre estarei aqui por você.'
-    'E com você!'
+    'Eu te amo!.',
+    'Ana Júlia Poloni.',
+    'Sempre estarei aqui por você.',
+    'E com você!',
     '<3'
 
 ];
