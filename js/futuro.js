@@ -291,11 +291,11 @@ async function renderizarMensagensFuturo() {
             item.appendChild(p);
         } else if (msg.subtipo === 'audio' && msg.blob) {
             const audio = document.createElement('audio');
-            audio.className = 'mensagem-futuro-audio'; audio.controls = true; audio.src = URL.createObjectURL(msg.blob);
+            audio.className = 'mensagem-futuro-audio'; audio.controls = true; audio.preload = 'metadata'; audio.src = URL.createObjectURL(msg.blob);
             item.appendChild(audio);
         } else if (msg.subtipo === 'video' && msg.blob) {
             const video = document.createElement('video');
-            video.className = 'mensagem-futuro-video-el'; video.controls = true; video.playsInline = true; video.src = URL.createObjectURL(msg.blob);
+            video.className = 'mensagem-futuro-video-el'; video.controls = true; video.playsInline = true; video.preload = 'metadata'; video.src = URL.createObjectURL(msg.blob);
             item.appendChild(video);
         }
         container.appendChild(item);

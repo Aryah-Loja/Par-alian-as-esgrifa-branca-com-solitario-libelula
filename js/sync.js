@@ -578,12 +578,20 @@ async function sincronizarNaAbertura() {
         } finally {
             __auroraAplicandoBackupRemoto = false;
         }
-    } else if (!nuvemFoiResetada && timestampLocal > 0 && timestampLocal >= timestampNuvem) {
+    } else if (!nuvemFoiResetada && timestampLocal > 0 && timestampLocal > timestampNuvem) {
         // Este aparelho tem dados que a nuvem ainda não tem (ex.: primeira vez, ou sem internet antes) — envia agora.
         // Isso também é o que "tira" a marca de reset do meta.json quando este aparelho já está em dia com o reset.
         // CORREÇÃO: exige "!nuvemFoiResetada" — sem isso, um aparelho cujo timestamp local já fosse >= ao do
         // reset (por já ter "visto" esse reset antes) podia reenviar dados antigos por cima da marca de reset,
         // ressuscitando informação que deveria ter sido apagada.
+        //
+        // CORREÇÃO DE PERFORMANCE (site demorando pra abrir com banco cheio de
+        // vídeo grande): antes era "timestampLocal >= timestampNuvem" — depois
+        // de um envio com sucesso, o timestamp da nuvem fica IGUAL ao local
+        // (nunca menor), então na próxima abertura "igual" também entrava
+        // aqui e reenviava o backup inteiro (zip com todos os vídeos/fotos) de
+        // novo, mesmo sem nada ter mudado. Com ">" estrito, só reenvia quando
+        // este aparelho realmente tem algo mais novo que a nuvem ainda não viu.
         try {
             await publicarComIndicadorVisivel();
         } catch (err) {
