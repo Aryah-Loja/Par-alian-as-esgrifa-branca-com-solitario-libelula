@@ -331,6 +331,12 @@ img { max-width: 100%; }
 
 .modo-vela-papel { position: relative; z-index: 1; max-width: 380px; width: 100%; background: rgba(250,240,225,0.97); border-radius: 4px; padding: 30px 24px; box-shadow: 0 0 60px 10px rgba(255,170,90,0.12), 0 20px 50px rgba(0,0,0,0.6); }
 .modo-vela-papel .letter-text { color: #2b2523; }
+/* Player do vídeo da cápsula do tempo (ver abrirModoVela em js/utils.js e
+   a chamada em iniciarEnvelopeCapsula, js/romance.js) — só aparece quando
+   opcoes.videoYoutubeId é passado, então não afeta as outras cartas
+   (carta final, carta de discussão) que usam este mesmo modal. */
+#modoVelaVideoWrap:not(.d-none) { position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 8px; overflow: hidden; margin-top: 16px; background: #000; box-shadow: 0 12px 30px rgba(0,0,0,0.35); }
+#modoVelaVideoWrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
 .letter-text { font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; font-size: 1.02rem; line-height: 1.75; color: #2b2523; text-align: left; min-height: 90px; margin: 0; white-space: pre-wrap; opacity: 0; transition: opacity 1s ease; }
 .letter-text.versiculo-visivel { opacity: 1; }
 .letter-signoff { font-family: 'Alex Brush', cursive; font-size: 1.7rem; color: var(--rosegold-dark); margin-top: 10px; opacity: 0; transition: opacity 0.6s ease; }

@@ -509,21 +509,12 @@ async function iniciarEnvelopeCapsula() {
     textoEl.textContent = textoCapsulaDoTempo();
     assinaturaEl.textContent = `Com amor, ${NOME_DELE}.`;
 
-    // Botão do vídeo do YouTube com a mensagem em vídeo — só existe no DOM
-    // a partir daqui (desbloqueio real confirmado), e só se um ID tiver
-    // sido preenchido em CAPSULA_YOUTUBE_ID (js/config.js).
-    if (CAPSULA_YOUTUBE_ID) {
-        const rodape = envelope.querySelector('.letter-paper-rodape');
-        if (rodape && !rodape.querySelector('.btn-capsula-video')) {
-            const btnVideo = document.createElement('a');
-            btnVideo.href = `https://www.youtube.com/watch?v=${CAPSULA_YOUTUBE_ID}`;
-            btnVideo.target = '_blank';
-            btnVideo.rel = 'noopener noreferrer';
-            btnVideo.className = 'btn btn-rosegold btn-sm rounded-pill fw-bold mt-2 btn-capsula-video';
-            btnVideo.innerHTML = '<i class="bi bi-youtube me-1"></i>Ver o vídeo';
-            rodape.appendChild(btnVideo);
-        }
-    }
+    // Vídeo do YouTube com a mensagem em vídeo pra cápsula do tempo (se um
+    // ID tiver sido preenchido em CAPSULA_YOUTUBE_ID, js/config.js): entra
+    // como opção pro abrirModoVela, no addEventListener de clique logo
+    // abaixo — embutido ali dentro, junto do texto da carta (modo "luz de
+    // vela"), não direto no envelope, que fica visível só um instante
+    // antes desse overlay abrir.
 
     // CORREÇÃO (carta ficando "flutuando" na tela depois de fechar): esta
     // carta pode ser aberta e fechada várias vezes (ao contrário da carta
@@ -550,7 +541,8 @@ async function iniciarEnvelopeCapsula() {
         // ela nunca fica flutuando por cima da tela depois de fechada.
         setTimeout(() => {
             abrirModoVela('Um ano depois', textoEl.innerHTML, assinaturaEl.textContent, {
-                aoFechar: fecharEnvelopeCapsula
+                aoFechar: fecharEnvelopeCapsula,
+                videoYoutubeId: CAPSULA_YOUTUBE_ID ? extrairIdYoutube(CAPSULA_YOUTUBE_ID) : ''
             });
         }, 900);
     });
@@ -846,10 +838,13 @@ async function goToRomancePage(primeiraVez) {
     iniciarAdjetivosParaEla();
 
     if (typeof VIDEO_PROCESSO_YOUTUBE_URL !== 'undefined' && VIDEO_PROCESSO_YOUTUBE_URL) {
-        const linkProcesso = document.getElementById('linkVideoProcesso');
+        const iframeProcesso = document.getElementById('videoProcessoIframe');
         const wrapProcesso = document.getElementById('videoProcessoWrap');
-        if (linkProcesso && wrapProcesso) {
-            linkProcesso.href = VIDEO_PROCESSO_YOUTUBE_URL;
+        const idProcesso = extrairIdYoutube(VIDEO_PROCESSO_YOUTUBE_URL);
+        if (iframeProcesso && wrapProcesso && idProcesso) {
+            // Embutido dentro do site (mesmo esquema usado no vídeo do
+            // pedido e na galeria) — não abre mais o app/site do YouTube.
+            iframeProcesso.src = `https://www.youtube.com/embed/${idProcesso}?rel=0&modestbranding=1`;
             wrapProcesso.classList.remove('d-none');
         }
     }

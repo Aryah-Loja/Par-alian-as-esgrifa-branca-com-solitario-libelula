@@ -72,6 +72,26 @@ function abrirModoVela(eyebrowTexto, textoHtml, assinaturaTexto, opcoes = {}) {
     overlay.scrollTop = 0;
     bloquearScrollFundoLembranca();
 
+    // Player embutido, hoje só usado pela cápsula do tempo (ver
+    // iniciarEnvelopeCapsula em js/romance.js) — as outras cartas que usam
+    // este mesmo modal (final e de discussão) não passam videoYoutubeId,
+    // então este bloco fica escondido e vazio pra elas.
+    const videoWrap = document.getElementById('modoVelaVideoWrap');
+    if (videoWrap) {
+        videoWrap.innerHTML = '';
+        if (opcoes.videoYoutubeId) {
+            const iframeVideo = document.createElement('iframe');
+            iframeVideo.src = `https://www.youtube.com/embed/${opcoes.videoYoutubeId}?rel=0&modestbranding=1`;
+            iframeVideo.title = 'Vídeo da cápsula do tempo';
+            iframeVideo.setAttribute('allow', 'accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture');
+            iframeVideo.setAttribute('allowfullscreen', '');
+            videoWrap.appendChild(iframeVideo);
+            videoWrap.classList.remove('d-none');
+        } else {
+            videoWrap.classList.add('d-none');
+        }
+    }
+
     const continuarWrap = document.getElementById('modoVelaContinuarWrap');
     const btnContinuar = document.getElementById('btnModoVelaContinuar');
     const btnFechar = document.getElementById('btnFecharModoVela');
@@ -105,6 +125,10 @@ function abrirModoVela(eyebrowTexto, textoHtml, assinaturaTexto, opcoes = {}) {
         // iniciarEnvelopeCapsula em romance.js).
         const fechar = () => {
             overlay.classList.add('d-none');
+            // Some o player junto (não só esconde): sem isso, um vídeo do
+            // YouTube tocando continuaria rodando com áudio escondido atrás
+            // do overlay fechado.
+            if (videoWrap) videoWrap.innerHTML = '';
             desbloquearScrollFundoLembranca();
             if (typeof opcoes.aoFechar === 'function') opcoes.aoFechar();
         };
