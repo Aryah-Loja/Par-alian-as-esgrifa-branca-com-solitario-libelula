@@ -781,8 +781,11 @@
         <div class="mt-5 reveal-up" style="max-width: 440px; margin: 0 auto;">
             <p class="romance-section-title"><i class="bi bi-signpost-split-fill me-2"></i>Nosso mapa</p>
             <div class="mapa-trilha" id="mapaTrilhaGrid"></div>
-            <div class="text-center mt-3 d-none" id="mapaVerTodosWrap">
-                <button id="btnMapaVerTodos" class="btn btn-outline-light btn-sm rounded-pill"><i class="bi bi-map me-1"></i>Ver todos os lugares</button>
+            <div class="text-center mt-3 d-flex gap-2 justify-content-center flex-wrap">
+                <button type="button" id="btnMapaAdicionarLocal" class="btn btn-outline-light btn-sm rounded-pill"><i class="bi bi-plus-lg me-1"></i>Adicionar local</button>
+                <div class="d-none" id="mapaVerTodosWrap">
+                    <button id="btnMapaVerTodos" class="btn btn-outline-light btn-sm rounded-pill"><i class="bi bi-map me-1"></i>Ver todos os lugares</button>
+                </div>
             </div>
         </div>
 
@@ -1166,6 +1169,46 @@ Se existe uma certeza que eu tenho, é esta: enquanto eu puder, vou continuar es
         </div>
     </div>
 
+    <!-- Modal "Adicionar local ao mapa": mesmo painel que já existia só em diagnostico.html (js/mapa-admin.js), agora também com um botão próprio aqui no site principal ("Adicionar local", na seção "Nosso mapa" acima). Os IDs dos campos são os mesmos usados em diagnostico.html de propósito — é o mesmo painel, só que dentro de um modal em vez de sempre visível. -->
+    <div id="mapaAdicionarModalOverlay" class="carta-discussao-overlay d-none">
+        <button id="btnFecharMapaAdicionarModal" class="modo-vela-fechar" aria-label="Fechar"><i class="bi bi-x-lg"></i></button>
+        <div class="mapa-modal-caixa">
+            <p class="mapa-modal-titulo"><i class="bi bi-signpost-split-fill me-2"></i>Adicionar um local novo</p>
+            <p class="small text-white-50 text-center mb-3">Fica salvo na nuvem, então aparece em qualquer aparelho que abrir o site. Depois de salvar aqui, falta só colocar a foto na pasta <code>assets/img/</code> com o nome indicado abaixo.</p>
+
+            <form id="mapaFormAdicionar" class="checklist-form-adicionar" onsubmit="return false;">
+                <label class="checklist-form-label" for="mapaAdminNome">Nome do local</label>
+                <input type="text" id="mapaAdminNome" placeholder="Ex.: Praia Nova">
+
+                <label class="checklist-form-label" for="mapaAdminCidade">Cidade (aparece embaixo do nome)</label>
+                <input type="text" id="mapaAdminCidade" placeholder="Ex.: Ribeirão Preto">
+
+                <label class="checklist-form-label" for="mapaAdminTexto">Frase curta sobre o local (opcional)</label>
+                <input type="text" id="mapaAdminTexto" placeholder="O que esse lugar significa pra vocês">
+
+                <label class="checklist-form-label" for="mapaAdminIcone">Ícone (Bootstrap Icons)</label>
+                <div class="d-flex gap-2 align-items-center">
+                    <i id="mapaAdminIconePreview" class="bi bi-geo-alt-fill" style="font-size: 1.3rem; color: var(--rosegold); width: 24px;"></i>
+                    <input type="text" id="mapaAdminIcone" value="bi-geo-alt-fill" placeholder="bi-geo-alt-fill">
+                </div>
+                <p class="small text-white-50 mt-1 mb-0">Nome do ícone em <a href="https://icons.getbootstrap.com" target="_blank" rel="noopener" class="text-rosegold">icons.getbootstrap.com</a> (ex.: bi-heart-fill, bi-cup-hot-fill, bi-tree-fill).</p>
+
+                <label class="checklist-form-label" for="mapaAdminFotoBase">Nome do arquivo da foto (gerado sozinho)</label>
+                <input type="text" id="mapaAdminFotoBase" readonly>
+                <p class="small text-white-50 mt-1 mb-0">Salve a foto em <code>assets/img/</code> com esse nome + <code>.jpg</code>, <code>.jpeg</code>, <code>.png</code> ou <code>.webp</code>.</p>
+
+                <div class="checklist-form-botoes">
+                    <button type="button" id="btnMapaAdminCancelar" class="checklist-form-btn checklist-form-btn-cancelar d-none">Cancelar edição</button>
+                    <button type="button" id="btnMapaAdminSalvar" class="checklist-form-btn checklist-form-btn-confirmar"><i class="bi bi-plus-circle me-1"></i>Adicionar local</button>
+                </div>
+                <p id="mapaAdminStatus" class="save-status mt-2 text-center"></p>
+            </form>
+
+            <p class="checklist-form-label mt-3 mb-2">Locais adicionados por aqui</p>
+            <div id="mapaAdminLista" class="d-flex flex-column gap-2"></div>
+        </div>
+    </div>
+
     <!-- Easter egg da lua: 5 toques revelam uma mensagem em código Morse (de propósito sem tradução — a graça é ela decifrar) -->
     <div id="luaEasterEggOverlay" class="carta-discussao-overlay d-none">
         <button id="btnFecharLuaEasterEgg" class="modo-vela-fechar" aria-label="Fechar"><i class="bi bi-x-lg"></i></button>
@@ -1242,6 +1285,7 @@ Se existe uma certeza que eu tenho, é esta: enquanto eu puder, vou continuar es
     <script src="js/store.js"></script>
     <script src="js/futuro.js"></script>
     <script src="js/romance.js"></script>
+    <script src="js/mapa-admin.js"></script>
     <script src="js/export.js"></script>
     <script src="js/sync.js"></script>
     <script src="js/suspense.js"></script>
