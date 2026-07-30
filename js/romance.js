@@ -373,21 +373,49 @@ async function iniciarGaleriaMomentos() {
         escolhidas = preenchidas;
     }
 
+    // CORREÇÃO (pedido: a página só deve aparecer com as 4 fotos já
+    // carregadas): até aqui só confirmamos que os ARQUIVOS existem (via
+    // HEAD) e escolhemos quais mostrar — isso não é o mesmo que a foto já
+    // ter sido baixada pelo navegador. Antes, esta função retornava assim
+    // que decidia `escolhidas`, então "Nossa História" podia aparecer
+    // (ver goToRomancePage/executarComBarraDeProgresso, que só revela a
+    // página quando TODAS as tarefas — incluindo esta — terminam) com as
+    // fotos da mesa ainda em branco por uma fração de segundo. Agora só
+    // consideramos a mesa "pronta" quando cada <img> escolhida terminar
+    // de carregar de verdade (evento load/error), com um limite de tempo
+    // de segurança pra nunca travar a experiência por causa de uma foto
+    // lenta ou quebrada.
+    const LIMITE_ESPERA_FOTO_MS = 6000;
+    const promessasDeCarregamento = [];
+
     cartoes.forEach((cartao, i) => {
         const img = cartao.querySelector('img');
         if (escolhidas[i]) {
-            img.src = escolhidas[i];
-            img.alt = 'Foto do casal';
             cartao.classList.remove('d-none');
+            cartao.style.cursor = 'pointer';
+            cartao.onclick = () => abrirLightboxGaleria(escolhidas, i);
+
+            promessasDeCarregamento.push(new Promise((resolve) => {
+                let jaResolveu = false;
+                const finalizar = () => { if (jaResolveu) return; jaResolveu = true; resolve(); };
+                img.onload = finalizar;
+                img.onerror = finalizar; // não trava a experiência por causa de uma foto quebrada
+                img.alt = 'Foto do casal';
+                img.src = escolhidas[i];
+                if (img.complete) finalizar(); // já estava no cache do navegador — não precisa esperar evento nenhum
+                setTimeout(finalizar, LIMITE_ESPERA_FOTO_MS); // trava de segurança
+            }));
         } else {
             // Só chega aqui se a galeria não tiver NENHUMA foto real ainda
             // (site recém criado) — cai no mesmo SVG "adicione esta foto"
             // usado no resto do site, em vez de simplesmente sumir ou quebrar.
             aplicarImagemPlaceholder(img, null, 'Foto do casal');
+            cartao.style.cursor = '';
+            cartao.onclick = null;
         }
-        cartao.style.cursor = escolhidas[i] ? 'pointer' : '';
-        cartao.onclick = escolhidas[i] ? () => abrirLightboxGaleria(escolhidas, i) : null;
     });
+
+    await Promise.all(promessasDeCarregamento);
 }
 
 /* ---------------- Quiz do casal ---------------- */
