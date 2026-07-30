@@ -528,14 +528,19 @@ async function galeriaEscanearCompleta(aoProgredir, aoEncontrarItem) {
  * (index.html) só precisa de umas poucas fotos pra sortear entre elas —
  * não faz sentido ela repetir a MESMA varredura pesada e completa (até
  * GALERIA_MAX_NUMERO, fotos e vídeos) que a página galeria.html já faz
- * direito, com barra de carregamento própria pra isso. Aqui a varredura é
- * bem mais leve: olha só o começo da faixa de fotos (nem entra na faixa
- * de vídeo, que "Nossos momentos" nem usa) e para assim que achar fotos
- * suficientes pra ter uma boa variedade — geralmente termina bem mais
- * rápido que a varredura completa, sem travar nada na home.
+ * direito, com barra de carregamento própria pra isso. Aqui a varredura
+ * olha só a faixa de fotos (nem entra na faixa de vídeo, que "Nossos
+ * momentos" nem usa), o que já é bem mais leve.
+ *
+ * CORREÇÃO (fotos escolhidas ficavam "grudadas", parecendo do mesmo
+ * dia): para poder escolher fotos espalhadas pela numeração (ver
+ * escolherFotosEspalhadas abaixo) é preciso conhecer TODAS as fotos
+ * existentes na faixa, não só um pedaço perto de um ponto sorteado —
+ * por isso a varredura agora sempre percorre a faixa inteira (sem parar
+ * ao achar uma quantidade-alvo), mantendo o NÚMERO de cada foto, não só
+ * o caminho do arquivo.
  */
-const GALERIA_DESTAQUE_TETO_MAX = 150;   // trava de segurança: mesmo que GALERIA_INICIO_VIDEOS seja configurado bem alto no futuro, essa varredura continua leve
-const GALERIA_DESTAQUE_FOTOS_ALVO = 15;  // para de procurar assim que achar essa quantidade
+const GALERIA_DESTAQUE_TETO_MAX = 150; // trava de segurança: mesmo que GALERIA_INICIO_VIDEOS seja configurado bem alto no futuro, essa varredura continua leve
 
 async function descobrirFotosParaDestaque() {
     const tetoFotos = Math.min(GALERIA_INICIO_VIDEOS - 1, GALERIA_DESTAQUE_TETO_MAX);
@@ -543,53 +548,56 @@ async function descobrirFotosParaDestaque() {
 
     const fotosEncontradas = [];
     const aoEncontrar = (numero, resultado) => {
-        if (resultado.tipo === 'foto') fotosEncontradas.push(resultado.caminho);
+        if (resultado.tipo === 'foto') fotosEncontradas.push({ numero, caminho: resultado.caminho });
     };
 
-    /*
-        CORREÇÃO (sempre as mesmas fotos): antes a varredura sempre
-        começava do número 1 e parava assim que achava
-        GALERIA_DESTAQUE_FOTOS_ALVO fotos — então o CONJUNTO de fotos
-        candidatas era sempre o mesmo (as primeiras que existem), e só a
-        escolha de quais 4 dela aparecer mudava a cada visita. Fotos
-        adicionadas depois (com número mais alto) praticamente nunca
-        apareciam em "Nossos momentos". Agora o ponto de partida é
-        sorteado dentro da faixa de fotos a cada abertura do site — assim
-        a área da galeria explorada muda de visita pra visita, incluindo
-        fotos mais recentes, e continua rápida porque a faixa de fotos é
-        pequena (até GALERIA_INICIO_VIDEOS - 1).
-    */
-    const inicioSorteado = 1 + Math.floor(Math.random() * tetoFotos);
-    await galeriaVarrerAteAlvoDestaque(inicioSorteado, tetoFotos, aoEncontrar, fotosEncontradas);
-
-    // Não achou o suficiente a partir do ponto sorteado (ex.: sorteou
-    // perto do fim da faixa, ou a galeria ainda tem poucas fotos no
-    // total) — completa dando a volta, varrendo do início até onde tinha
-    // começado, sem repetir nenhum número.
-    if (fotosEncontradas.length < GALERIA_DESTAQUE_FOTOS_ALVO && inicioSorteado > 1) {
-        await galeriaVarrerAteAlvoDestaque(1, inicioSorteado - 1, aoEncontrar, fotosEncontradas);
-    }
+    // Infinity: não desiste por causa de buracos na numeração — a faixa é
+    // pequena (no máximo GALERIA_DESTAQUE_TETO_MAX números) e usa HEAD
+    // (bem leve), então varrer até o fim garante achar todas as fotos
+    // reais em vez de cortar cedo demais.
+    await galeriaVarrerFaixa(1, tetoFotos, aoEncontrar, null, 'foto', Infinity);
 
     return fotosEncontradas;
 }
 
-async function galeriaVarrerAteAlvoDestaque(inicio, teto, aoEncontrar, fotosEncontradas) {
-    const TAMANHO_LOTE_DESTAQUE = 8;
-    let proximoInicio = inicio;
-    while (proximoInicio <= teto && fotosEncontradas.length < GALERIA_DESTAQUE_FOTOS_ALVO) {
-        const proximoTeto = Math.min(proximoInicio + TAMANHO_LOTE_DESTAQUE - 1, teto);
-        // CORREÇÃO ("Nossos momentos" às vezes ficava sem foto nenhuma):
-        // sem `Infinity` aqui, essa varredura usava a tolerância padrão de 6
-        // buracos seguidos (GALERIA_LACUNA_PARA_PARAR) e desistia cedo demais
-        // — bastava a numeração ter um trecho com poucas fotos (ou, com a
-        // rede instável do celular, algumas falhas de HEAD em sequência)
-        // para a busca parar ali mesmo, mesmo com fotos de verdade logo à
-        // frente. Como essa faixa já é pequena (no máximo GALERIA_DESTAQUE_TETO_MAX
-        // números) e usa HEAD (bem leve), varrer até o fim sem desistir por
-        // buraco não pesa em nada e garante achar todas as fotos reais.
-        await galeriaVarrerFaixa(proximoInicio, proximoTeto, aoEncontrar, null, 'foto', Infinity);
-        proximoInicio = proximoTeto + 1;
+/**
+ * Escolhe `quantidade` fotos dentro de `fotos` ({numero, caminho}[])
+ * tentando ao máximo EVITAR números próximos entre si — fotos tiradas no
+ * mesmo dia/momento tendem a ter números seguidos (ex.: galeria_12,
+ * galeria_13, galeria_14), então escolher de perto demais dava a
+ * impressão de que todas as fotos em destaque eram do mesmo dia.
+ *
+ * Estratégia: ordena pela numeração e divide a faixa em `quantidade`
+ * pedaços (aproximadamente) iguais, sorteando UMA foto de dentro de cada
+ * pedaço. Assim, com fotos numeradas de 1 a 28 e 4 fotos pedidas, por
+ * exemplo, cada escolha sai de um quarto diferente da numeração (tipo
+ * foto 1, foto 8, foto 16, foto 24 — nunca duas do mesmo pedaço), o que
+ * bate com o espaçamento pedido (ex.: foto 1, foto 5, foto 13, foto 25).
+ * Devolve só os caminhos, já na ordem de exibição embaralhada (a divisão
+ * em pedaços cuida do espaçamento; a ordem de exibição pode ser livre).
+ */
+function escolherFotosEspalhadas(fotos, quantidade) {
+    if (!Array.isArray(fotos) || fotos.length === 0 || quantidade <= 0) return [];
+
+    const ordenadas = fotos.slice().sort((a, b) => a.numero - b.numero);
+
+    // Menos fotos disponíveis do que o pedido: não há como espalhar de
+    // verdade, devolve todas as que existem (quem chama decide como
+    // preencher os cartões restantes, ex.: repetindo).
+    if (ordenadas.length <= quantidade) {
+        return ordenadas.map(f => f.caminho).sort(() => Math.random() - 0.5);
     }
+
+    const tamanhoPedaco = ordenadas.length / quantidade;
+    const escolhidas = [];
+    for (let i = 0; i < quantidade; i++) {
+        const inicio = Math.floor(i * tamanhoPedaco);
+        const fim = Math.max(Math.floor((i + 1) * tamanhoPedaco), inicio + 1);
+        const pedaco = ordenadas.slice(inicio, fim);
+        escolhidas.push(pedaco[Math.floor(Math.random() * pedaco.length)]);
+    }
+
+    return escolhidas.map(f => f.caminho).sort(() => Math.random() - 0.5);
 }
 
 function bloquearZoom() {

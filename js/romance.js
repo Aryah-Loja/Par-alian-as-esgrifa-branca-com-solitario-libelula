@@ -339,28 +339,26 @@ async function iniciarGaleriaMomentos() {
         fotos = [];
     }
 
-    // CORREÇÃO ("é inaceitável espaço vazio"): a varredura rápida acima é
-    // deliberadamente limitada (só a faixa de fotos, para de procurar ao
-    // achar GALERIA_DESTAQUE_FOTOS_ALVO) para não pesar na home. Se por
-    // qualquer motivo ela não achar fotos suficientes para preencher os 4
-    // cartões, refaz a busca com a varredura COMPLETA e exaustiva (a
-    // mesma que a página da Galeria usa, sem nenhum limite de tolerância
-    // a buracos) antes de aceitar que realmente não há fotos.
-    if (fotos.length < cartoes.length) {
+    // CORREÇÃO ("é inaceitável espaço vazio"): a varredura acima já cobre
+    // a faixa inteira de fotos, mas se por qualquer motivo ela não achar
+    // NENHUMA foto (ex.: instabilidade de rede grande demais mesmo com os
+    // retries), refaz a busca com a varredura COMPLETA e exaustiva da
+    // Galeria (fotos e vídeos, filtrando só fotos) antes de aceitar que
+    // realmente não há fotos.
+    if (fotos.length === 0) {
         try {
             const todosOsItens = await galeriaEscanearCompleta(null, null);
-            const todasAsFotos = todosOsItens.filter(item => item.tipo === 'foto').map(item => item.caminho);
-            if (todasAsFotos.length > fotos.length) fotos = todasAsFotos;
+            fotos = todosOsItens.filter(item => item.tipo === 'foto').map(item => ({ numero: item.numero, caminho: item.caminho }));
         } catch (e) {
-            // mantém o que a varredura rápida já tinha achado
+            // mantém o que a varredura já tinha achado (nada, nesse caso)
         }
     }
 
-    // Sorteia até 4 fotos, sem repetir nenhuma (embaralha e pega as
-    // primeiras N) — toda vez que a página é aberta, uma seleção
-    // diferente de momentos aparece aqui.
-    const embaralhadas = fotos.slice().sort(() => Math.random() - 0.5);
-    let escolhidas = embaralhadas.slice(0, cartoes.length);
+    // Escolhe as fotos ESPALHADAS pela numeração (ver escolherFotosEspalhadas
+    // em js/utils.js) — evita pegar várias fotos seguidas na numeração, que
+    // costumam ser do mesmo dia/momento, em vez de um sorteio totalmente
+    // livre que podia (por acaso) escolher fotos vizinhas.
+    let escolhidas = escolherFotosEspalhadas(fotos, cartoes.length);
 
     // CORREÇÃO (espaço vazio inaceitável): se existir pelo menos UMA foto
     // real mas menos de 4 no total (ex.: site recém-criado, ainda subindo
