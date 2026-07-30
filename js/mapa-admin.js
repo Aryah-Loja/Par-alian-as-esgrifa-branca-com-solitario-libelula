@@ -99,7 +99,7 @@ async function mapaAdminRenderizarLista() {
     container.innerHTML = '';
     lista.forEach(lugar => {
         const item = document.createElement('div');
-        item.className = 'diag-item diag-neutro';
+        item.className = 'mapa-admin-item';
         item.innerHTML = `
             <i class="bi ${lugar.icon || 'bi-geo-alt-fill'}"></i>
             <div class="flex-grow-1">
@@ -160,6 +160,7 @@ async function mapaAdminExcluir(id) {
     await mapaAdminSalvarLista(novaLista);
     if (mapaAdminEditandoId === id) mapaAdminCancelarEdicao();
     await mapaAdminRenderizarLista();
+    if (typeof renderizarMapaDaRelacao === 'function') await renderizarMapaDaRelacao();
 }
 
 async function mapaAdminSalvar() {
@@ -202,6 +203,13 @@ async function mapaAdminSalvar() {
 
     mapaAdminCancelarEdicao();
     await mapaAdminRenderizarLista();
+
+    // Atualiza o "Nosso mapa" já visível na página na hora, se essa função
+    // existir (só existe em index.html, via js/romance.js — não em
+    // diagnostico.html, onde o mapa não é mostrado). Sem isso, quem
+    // adicionasse um local pelo botão do site só veria o resultado depois
+    // de recarregar a página.
+    if (typeof renderizarMapaDaRelacao === 'function') await renderizarMapaDaRelacao();
 }
 
 function iniciarPainelMapaAdmin() {
@@ -218,6 +226,31 @@ function iniciarPainelMapaAdmin() {
 
     mapaAdminAtualizarIconePreview();
     mapaAdminRenderizarLista();
+
+    // O botão "Adicionar local" + modal só existem em index.html (o painel
+    // continua sempre visível, sem modal, em diagnostico.html) — essas
+    // buscas simplesmente não encontram nada lá e a função não faz nada a
+    // mais nesse caso.
+    const overlay = document.getElementById('mapaAdicionarModalOverlay');
+    const btnAbrir = document.getElementById('btnMapaAdicionarLocal');
+    const btnFechar = document.getElementById('btnFecharMapaAdicionarModal');
+    if (overlay && btnAbrir) {
+        const abrirModal = () => {
+            mapaAdminCancelarEdicao(); // sempre abre pronto pra ADICIONAR um local novo, nunca preso numa edição anterior
+            overlay.classList.remove('d-none');
+            overlay.scrollTop = 0;
+            if (typeof bloquearScrollFundoLembranca === 'function') bloquearScrollFundoLembranca();
+            nomeInput.focus();
+        };
+        const fecharModal = () => {
+            overlay.classList.add('d-none');
+            if (typeof desbloquearScrollFundoLembranca === 'function') desbloquearScrollFundoLembranca();
+            if (typeof forcarRecalculoDeLayout === 'function') forcarRecalculoDeLayout();
+        };
+        btnAbrir.addEventListener('click', abrirModal);
+        if (btnFechar) btnFechar.addEventListener('click', fecharModal);
+        overlay.addEventListener('click', (evt) => { if (evt.target === overlay) fecharModal(); });
+    }
 }
 
 document.addEventListener('DOMContentLoaded', iniciarPainelMapaAdmin);

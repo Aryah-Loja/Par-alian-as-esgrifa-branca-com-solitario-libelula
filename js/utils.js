@@ -384,44 +384,76 @@ async function galeriaArquivoExiste(caminho) {
  * vazio), o comportamento continua igual a antes: precisa mesmo
  * terminar de testar todas pra ter certeza que não existe.
  */
-async function galeriaDescobrirItem(numero) {
+async function galeriaDescobrirItem(numero, tipoAlvo) {
     // Testa cada extensão tanto em minúsculo quanto em MAIÚSCULO — celular
     // (principalmente iPhone) às vezes salva/exporta com extensão em
     // maiúsculo (ex.: IMG.MOV), e servidores estáticos (GitHub Pages, etc.)
     // costumam ser case-sensitive, então "galeria_2.mov" não bate com
     // "galeria_2.MOV" se testarmos só uma forma.
+    //
+    // CORREÇÃO (carregamento lento): antes, CADA número testado — mesmo
+    // dentro da faixa só de fotos — também testava as extensões de vídeo
+    // (e vice-versa na faixa de vídeo), dobrando à toa a quantidade de
+    // requisições de rede por número. Agora quem varre uma faixa (ver
+    // galeriaVarrerFaixa) informa `tipoAlvo` ('foto' ou 'video') e só as
+    // extensões daquele tipo são testadas — metade das requisições por
+    // número, o que reduz o tempo total de descoberta por cerca da metade.
     const candidatos = [
-        ...GALERIA_EXTENSOES_FOTO.flatMap(ext => ([
+        ...(tipoAlvo !== 'video' ? GALERIA_EXTENSOES_FOTO.flatMap(ext => ([
             { ext, tipo: 'foto' },
             { ext: ext.toUpperCase(), tipo: 'foto' }
-        ])),
-        ...GALERIA_EXTENSOES_VIDEO.flatMap(ext => ([
+        ])) : []),
+        ...(tipoAlvo !== 'foto' ? GALERIA_EXTENSOES_VIDEO.flatMap(ext => ([
             { ext, tipo: 'video' },
             { ext: ext.toUpperCase(), tipo: 'video' }
-        ]))
+        ])) : [])
     ];
 
-    const controlador = new AbortController();
-    const tentativas = candidatos.map(async (c) => {
-        const caminho = `${PASTA_GALERIA}/galeria_${numero}.${c.ext}`;
-        try {
-            const resposta = await fetch(caminho, { method: 'HEAD', cache: 'no-store', signal: controlador.signal });
-            if (resposta.ok) return { caminho, tipo: c.tipo };
-        } catch (e) {
-            // 404 (fetch não trata como erro, então normalmente nem cai
-            // aqui), sem internet, ou cancelado pelo controlador acima —
-            // em qualquer um desses casos, essa combinação "não achou".
-        }
-        throw new Error('galeria: extensão não encontrada'); // faz Promise.any pular essa tentativa
-    });
+    const testarTodasAsExtensoes = async () => {
+        const controlador = new AbortController();
+        const tentativas = candidatos.map(async (c) => {
+            const caminho = `${PASTA_GALERIA}/galeria_${numero}.${c.ext}`;
+            try {
+                // cache 'default' (em vez de 'no-store'): deixa o navegador
+                // reaproveitar a resposta HEAD em visitas seguintes à
+                // galeria, em vez de refazer a mesma pergunta ao servidor
+                // toda vez — as fotos raramente mudam depois de publicadas,
+                // então cache aqui é praticamente sempre válido e acelera
+                // bastante revisitas.
+                const resposta = await fetch(caminho, { method: 'HEAD', cache: 'default', signal: controlador.signal });
+                if (resposta.ok) return { caminho, tipo: c.tipo };
+            } catch (e) {
+                // 404 (fetch não trata como erro, então normalmente nem cai
+                // aqui), sem internet, ou cancelado pelo controlador acima —
+                // em qualquer um desses casos, essa combinação "não achou".
+            }
+            throw new Error('galeria: extensão não encontrada'); // faz Promise.any pular essa tentativa
+        });
 
-    try {
-        const achou = await Promise.any(tentativas);
-        controlador.abort(); // corta as combinações que ainda estavam em andamento — não precisa mais delas
-        return achou;
-    } catch (erroAgregado) {
-        return null; // nenhuma das combinações existe
-    }
+        try {
+            const achou = await Promise.any(tentativas);
+            controlador.abort(); // corta as combinações que ainda estavam em andamento — não precisa mais delas
+            return achou;
+        } catch (erroAgregado) {
+            return null; // nenhuma das combinações existe
+        }
+    };
+
+    // CORREÇÃO (galeria às vezes carrega vazia/incompleta): numa conexão de
+    // celular instável, um HEAD que falha por um soluço momentâneo de rede
+    // (não porque o arquivo realmente não existe) era tratado exatamente
+    // igual a "número vazio" — e como a varredura para depois de
+    // GALERIA_LACUNA_PARA_PARAR números vazios seguidos, uma sequência de
+    // falhas de rede bem no meio das fotos de verdade podia fazer a
+    // varredura parar cedo demais, escondendo o resto das fotos (ou, se
+    // acontecesse logo no início, a galeria inteira). Antes de aceitar que
+    // um número realmente não existe, tenta de novo uma vez depois de uma
+    // pequena pausa — se a foto existir de verdade, essa segunda tentativa
+    // quase sempre encontra.
+    const primeiraTentativa = await testarTodasAsExtensoes();
+    if (primeiraTentativa) return primeiraTentativa;
+    await new Promise(resolve => setTimeout(resolve, 350));
+    return testarTodasAsExtensoes();
 }
 
 /**
@@ -434,8 +466,13 @@ async function galeriaDescobrirItem(numero) {
  * vídeos (ver GALERIA_INICIO_VIDEOS em js/config.js) — sem duplicar a
  * lógica de descoberta em cada lugar que precisa dela.
  */
-async function galeriaVarrerFaixa(inicio, teto, aoEncontrar, aoProgredir) {
-    const TAMANHO_LOTE = 8;
+async function galeriaVarrerFaixa(inicio, teto, aoEncontrar, aoProgredir, tipoAlvo) {
+    // Lote maior que antes (16 em vez de 8): agora que galeriaDescobrirItem
+    // só testa as extensões do tipo relevante (metade das requisições por
+    // número — ver correção lá), dá pra conferir mais números por vez sem
+    // sobrecarregar, o que reduz o número de "idas e voltas" (lotes
+    // sequenciais aguardados) e acelera a varredura como um todo.
+    const TAMANHO_LOTE = 16;
     let proximoNumero = inicio;
     let lacunaAtual = 0;
 
@@ -443,7 +480,7 @@ async function galeriaVarrerFaixa(inicio, teto, aoEncontrar, aoProgredir) {
         const numerosDoLote = [];
         for (let i = 0; i < TAMANHO_LOTE; i++) numerosDoLote.push(proximoNumero + i);
 
-        const resultados = await Promise.all(numerosDoLote.map(n => galeriaDescobrirItem(n)));
+        const resultados = await Promise.all(numerosDoLote.map(n => galeriaDescobrirItem(n, tipoAlvo)));
 
         for (let i = 0; i < resultados.length; i++) {
             if (resultados[i]) {
@@ -472,8 +509,8 @@ async function galeriaEscanearCompleta(aoProgredir) {
     const itensEncontrados = [];
     const aoEncontrar = (numero, resultado) => itensEncontrados.push({ numero, ...resultado });
 
-    await galeriaVarrerFaixa(1, GALERIA_INICIO_VIDEOS - 1, aoEncontrar, aoProgredir);
-    await galeriaVarrerFaixa(GALERIA_INICIO_VIDEOS, GALERIA_MAX_NUMERO, aoEncontrar, aoProgredir);
+    await galeriaVarrerFaixa(1, GALERIA_INICIO_VIDEOS - 1, aoEncontrar, aoProgredir, 'foto');
+    await galeriaVarrerFaixa(GALERIA_INICIO_VIDEOS, GALERIA_MAX_NUMERO, aoEncontrar, aoProgredir, 'video');
 
     return itensEncontrados;
 }
@@ -533,7 +570,7 @@ async function galeriaVarrerAteAlvoDestaque(inicio, teto, aoEncontrar, fotosEnco
     let proximoInicio = inicio;
     while (proximoInicio <= teto && fotosEncontradas.length < GALERIA_DESTAQUE_FOTOS_ALVO) {
         const proximoTeto = Math.min(proximoInicio + TAMANHO_LOTE_DESTAQUE - 1, teto);
-        await galeriaVarrerFaixa(proximoInicio, proximoTeto, aoEncontrar);
+        await galeriaVarrerFaixa(proximoInicio, proximoTeto, aoEncontrar, null, 'foto');
         proximoInicio = proximoTeto + 1;
     }
 }

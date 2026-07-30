@@ -1375,7 +1375,16 @@ async function renderizarMapaDaRelacao() {
     if (!gridPrevia || !Array.isArray(MAPA_LUGARES)) return;
 
     const extras = await obterLugaresExtrasDoMapa();
-    const todosOsLugares = MAPA_LUGARES.concat(extras);
+    // CORREÇÃO: antes, os locais adicionados pelo painel entravam sempre
+    // no FINAL da lista (MAPA_LUGARES.concat(extras)) — como o card
+    // "Próximo destino" (futuro: true) é o último item de MAPA_LUGARES,
+    // todo local novo aparecia DEPOIS dele. Agora separamos o(s) card(s)
+    // marcados como "futuro" e sempre os colocamos no final de verdade,
+    // então qualquer local novo (fixo ou adicionado pelo painel) sempre
+    // fica antes de "Próximo destino".
+    const lugaresFixosSemFuturo = MAPA_LUGARES.filter(lugar => !lugar.futuro);
+    const lugaresFuturo = MAPA_LUGARES.filter(lugar => lugar.futuro);
+    const todosOsLugares = lugaresFixosSemFuturo.concat(extras, lugaresFuturo);
 
     const temMais = todosOsLugares.length > MAPA_QUANTIDADE_PREVIA;
     preencherGridDoMapa(gridPrevia, temMais ? todosOsLugares.slice(0, MAPA_QUANTIDADE_PREVIA) : todosOsLugares);
