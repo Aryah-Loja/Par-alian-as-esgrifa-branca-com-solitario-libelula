@@ -219,13 +219,26 @@ function iniciarFechamentoEstrelaModal() {
     overlay.addEventListener('click', (evt) => { if (evt.target === overlay) fecharEstrelaModal(); });
 }
 
+// Guarda qual estrela está aberta no momento, pra "anterior"/"próxima"
+// saberem de onde partir (ver estrelaModalAnterior/estrelaModalProxima).
+let estrelaIndiceAtual = 0;
+
 async function abrirEstrelaModal(indice) {
     const marco = TIMELINE_MARCOS[indice];
     if (!marco) return;
+    estrelaIndiceAtual = indice;
     const overlay = document.getElementById('estrelaModalOverlay');
     const foto = document.getElementById('estrelaModalFoto');
     const dataEl = document.getElementById('estrelaModalData');
     const textoEl = document.getElementById('estrelaModalTexto');
+
+    // Setas de navegação: escondidas nas pontas (não dá "próxima" na
+    // última estrela nem "anterior" na primeira) — é uma linha do tempo,
+    // então não faz sentido dar a volta como no lightbox de fotos.
+    const btnAnterior = document.getElementById('btnEstrelaAnterior');
+    const btnProxima = document.getElementById('btnEstrelaProxima');
+    if (btnAnterior) btnAnterior.classList.toggle('d-none', indice <= 0);
+    if (btnProxima) btnProxima.classList.toggle('d-none', indice >= TIMELINE_MARCOS.length - 1);
 
     // resolverFotoPlaceholderOuAsset (js/export.js) resolve a extensão real
     // do arquivo (.jpg/.jpeg/.png/.webp) em vez de assumir .jpg fixo.
@@ -251,6 +264,23 @@ async function abrirEstrelaModal(indice) {
         abrirLightboxGaleria(todasFotos, indice, todasLegendas);
     };
 }
+
+function estrelaModalAnterior() {
+    if (estrelaIndiceAtual > 0) abrirEstrelaModal(estrelaIndiceAtual - 1);
+}
+function estrelaModalProxima() {
+    if (estrelaIndiceAtual < TIMELINE_MARCOS.length - 1) abrirEstrelaModal(estrelaIndiceAtual + 1);
+}
+
+// Setas do teclado (← →) navegam entre as estrelas enquanto o modal
+// estiver aberto — só reage se o modal da estrela estiver visível, pra
+// não capturar as setas quando a pessoa está em outra parte da página.
+document.addEventListener('keydown', (evt) => {
+    const overlay = document.getElementById('estrelaModalOverlay');
+    if (!overlay || overlay.classList.contains('d-none')) return;
+    if (evt.key === 'ArrowLeft') estrelaModalAnterior();
+    else if (evt.key === 'ArrowRight') estrelaModalProxima();
+});
 
 /* ---------------- "Nossos momentos" (mesa de fotos) ---------------- */
 async function iniciarGaleriaMomentos() {
@@ -1473,6 +1503,8 @@ function iniciarModuloRomance() {
     document.getElementById('btnFecharLembranca').addEventListener('click', fecharLembrancaAmpliada);
     document.getElementById('btnLightboxAnterior').addEventListener('click', lightboxFotoAnterior);
     document.getElementById('btnLightboxProxima').addEventListener('click', lightboxProximaFoto);
+    document.getElementById('btnEstrelaAnterior').addEventListener('click', estrelaModalAnterior);
+    document.getElementById('btnEstrelaProxima').addEventListener('click', estrelaModalProxima);
 
     document.getElementById('btnReverLoja').addEventListener('click', abrirLojaSomenteVisualizacao);
     document.getElementById('btnVoltarDaLoja').addEventListener('click', fecharLojaSomenteVisualizacao);
