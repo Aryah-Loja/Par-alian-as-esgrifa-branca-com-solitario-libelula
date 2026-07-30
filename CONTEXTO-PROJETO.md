@@ -172,6 +172,12 @@ verificar se ela já existe em outro arquivo carregado na mesma página.
   SVG "adicione esta foto" aparece no lugar — nunca quebra como imagem
   ausente. Ao adicionar uma foto nova a alguma seção, sempre seguir esse
   padrão em vez de referenciar um caminho fixo direto.
+- **Entrega de correções/pedidos: mandar SEMPRE só o(s) arquivo(s)
+  individual(is) que foram de fato modificados** (ex.: `js/romance.js`,
+  `js/utils.js`), nunca o projeto inteiro zipado de novo — isso vale
+  mesmo que várias sessões diferentes tenham ido mexendo em arquivos
+  diferentes. Só reempacotar o `.zip` inteiro se o Gabriel pedir isso
+  explicitamente (ex.: pra subir no GitHub Pages do zero).
 
 ## Bugs reais já encontrados e corrigidos (padrões a evitar repetir)
 
@@ -282,6 +288,60 @@ está comentada no código, mas vale saber de antemão:
     Corrigido guardando se o overlay já estava visível ANTES da chamada
     (`jaEstavaAberto`) e só chamando `bloquearScrollFundoLembranca()`
     quando ele estava realmente fechado.
+
+15. **Sair do site no celular no meio do carregamento da Galeria
+    (`galeria.html`) deixava a varredura pela metade pra sempre.** No
+    celular, trocar de app/apagar a tela quase nunca fecha a aba de
+    verdade, o navegador só CONGELA a página como está (bfcache) e, ao
+    voltar, restaura ela exatamente daquele jeito, sem rodar
+    `DOMContentLoaded` de novo. Como `montarGaleria()` (`js/galeria.js`)
+    só era chamada nesse evento, uma varredura interrompida nunca era
+    retomada, sobravam só as fotos que já tinham entrado na grade até o
+    momento de sair. Corrigido com um listener de `pageshow`: se
+    `evento.persisted` for `true` (restaurado de um congelamento) e a
+    varredura ainda não tinha terminado (flag `__galeriaCarregamentoCompleto`),
+    refaz `montarGaleria()` do zero — rápido, porque HEAD/imagens já
+    baixadas vêm do cache do navegador.
+
+16. **"Nossos momentos" (mesa de 4 fotos em "Nossa História") às vezes não
+    conseguia achar foto nenhuma, mostrando placeholder vazio.** Duas
+    causas combinadas em `descobrirFotosParaDestaque()`/`galeriaDescobrirItem()`
+    (`js/utils.js`): (a) qualquer resposta HEAD que não fosse sucesso era
+    tratada como "a foto não existe", inclusive falhas passageiras de
+    rede (429/503/instabilidade de 4G) que não são um 404 de verdade; (b)
+    a varredura desistia depois de alguns números seguidos sem achar nada
+    (tolerância a "buracos" pensada pra varredura completa, que não faz
+    sentido numa faixa pequena e já limitada). Corrigido em 3 camadas: só
+    um 404 confirmado conta como "não existe" (qualquer outra falha tenta
+    de novo); a varredura da faixa de fotos não desiste mais por buraco
+    (`Infinity` de tolerância); e, como rede de segurança em
+    `iniciarGaleriaMomentos()` (`js/romance.js`), se mesmo assim não
+    achar NENHUMA foto, refaz com a varredura completa e exaustiva da
+    Galeria, e se existir pelo menos 1 foto real mas menos de 4, repete
+    as que existem pra preencher os 4 cartões — só cai no placeholder
+    "adicione esta foto" se a galeria estiver mesmo totalmente vazia.
+    Além disso, `iniciarGaleriaMomentos()` agora só resolve depois que
+    cada `<img>` escolhida REALMENTE terminar de carregar no navegador
+    (evento `load`/`error`, com timeout de segurança de 6s) — antes ela
+    retornava assim que decidia quais fotos mostrar (HEAD só confirma que
+    o arquivo existe, não baixa a foto), então a tela de carregamento de
+    "Nossa História" podia esconder antes das fotos aparecerem de
+    verdade.
+
+17. **As 4 fotos de "Nossos momentos" às vezes pareciam todas do mesmo
+    dia**, porque a escolha era um sorteio totalmente livre entre as
+    fotos encontradas e fotos do mesmo momento tendem a ter números de
+    arquivo seguidos (`galeria_12.jpg`, `galeria_13.jpg`...). Corrigido
+    com `escolherFotosEspalhadas()` (`js/utils.js`): ordena as fotos pela
+    numeração, divide a faixa em pedaços iguais (um pedaço por cartão) e
+    sorteia uma foto de dentro de CADA pedaço — garante que as 4 escolhas
+    vêm de regiões diferentes da numeração (ex.: foto 4, foto 12, foto
+    20, foto 27) em vez de poderem sair vizinhas por acaso. Para isso,
+    `descobrirFotosParaDestaque()` também passou a devolver `{numero,
+    caminho}` (não só o caminho) e passou a varrer a faixa de fotos
+    INTEIRA (sem meta de quantidade nem ponto de início sorteado como
+    antes), já que a seleção por espaçamento precisa conhecer todas as
+    fotos existentes na faixa pra dividir em pedaços corretamente.
 
 ## Checklist de encontros ("Nosso Checklist")
 
