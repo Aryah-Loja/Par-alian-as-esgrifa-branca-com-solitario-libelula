@@ -439,20 +439,6 @@ async function galeriaDescobrirItem(numero, tipoAlvo) {
         }
     };
 
-    // CORREÇÃO (galeria às vezes carrega vazia/incompleta): numa conexão de
-    // celular instável, um HEAD que falha por um soluço momentâneo de rede
-    // (não porque o arquivo realmente não existe) era tratado exatamente
-    // igual a "número vazio" — e como a varredura para depois de
-    // GALERIA_LACUNA_PARA_PARAR números vazios seguidos, uma sequência de
-    // falhas de rede bem no meio das fotos de verdade podia fazer a
-    // varredura parar cedo demais, escondendo o resto das fotos (ou, se
-    // acontecesse logo no início, a galeria inteira). Antes de aceitar que
-    // um número realmente não existe, tenta de novo uma vez depois de uma
-    // pequena pausa — se a foto existir de verdade, essa segunda tentativa
-    // quase sempre encontra.
-    const primeiraTentativa = await testarTodasAsExtensoes();
-    if (primeiraTentativa) return primeiraTentativa;
-    await new Promise(resolve => setTimeout(resolve, 350));
     return testarTodasAsExtensoes();
 }
 
@@ -467,12 +453,7 @@ async function galeriaDescobrirItem(numero, tipoAlvo) {
  * lógica de descoberta em cada lugar que precisa dela.
  */
 async function galeriaVarrerFaixa(inicio, teto, aoEncontrar, aoProgredir, tipoAlvo) {
-    // Lote maior que antes (16 em vez de 8): agora que galeriaDescobrirItem
-    // só testa as extensões do tipo relevante (metade das requisições por
-    // número — ver correção lá), dá pra conferir mais números por vez sem
-    // sobrecarregar, o que reduz o número de "idas e voltas" (lotes
-    // sequenciais aguardados) e acelera a varredura como um todo.
-    const TAMANHO_LOTE = 16;
+    const TAMANHO_LOTE = 8;
     let proximoNumero = inicio;
     let lacunaAtual = 0;
 
