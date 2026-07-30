@@ -186,11 +186,23 @@ function iniciarEstrelasCadentes() {
 
 /**
  * Easter egg raro: uma navezinha alienígena cruza o céu bem devagar, uma
- * vez a cada 5 minutos (tempo real, não só na abertura da página) — se
+ * vez a cada 3 minutos (tempo real, não só na abertura da página) — se
  * ela ficar olhando o céu por tempo suficiente, tem chance de ver.
+ *
+ * CORREÇÃO (ela mal andava e ficava só no canto): o "--nave-dx" era
+ * definido em porcentagem (140%/-140%) e usado dentro de um
+ * transform: translate(...) no CSS — só que porcentagem em translate()
+ * é relativa ao tamanho do PRÓPRIO elemento sendo movido, não ao
+ * tamanho da tela/contêiner. Como a navezinha tem só 46px de largura,
+ * 140% disso é ~64px: ela nascia fora da tela, "tremia" uns 64px pro
+ * lado e sumia, sem nunca realmente atravessar o céu — por isso parecia
+ * aparecer pouco tempo e ficar presa num canto. Agora a distância é
+ * calculada em pixels a partir da largura real do céu na tela (mais uma
+ * folga extra pra nascer e morrer totalmente fora da vista), então ela
+ * de fato atravessa a tela inteira de um lado a outro.
  */
 function iniciarNaveAlienigena(camada) {
-    const CINCO_MINUTOS_MS = 5 * 60 * 1000;
+    const TRES_MINUTOS_MS = 3 * 60 * 1000;
 
     function cruzarUmaVez() {
         if (!document.body.contains(camada)) return; // saiu da página "Nossa História" — não continua gerando em segundo plano
@@ -200,13 +212,26 @@ function iniciarNaveAlienigena(camada) {
         const indoDireita = Math.random() < 0.5;
         nave.style.top = `${10 + Math.random() * 50}%`;
         nave.style.left = indoDireita ? '-20%' : '120%';
-        nave.style.setProperty('--nave-dx', indoDireita ? '140%' : '-140%');
+
+        // Distância real do trajeto: largura da camada do céu (ou da
+        // janela, se por algum motivo a camada ainda não tiver tamanho)
+        // mais uma folga extra, pra ela nascer e desaparecer totalmente
+        // fora da vista dos dois lados, atravessando a tela toda.
+        const largura = camada.getBoundingClientRect().width || window.innerWidth;
+        const distancia = largura + 120;
+        nave.style.setProperty('--nave-dx', `${indoDireita ? distancia : -distancia}px`);
+
+        // Trajeto bem mais longo agora (tela inteira, não só ~64px) —
+        // aumenta a duração da animação também, senão ela cruzaria rápido
+        // demais e deixaria de parecer "bem devagar".
+        nave.style.animationDuration = '16s';
+
         camada.appendChild(nave);
         nave.addEventListener('animationend', () => nave.remove());
     }
 
-    setTimeout(cruzarUmaVez, 30000 + Math.random() * 60000); // primeira aparição entre 30s e 1min30s, pra não depender só de quem fica 5min+ olhando
-    setInterval(cruzarUmaVez, CINCO_MINUTOS_MS);
+    setTimeout(cruzarUmaVez, 30000 + Math.random() * 60000); // primeira aparição entre 30s e 1min30s, pra não depender só de quem fica 3min+ olhando
+    setInterval(cruzarUmaVez, TRES_MINUTOS_MS);
 }
 
 function iniciarFechamentoEstrelaModal() {

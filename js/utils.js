@@ -461,10 +461,50 @@ async function galeriaVarrerFaixa(inicio, teto, aoEncontrar, aoProgredir) {
 }
 
 /**
+ * CORREÇÃO (checagem duplicada): "Nossos momentos" (index.html, via
+ * descobrirTodasAsFotosDaGaleria abaixo) e a página galeria.html faziam,
+ * cada uma por conta própria, a MESMA varredura completa do servidor
+ * (centenas de requisições HEAD testando galeria_1, galeria_2, ...) — ou
+ * seja, ao entrar no site a galeria já era checada uma vez, e checada de
+ * novo do zero ao entrar em galeria.html logo em seguida, mesmo sem nada
+ * ter mudado nesse meio tempo.
+ *
+ * Essa varredura de verdade agora só roda uma vez por visita: o
+ * resultado fica guardado em sessionStorage (dura só enquanto a aba
+ * estiver aberta — fecha a aba ou abre de novo depois e ele refaz a
+ * varredura, então nunca fica "desatualizado" de uma visita pra outra) e
+ * é reaproveitado pela segunda tela que precisar dele, seja ela
+ * index.html ou galeria.html, não importa a ordem.
+ */
+const GALERIA_CACHE_CHAVE = 'galeriaItensDescobertosNestaVisita';
+
+function galeriaLerCache() {
+    try {
+        const bruto = sessionStorage.getItem(GALERIA_CACHE_CHAVE);
+        return bruto ? JSON.parse(bruto) : null;
+    } catch (e) {
+        return null; // sessionStorage indisponível (ex.: aba anônima/modo privado) — sem cache, mas nada quebra
+    }
+}
+
+function galeriaGravarCache(itens) {
+    try {
+        sessionStorage.setItem(GALERIA_CACHE_CHAVE, JSON.stringify(itens));
+    } catch (e) {
+        // sem espaço ou indisponível — sem problema, só não terá cache desta vez
+    }
+}
+
+/**
  * Varre a galeria inteira (mesma lógica de descoberta usada em
- * galeria.html) e devolve só os itens do tipo "foto" encontrados. Usado
- * por "Nossos momentos" (js/romance.js) pra sortear fotos aleatórias
- * reais da galeria, em vez de depender de 4 arquivos fixos.
+ * galeria.html) e devolve TODOS os itens encontrados ({ numero, caminho,
+ * tipo }), fotos e vídeos. Se já existe um resultado guardado desta
+ * mesma visita ao site (ver GALERIA_CACHE_CHAVE acima), devolve ele na
+ * hora, sem gerar nenhuma requisição nova.
+ *
+ * `aoProgredir`, se passado, só é chamado quando a varredura de verdade
+ * roda (não é chamado num acerto de cache, já que não há nada pra
+ * progredir).
  *
  * Varre em DUAS faixas (fotos: 1 até GALERIA_INICIO_VIDEOS - 1; vídeos:
  * GALERIA_INICIO_VIDEOS em diante) em vez de uma sequência única — assim
@@ -472,16 +512,29 @@ async function galeriaVarrerFaixa(inicio, teto, aoEncontrar, aoProgredir) {
  * segurança pra fotos crescerem sem esbarrar nos vídeos) nunca é
  * confundido com "acabaram os itens" pela tolerância a buracos.
  */
+async function galeriaEscanearComCache(aoProgredir) {
+    const cache = galeriaLerCache();
+    if (cache) return cache;
+
+    const itensEncontrados = [];
+    const aoEncontrar = (numero, resultado) => itensEncontrados.push({ numero, ...resultado });
+
+    await galeriaVarrerFaixa(1, GALERIA_INICIO_VIDEOS - 1, aoEncontrar, aoProgredir);
+    await galeriaVarrerFaixa(GALERIA_INICIO_VIDEOS, GALERIA_MAX_NUMERO, aoEncontrar, aoProgredir);
+
+    galeriaGravarCache(itensEncontrados);
+    return itensEncontrados;
+}
+
+/**
+ * Devolve só os itens do tipo "foto" (caminho de cada uma) já
+ * descobertos na galeria. Usado por "Nossos momentos" (js/romance.js)
+ * pra sortear fotos aleatórias reais da galeria, em vez de depender de 4
+ * arquivos fixos. Reaproveita o cache de galeriaEscanearComCache acima.
+ */
 async function descobrirTodasAsFotosDaGaleria() {
-    const fotosEncontradas = [];
-    const aoEncontrar = (numero, resultado) => {
-        if (resultado.tipo === 'foto') fotosEncontradas.push(resultado.caminho);
-    };
-
-    await galeriaVarrerFaixa(1, GALERIA_INICIO_VIDEOS - 1, aoEncontrar);
-    await galeriaVarrerFaixa(GALERIA_INICIO_VIDEOS, GALERIA_MAX_NUMERO, aoEncontrar);
-
-    return fotosEncontradas;
+    const itens = await galeriaEscanearComCache();
+    return itens.filter(item => item.tipo === 'foto').map(item => item.caminho);
 }
 
 function bloquearZoom() {

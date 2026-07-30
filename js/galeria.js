@@ -38,8 +38,6 @@ async function montarGaleria() {
         if (texto && mensagem) texto.textContent = mensagem;
     };
 
-    const itensEncontrados = [];
-
     // Fase 1: descobrir quais números de foto/vídeo existem de verdade no
     // servidor. Varre em DUAS faixas (fotos: 1 até GALERIA_INICIO_VIDEOS -
     // 1; vídeos: GALERIA_INICIO_VIDEOS em diante — ver js/config.js) em
@@ -50,11 +48,14 @@ async function montarGaleria() {
     // quanto já foi varrido do total possível (GALERIA_MAX_NUMERO), só
     // pra dar uma ideia de progresso — não sabemos quantos itens existem
     // de fato até terminar de procurar.
-    const aoEncontrar = (numero, resultado) => itensEncontrados.push({ numero, ...resultado });
+    //
+    // CORREÇÃO (checagem duplicada): se a pessoa já passou por "Nossos
+    // momentos" no index.html nesta mesma visita, a varredura completa já
+    // rodou uma vez e o resultado está guardado (ver
+    // galeriaEscanearComCache, js/utils.js) — aqui ele só é reaproveitado,
+    // sem gerar nenhuma requisição nova ao servidor.
     const aoProgredir = (numeroAtual) => atualizarBarra((numeroAtual / GALERIA_MAX_NUMERO) * 0.4, 'Procurando fotos...');
-
-    await galeriaVarrerFaixa(1, GALERIA_INICIO_VIDEOS - 1, aoEncontrar, aoProgredir);
-    await galeriaVarrerFaixa(GALERIA_INICIO_VIDEOS, GALERIA_MAX_NUMERO, aoEncontrar, aoProgredir);
+    const itensEncontrados = await galeriaEscanearComCache(aoProgredir);
 
     // Fase 2: os itens já foram encontrados, agora é acompanhar o
     // carregamento de verdade (o navegador ainda precisa baixar cada
