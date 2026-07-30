@@ -1333,6 +1333,27 @@ html.checklist-html { background-color: #1c1014; }
 .checklist-form-btn-confirmar:hover, .checklist-form-btn-confirmar:active { background: #a05d67; }
 .checklist-form-btn-cancelar:hover, .checklist-form-btn-cancelar:active { background: rgba(255,255,255,0.06); }
 
+/* Item da lista "Locais adicionados por aqui" (painel de js/mapa-admin.js) — compartilhado entre o modal em index.html e o painel em diagnostico.html (ambos carregam este arquivo). */
+.mapa-admin-item { display: flex; gap: 10px; align-items: flex-start; background: rgba(255,255,255,0.05); border: 1px solid rgba(183,110,121,0.25); border-radius: 10px; padding: 10px 12px; }
+.mapa-admin-item i { font-size: 1.05rem; margin-top: 2px; flex-shrink: 0; color: var(--rosegold); }
+.mapa-admin-item strong { font-size: 0.85rem; display: block; margin-bottom: 2px; color: #f8e9ec; }
+.mapa-admin-item p { font-size: 0.75rem; color: rgba(240,217,221,0.6); margin: 0; line-height: 1.45; }
+.mapa-admin-item .btn { flex-shrink: 0; }
+
+/* Campos de texto do formulário "Adicionar local" (modal em index.html) — reaproveita .checklist-form-adicionar como estrutura (mesmo padrão do modal "Adicionar item" do checklist), só que com <input type="text"> em vez de select/textarea. */
+.checklist-form-adicionar input[type="text"] {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(183,110,121,0.35);
+    color: #f8e9ec;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 1rem;
+}
+.checklist-form-adicionar input[type="text"]:focus { outline: none; border-color: var(--rosegold); box-shadow: 0 0 0 2px rgba(183,110,121,0.25); }
+.checklist-form-adicionar input[type="text"]::placeholder { color: rgba(240,217,221,0.4); }
+.checklist-form-adicionar input[readonly] { opacity: 0.65; }
+
 @media (prefers-reduced-motion: reduce) {
     .checklist-progresso-barra-preenchida, .checklist-resumo-barra-preenchida, .checklist-categorias, .checklist-item, .checklist-item-check { transition: none !important; }
 }
