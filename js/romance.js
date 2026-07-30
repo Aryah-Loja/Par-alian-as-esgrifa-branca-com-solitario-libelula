@@ -214,7 +214,16 @@ function iniciarFechamentoEstrelaModal() {
     const fechar = document.getElementById('btnFecharEstrelaModal');
     if (!overlay || overlay.dataset.iniciado === '1') return;
     overlay.dataset.iniciado = '1';
-    const fecharEstrelaModal = () => { overlay.classList.add('d-none'); desbloquearScrollFundoLembranca(); };
+    const fecharEstrelaModal = () => {
+        overlay.classList.add('d-none');
+        desbloquearScrollFundoLembranca();
+        // Mesma correção do "espaço vazio/roxo no fim da tela" usada ao
+        // fechar o lightbox de fotos e a lojinha (ver forcarRecalculoDeLayout()
+        // em js/utils.js) — sem isso, fechar o modal às vezes deixava a
+        // altura da página desatualizada, mostrando só a cor de fundo
+        // escura/roxa por baixo, como se o conteúdo tivesse sumido.
+        forcarRecalculoDeLayout();
+    };
     fechar.addEventListener('click', fecharEstrelaModal);
     overlay.addEventListener('click', (evt) => { if (evt.target === overlay) fecharEstrelaModal(); });
 }
