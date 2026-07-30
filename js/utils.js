@@ -409,24 +409,35 @@ async function galeriaDescobrirItem(numero, tipoAlvo) {
         ])) : [])
     ];
 
+    const testarUmaExtensao = async (c, controlador) => {
+        const caminho = `${PASTA_GALERIA}/galeria_${numero}.${c.ext}`;
+        try {
+            const resposta = await fetch(caminho, { method: 'HEAD', cache: 'no-store', signal: controlador.signal });
+            if (resposta.ok) return { caminho, tipo: c.tipo };
+            return null; // 404 de verdade: arquivo não existe, sem retry — resposta rápida e definitiva
+        } catch (e) {
+            if (controlador.signal.aborted) throw e; // cancelado porque outra extensão já achou — não é erro de rede, não faz sentido re-tentar
+            // Erro de rede de verdade (soluço momentâneo de conexão, comum em
+            // 4G/wifi instável) — diferente do 404 acima, aqui NÃO temos
+            // certeza se o arquivo existe ou não, então vale uma segunda
+            // tentativa rápida antes de desistir. Sem essa distinção, um
+            // arquivo que EXISTE de verdade podia sumir de "Nossos momentos"
+            // (ou da galeria) só por causa de uma falha de rede passageira.
+            try {
+                const resposta = await fetch(caminho, { method: 'HEAD', cache: 'no-store', signal: controlador.signal });
+                if (resposta.ok) return { caminho, tipo: c.tipo };
+                return null;
+            } catch (e2) {
+                return null; // falhou de novo — aí sim trata como "não achou"
+            }
+        }
+    };
+
     const testarTodasAsExtensoes = async () => {
         const controlador = new AbortController();
         const tentativas = candidatos.map(async (c) => {
-            const caminho = `${PASTA_GALERIA}/galeria_${numero}.${c.ext}`;
-            try {
-                // cache 'default' (em vez de 'no-store'): deixa o navegador
-                // reaproveitar a resposta HEAD em visitas seguintes à
-                // galeria, em vez de refazer a mesma pergunta ao servidor
-                // toda vez — as fotos raramente mudam depois de publicadas,
-                // então cache aqui é praticamente sempre válido e acelera
-                // bastante revisitas.
-                const resposta = await fetch(caminho, { method: 'HEAD', cache: 'default', signal: controlador.signal });
-                if (resposta.ok) return { caminho, tipo: c.tipo };
-            } catch (e) {
-                // 404 (fetch não trata como erro, então normalmente nem cai
-                // aqui), sem internet, ou cancelado pelo controlador acima —
-                // em qualquer um desses casos, essa combinação "não achou".
-            }
+            const resultado = await testarUmaExtensao(c, controlador);
+            if (resultado) return resultado;
             throw new Error('galeria: extensão não encontrada'); // faz Promise.any pular essa tentativa
         });
 
