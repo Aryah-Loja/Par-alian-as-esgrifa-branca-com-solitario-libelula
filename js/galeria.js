@@ -29,6 +29,48 @@ async function montarGaleria() {
     const masonry = document.getElementById('galeriaMasonry');
     if (!masonry) return;
 
+    // As "colunas" agora são divs de verdade (ver CSS .galeria-coluna),
+    // não a propriedade column-count do CSS — isso evita que o navegador
+    // fique rebalanceando/pulando os itens de coluna conforme cada foto
+    // termina de carregar com uma altura diferente da esperada (era a
+    // causa do efeito "carregando de baixo pra cima"). A quantidade de
+    // colunas replica os mesmos pontos de corte que existiam antes no
+    // CSS: 1 coluna no celular, 2/3/4 conforme a tela cresce.
+    const numeroDeColunas = () => {
+        const largura = window.innerWidth;
+        if (largura >= 980) return 4;
+        if (largura >= 640) return 3;
+        if (largura >= 480) return 2;
+        return 1;
+    };
+
+    let colunas = [];
+    const montarColunas = (qtd) => {
+        masonry.innerHTML = '';
+        colunas = [];
+        for (let i = 0; i < qtd; i++) {
+            const col = document.createElement('div');
+            col.className = 'galeria-coluna';
+            masonry.appendChild(col);
+            colunas.push(col);
+        }
+    };
+    montarColunas(numeroDeColunas());
+
+    // Se a tela girar/redimensionar a ponto de mudar a quantidade de
+    // colunas, reconstrói as colunas e redistribui os itens já montados
+    // (sem refazer nenhuma busca no servidor) — mantém a mesma ordem.
+    let __ultimoNumeroColunas = colunas.length;
+    window.addEventListener('resize', () => {
+        const novoNumero = numeroDeColunas();
+        if (novoNumero === __ultimoNumeroColunas) return;
+        __ultimoNumeroColunas = novoNumero;
+        const itensAtuais = Array.from(masonry.querySelectorAll('.galeria-item'))
+            .sort((a, b) => Number(a.dataset.ordem) - Number(b.dataset.ordem));
+        montarColunas(novoNumero);
+        itensAtuais.forEach((item, indice) => colunas[indice % colunas.length].appendChild(item));
+    });
+
     const barraWrap = document.getElementById('galeriaCarregando');
     const barra = document.getElementById('galeriaCarregandoBarra');
     const texto = document.getElementById('galeriaCarregandoTexto');
@@ -63,7 +105,13 @@ async function montarGaleria() {
     const contarCarregado = () => { totalCarregados++; atualizarProgresso(); };
     const aoEncontrarItem = (item) => {
         totalEncontrados++;
-        adicionarItemNaGrade(item.numero, item.caminho, item.tipo, masonry, contarCarregado);
+        // Cada foto/vídeo entra sempre na MESMA coluna a partir do seu
+        // índice (round-robin) — nunca muda de coluna depois de
+        // colocada, diferente do balanceamento automático do CSS
+        // column-count, que reordenava tudo conforme as alturas reais
+        // iam ficando conhecidas.
+        const colunaAlvo = colunas[__galeriaItens.length % colunas.length];
+        adicionarItemNaGrade(item.numero, item.caminho, item.tipo, colunaAlvo, contarCarregado);
         atualizarProgresso();
     };
 
@@ -73,7 +121,7 @@ async function montarGaleria() {
     if (totalEncontrados === 0 && barraWrap) barraWrap.classList.add('d-none');
     atualizarProgresso();
 
-    montarItensYoutube(masonry);
+    montarItensYoutube(colunas);
 
     setTimeout(verificarSeGaleriaFicouVazia, 1200);
 }
@@ -139,11 +187,12 @@ function adicionarItemNaGrade(numero, src, tipo, masonry, aoCarregar) {
 
     const indice = __galeriaItens.length;
     __galeriaItens.push({ src, legenda, tipo });
+    item.dataset.ordem = indice; // usado só se a tela redimensionar e as colunas precisarem ser remontadas (ver resize em montarGaleria)
     item.addEventListener('click', () => abrirLightbox(indice));
     masonry.appendChild(item);
 }
 
-function montarItensYoutube(masonry) {
+function montarItensYoutube(colunas) {
     if (!Array.isArray(GALERIA_YOUTUBE)) return;
 
     GALERIA_YOUTUBE.forEach((entrada) => {
@@ -178,15 +227,16 @@ function montarItensYoutube(masonry) {
 
         const indice = __galeriaItens.length;
         __galeriaItens.push({ src: idYoutube, legenda, tipo: 'youtube' });
+        item.dataset.ordem = indice;
         item.addEventListener('click', () => abrirLightbox(indice));
-        masonry.appendChild(item);
+        colunas[indice % colunas.length].appendChild(item);
     });
 }
 
 function verificarSeGaleriaFicouVazia() {
     const masonry = document.getElementById('galeriaMasonry');
     const vazio = document.getElementById('galeriaVazio');
-    if (masonry && masonry.children.length === 0) vazio.classList.remove('d-none');
+    if (masonry && masonry.querySelectorAll('.galeria-item').length === 0) vazio.classList.remove('d-none');
 }
 
 let __galeriaObserver = null;

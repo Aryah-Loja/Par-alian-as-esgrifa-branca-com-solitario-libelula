@@ -968,25 +968,27 @@ html.galeria-html { background-color: #1c1014; }
 .galeria-carregando-barra { width: 100%; height: 4px; border-radius: 999px; background: rgba(183,110,121,0.18); overflow: hidden; }
 .galeria-carregando-barra-preenchida { height: 100%; width: 0%; background: var(--rosegold); border-radius: 999px; transition: width 0.3s ease; }
 .galeria-carregando-texto { font-size: 0.75rem; color: rgba(240,217,221,0.6); margin: 8px 0 0; letter-spacing: 0.5px; }
-.galeria-masonry { column-count: 1; column-gap: 16px; }
-@media (min-width: 480px) { .galeria-masonry { column-count: 2; column-gap: 16px; } }
-@media (min-width: 640px) { .galeria-masonry { column-count: 3; column-gap: 20px; } }
-@media (min-width: 980px) { .galeria-masonry { column-count: 4; column-gap: 24px; } }
+/* CORREÇÃO ("carregando de baixo pra cima"): antes a galeria usava
+   colunas CSS (column-count), que se AUTO-BALANCEIAM por altura. Como as
+   fotos entram com tamanhos variados e terminam de carregar fora de
+   ordem (a rede não baixa 1, 2, 3... em sequência), o navegador ficava
+   recalculando a altura ideal das colunas toda hora e redistribuindo os
+   itens entre elas — dando a impressão de que tudo "pulava" e preenchia
+   de baixo pra cima. Agora as colunas são divs de verdade montadas via
+   JS (js/galeria.js), e cada foto é colocada na coluna certa desde o
+   início, sem o navegador rebalancear nada depois — então nada mais
+   pula de lugar, e as fotos continuam exibidas na proporção original
+   (sem corte).
+*/
+.galeria-masonry { display: flex; gap: 16px; align-items: flex-start; }
+@media (min-width: 640px) { .galeria-masonry { gap: 20px; } }
+@media (min-width: 980px) { .galeria-masonry { gap: 24px; } }
+.galeria-coluna { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; }
 
 .galeria-item { break-inside: avoid; margin-bottom: 16px; background: #fdfcfa; padding: 10px 10px 30px; border-radius: 4px; box-shadow: 0 12px 28px rgba(0,0,0,0.45); opacity: 0; transform: translateY(18px) rotate(var(--tilt, 0deg)); transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.22,1,0.36,1); cursor: zoom-in; }
 .galeria-item.visivel { opacity: 1; transform: translateY(0) rotate(var(--tilt, 0deg)); }
 .galeria-item:hover { transform: translateY(-4px) rotate(0deg) scale(1.03); z-index: 2; }
-/* CORREÇÃO ("carregando de baixo pra cima"): a galeria usa colunas CSS
-   (column-count acima) que se AUTO-BALANCEIAM por altura — sem uma altura
-   reservada, cada foto pula de 0px pro tamanho real assim que termina de
-   carregar, e como as fotos terminam fora de ordem (a rede não baixa na
-   sequência 1, 2, 3...), o navegador fica recalculando e redistribuindo
-   os itens entre as colunas toda hora, dando a impressão de que tudo
-   "pula" e preenche de baixo pra cima. Reservando a proporção 3/4 (igual
-   já era feito pro vídeo, na linha logo abaixo) a altura de cada item já
-   fica definida ANTES da imagem carregar, então o balanceamento das
-   colunas só acontece uma vez — nada mais salta de lugar depois. */
-.galeria-item img { width: 100%; display: block; border-radius: 2px; aspect-ratio: 3 / 4; object-fit: cover; background: #eee; }
+.galeria-item img { width: 100%; display: block; border-radius: 2px; background: #eee; }
 .galeria-item video { width: 100%; display: block; border-radius: 2px; background: #000; aspect-ratio: 3 / 4; object-fit: cover; }
 .galeria-item-video { position: relative; }
 .galeria-video-play {
