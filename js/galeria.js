@@ -25,7 +25,23 @@ let __galeriaFotosCarregadas = 0;
 // entre itens (anterior/próxima) dentro do lightbox.
 let __galeriaItens = [];
 
+// CORREÇÃO (galeria "trava" pela metade se a pessoa sai do site no meio
+// do carregamento): no celular, sair do site (trocar de app, apagar a
+// tela) quase nunca fecha a aba de verdade — o navegador congela a
+// página como está e, ao voltar, restaura ela exatamente daquele jeito
+// (bfcache), sem rodar DOMContentLoaded de novo. Como montarGaleria() só
+// era chamada nesse evento, uma varredura interrompida nunca era
+// retomada: a pessoa via só as fotos que já tinham entrado na grade até
+// o momento de sair. Esta flag marca quando a varredura termina de
+// verdade, para o listener de pageshow (abaixo) saber se precisa
+// reiniciar o carregamento ao restaurar a página de um congelamento.
+let __galeriaCarregamentoCompleto = false;
+
 async function montarGaleria() {
+    __galeriaCarregamentoCompleto = false;
+    __galeriaItens = [];
+    __galeriaFotosCarregadas = 0;
+
     const masonry = document.getElementById('galeriaMasonry');
     if (!masonry) return;
 
@@ -122,6 +138,8 @@ async function montarGaleria() {
     atualizarProgresso();
 
     montarItensYoutube(colunas);
+
+    __galeriaCarregamentoCompleto = true;
 
     setTimeout(verificarSeGaleriaFicouVazia, 1200);
 }
@@ -351,6 +369,19 @@ function fecharLightbox() {
     if (youtube) { youtube.src = ''; } // para a reprodução do YouTube ao fechar
     desbloquearScrollFundo();
 }
+
+// CORREÇÃO (galeria "trava" pela metade se a pessoa sai do site no meio do
+// carregamento): se a página está sendo restaurada de um congelamento do
+// navegador (bfcache — ver comentário de __galeriaCarregamentoCompleto
+// acima) e a varredura ainda não tinha terminado quando ela foi
+// congelada, refaz o carregamento do zero. As requisições HEAD já feitas
+// e as imagens já baixadas costumam vir do cache do próprio navegador,
+// então isso normalmente é rápido — muito mais rápido que a primeira vez.
+window.addEventListener('pageshow', (evento) => {
+    if (!evento.persisted) return; // página realmente recarregada do zero: DOMContentLoaded já vai cuidar disso
+    if (__galeriaCarregamentoCompleto) return; // já tinha terminado antes de sair: nada a fazer
+    montarGaleria();
+});
 
 document.addEventListener('DOMContentLoaded', () => {
     try {
