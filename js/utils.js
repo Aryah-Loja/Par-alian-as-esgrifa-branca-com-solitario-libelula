@@ -368,45 +368,18 @@ async function galeriaArquivoExiste(caminho) {
 }
 
 /**
- * Tenta descobrir o item "galeria_N" testando cada extensão de foto e
- * vídeo aceita, em paralelo. Devolve { caminho, tipo } da primeira que
- * existir, ou `null` se nenhuma existir.
- *
- * CORREÇÃO (checagem excessiva): antes, mesmo depois de achar a extensão
- * certa, o código continuava esperando TODAS as outras combinações
- * terminarem (13 requisições 404 desperdiçadas pra cada número que já
- * tem arquivo de verdade, a cada carregamento da página). Agora, assim
- * que uma combinação responde que existe, as outras que ainda estavam
- * em andamento são canceladas (AbortController) em vez de esperadas até
- * o fim — não muda o resultado (a primeira extensão real encontrada
- * sempre vence), só corta o ruído de rede/console pra números que já
- * têm arquivo. Quando NENHUMA combinação existe (número realmente
- * vazio), o comportamento continua igual a antes: precisa mesmo
- * terminar de testar todas pra ter certeza que não existe.
+ * Tenta descobrir o item "galeria_N" testando a extensão fixa de foto
+ * (.jpg) e/ou de vídeo (.mp4), em paralelo quando os dois tipos são
+ * relevantes. Devolve { caminho, tipo } da primeira que existir, ou
+ * `null` se nenhuma existir.
  */
 async function galeriaDescobrirItem(numero, tipoAlvo) {
-    // Testa cada extensão tanto em minúsculo quanto em MAIÚSCULO — celular
-    // (principalmente iPhone) às vezes salva/exporta com extensão em
-    // maiúsculo (ex.: IMG.MOV), e servidores estáticos (GitHub Pages, etc.)
-    // costumam ser case-sensitive, então "galeria_2.mov" não bate com
-    // "galeria_2.MOV" se testarmos só uma forma.
-    //
-    // CORREÇÃO (carregamento lento): antes, CADA número testado — mesmo
-    // dentro da faixa só de fotos — também testava as extensões de vídeo
-    // (e vice-versa na faixa de vídeo), dobrando à toa a quantidade de
-    // requisições de rede por número. Agora quem varre uma faixa (ver
-    // galeriaVarrerFaixa) informa `tipoAlvo` ('foto' ou 'video') e só as
-    // extensões daquele tipo são testadas — metade das requisições por
-    // número, o que reduz o tempo total de descoberta por cerca da metade.
+    // Só testa a extensão fixa do(s) tipo(s) relevante(s) — quem varre
+    // uma faixa (ver galeriaVarrerFaixa) informa `tipoAlvo` ('foto' ou
+    // 'video') e só a extensão daquele tipo é testada.
     const candidatos = [
-        ...(tipoAlvo !== 'video' ? GALERIA_EXTENSOES_FOTO.flatMap(ext => ([
-            { ext, tipo: 'foto' },
-            { ext: ext.toUpperCase(), tipo: 'foto' }
-        ])) : []),
-        ...(tipoAlvo !== 'foto' ? GALERIA_EXTENSOES_VIDEO.flatMap(ext => ([
-            { ext, tipo: 'video' },
-            { ext: ext.toUpperCase(), tipo: 'video' }
-        ])) : [])
+        ...(tipoAlvo !== 'video' ? GALERIA_EXTENSOES_FOTO.map(ext => ({ ext, tipo: 'foto' })) : []),
+        ...(tipoAlvo !== 'foto' ? GALERIA_EXTENSOES_VIDEO.map(ext => ({ ext, tipo: 'video' })) : [])
     ];
 
     const testarUmaExtensao = async (c, controlador) => {

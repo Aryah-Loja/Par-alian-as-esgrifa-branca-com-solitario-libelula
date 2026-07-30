@@ -92,9 +92,8 @@ const PLACEHOLDERS = {
     imagem_flashback_5: { arquivo: 'flashback-5.jpg', tipo: 'imagem', descricao: 'Flashback — "e a partir de hoje, minha namorada' },
 
     // ---- Timeline (Nossa História) ----
-    // Extensão flexível (igual bichos/mapa): aceita .jpg, .jpeg, .png ou
-    // .webp sem precisar editar nada aqui, só salvar o arquivo com esse
-    // nome base em assets/img/.
+    // Igual bichos/mapa: só salvar o arquivo como .jpg com esse nome
+    // base em assets/img/, sem precisar editar nada aqui.
     imagem_timeline_1: { arquivoBase: 'timeline-1', tipo: 'imagem', descricao: 'Timeline — quando você comentou com a Vitória / dias antes de se conhecerem' },
     imagem_timeline_2: { arquivoBase: 'timeline-2', tipo: 'imagem', descricao: 'Timeline — 11/05, carona e primeira conversa de verdade' },
     imagem_timeline_3: { arquivoBase: 'timeline-3', tipo: 'imagem', descricao: 'Timeline — 30/05, primeiro encontro no Colina (Orlândia) e o beijo' },
@@ -113,10 +112,9 @@ const PLACEHOLDERS = {
     imagem_momento_4: { arquivo: 'momento-4.jpg', tipo: 'imagem', descricao: 'Foto solta na "mesa de fotos"' },
 
     // ---- Seus bichos (clique no nome de cada um abre a foto) ----
-    // "arquivoBase" (sem extensão) em vez de "arquivo": aceita qualquer
-    // extensão de foto listada em EXTENSOES_FOTO_ACEITAS, então tanto faz
-    // salvar como .jpg, .jpeg, .png ou .webp — não precisa editar nada
-    // aqui além de colocar o arquivo na pasta (ver resolverFotoPlaceholder).
+    // "arquivoBase" (sem extensão) em vez de "arquivo": o arquivo deve
+    // ser salvo como .jpg — não precisa editar nada aqui além de colocar
+    // o arquivo na pasta (ver resolverFotoPlaceholder).
     bicho_koda: { arquivoBase: 'bicho-koda', tipo: 'imagem', descricao: 'Koda' },
     bicho_xixico: { arquivoBase: 'bicho-xixico', tipo: 'imagem', descricao: 'Xixico' },
     bicho_kovu: { arquivoBase: 'bicho-kovu', tipo: 'imagem', descricao: 'Kovu' },
@@ -167,10 +165,9 @@ function getAsset(id) {
 
 /**
  * Resolve a foto de um placeholder "por nome" (arquivoBase, sem extensão
- * fixa) — testa cada extensão em EXTENSOES_FOTO_ACEITAS, em minúsculo e
- * MAIÚSCULO, até achar um arquivo que exista de verdade em assets/img/.
+ * fixa) — o arquivo precisa estar salvo como .jpg em assets/img/.
  * Usada hoje pelas fotos de "Seus bichos" (ver PLACEHOLDERS acima).
- * Se nada for encontrado, devolve um SVG de espaço reservado (com a
+ * Se o arquivo não existir, devolve um SVG de espaço reservado (com a
  * legenda do item) em vez de quebrar como imagem ausente.
  */
 const __cacheResolverFotoPlaceholder = {};
@@ -183,19 +180,16 @@ async function resolverFotoPlaceholder(id) {
         return gerarSvgPlaceholderComLegenda(item ? item.descricao : id);
     }
 
-    const candidatos = EXTENSOES_FOTO_ACEITAS.flatMap(ext => [ext, ext.toUpperCase()]);
-    for (const ext of candidatos) {
-        const caminho = `assets/img/${item.arquivoBase}.${ext}`;
-        if (await arquivoExisteNoServidor(caminho)) {
-            __cacheResolverFotoPlaceholder[id] = caminho;
-            return caminho;
-        }
+    const caminho = `assets/img/${item.arquivoBase}.jpg`;
+    if (await arquivoExisteNoServidor(caminho)) {
+        __cacheResolverFotoPlaceholder[id] = caminho;
+        return caminho;
     }
 
-    // Nenhuma extensão encontrada — provavelmente a foto ainda não foi
-    // adicionada na pasta. Não guarda esse "não encontrado" no cache
-    // (diferente do sucesso), assim, se a foto for adicionada depois sem
-    // recarregar a página, uma nova tentativa ainda pode encontrar.
+    // Arquivo ainda não foi adicionado na pasta. Não guarda esse "não
+    // encontrado" no cache (diferente do sucesso), assim, se a foto for
+    // adicionada depois sem recarregar a página, uma nova tentativa ainda
+    // pode encontrar.
     return gerarSvgPlaceholderComLegenda(item.descricao);
 }
 
@@ -205,21 +199,17 @@ async function resolverFotoPlaceholder(id) {
  * mapa" adicionados pelo painel (diagnostico.html → "Adicionar local ao
  * mapa"), que não passam por PLACEHOLDERS — o nome do arquivo é gerado
  * automaticamente a partir do nome do local, e o Gabriel só precisa
- * salvar a foto em assets/img/ com esse nome (qualquer extensão de
- * EXTENSOES_FOTO_ACEITAS).
+ * salvar a foto em assets/img/ com esse nome, no formato .jpg.
  */
 const __cacheResolverFotoPorBase = {};
 async function resolverFotoPorBase(arquivoBase, legenda) {
     if (!arquivoBase) return gerarSvgPlaceholderComLegenda(legenda);
     if (arquivoBase in __cacheResolverFotoPorBase) return __cacheResolverFotoPorBase[arquivoBase];
 
-    const candidatos = EXTENSOES_FOTO_ACEITAS.flatMap(ext => [ext, ext.toUpperCase()]);
-    for (const ext of candidatos) {
-        const caminho = `assets/img/${arquivoBase}.${ext}`;
-        if (await arquivoExisteNoServidor(caminho)) {
-            __cacheResolverFotoPorBase[arquivoBase] = caminho;
-            return caminho;
-        }
+    const caminho = `assets/img/${arquivoBase}.jpg`;
+    if (await arquivoExisteNoServidor(caminho)) {
+        __cacheResolverFotoPorBase[arquivoBase] = caminho;
+        return caminho;
     }
 
     return gerarSvgPlaceholderComLegenda(legenda);
@@ -243,8 +233,7 @@ async function resolverFotoPorBase(arquivoBase, legenda) {
    Para adicionar um novo item, só salve o arquivo com o próximo número
    da sequência. Não precisa editar nenhum arquivo do projeto — nem
    contar quantos itens existem, nem dizer se é foto ou vídeo (o site vê
-   sozinho pela extensão do arquivo: .jpg/.jpeg/.png/.webp = foto,
-   .mp4/.mov/.webm = vídeo).
+   sozinho pela extensão do arquivo: .jpg = foto, .mp4 = vídeo).
 
    O site para de procurar depois de alguns números seguidos sem
    encontrar nada — então, DENTRO de cada faixa (ver
@@ -322,16 +311,13 @@ function extrairIdYoutube(valor) {
     return texto; // já era só o ID (ou algo não reconhecido — usa como veio)
 }
 
-/* Extensões aceitas para descoberta automática — ver montarGaleria() em js/galeria.js. */
-/* Extensões de foto aceitas em qualquer lugar do site que resolve uma
- * imagem "por nome", sem precisar dizer a extensão exata em config.js —
- * hoje usada pela galeria (galeria.html) e pelas fotos de "Seus bichos".
- * Adicione aqui se precisar aceitar outro formato de foto no futuro
- * (o teste também é sempre insensível a maiúscula/minúscula, então
- * ".JPG" e ".jpg" funcionam do mesmo jeito). */
-const EXTENSOES_FOTO_ACEITAS = ['jpg', 'jpeg', 'png', 'webp'];
+/* Extensão padronizada para descoberta automática — ver montarGaleria() em
+ * js/galeria.js. Fotos sempre em .jpg (minúsculo) e vídeos sempre em .mp4
+ * (minúsculo) — nenhuma outra extensão nem variação de maiúscula/minúscula
+ * é testada. */
+const EXTENSOES_FOTO_ACEITAS = ['jpg'];
 const GALERIA_EXTENSOES_FOTO = EXTENSOES_FOTO_ACEITAS;
-const GALERIA_EXTENSOES_VIDEO = ['mp4', 'mov', 'webm'];
+const GALERIA_EXTENSOES_VIDEO = ['mp4'];
 
 /* Extensões de áudio aceitas em qualquer lugar do site que resolve um
  * áudio "por nome", sem precisar dizer a extensão exata em config.js —
@@ -918,8 +904,7 @@ const IMPRIMIVEL_ALTURA_PX = 1772;  // 15cm a 300dpi
 /* ----------------------------------------------------------------------
    CÂMERA LENTA DE UM MOMENTO — um vídeo curto, tocado bem devagar e em
    loop, com frases surgindo por cima aos poucos. Coloque o vídeo em
-   assets/video/ com o nome abaixo (qualquer extensão de
-   GALERIA_EXTENSOES_VIDEO serve: .mp4, .mov, .webm). Enquanto o arquivo
+   assets/video/ com o nome abaixo, no formato .mp4. Enquanto o arquivo
    não existir, essa seção inteira fica escondida sozinha — sem quebrar
    nada nem mostrar um vídeo vazio.
    ---------------------------------------------------------------------- */
@@ -960,9 +945,9 @@ Feliz aniversário, meu amor. Hoje o dia é seu, mas eu que ganhei o presente de
 
 /* Vídeo especial que aparece junto com a mensagem de aniversário, dentro
  * do mesmo bloco. Coloque o arquivo em assets/video/ com esse nome (ver
- * assets/video/LEIA-ME-video-aniversario.md) — qualquer extensão de
- * GALERIA_EXTENSOES_VIDEO serve. Enquanto o arquivo não existir, só o
- * texto aparece, sem espaço vazio nem nada quebrado. */
+ * assets/video/LEIA-ME-video-aniversario.md), no formato .mp4. Enquanto
+ * o arquivo não existir, só o texto aparece, sem espaço vazio nem nada
+ * quebrado. */
 const ANIVERSARIO_VIDEO_ARQUIVO_BASE = 'video-aniversario';
 
 /* Música especial que toca sozinha, só no dia 8 de agosto, junto com o
@@ -1295,22 +1280,19 @@ const LOJA_EASTER_EGGS = {
 /**
  * Igual a resolverFotoPlaceholder, mas para um vídeo estático em
  * assets/video/ (não gravado pelo usuário, um arquivo que você mesmo
- * coloca na pasta) — testa cada extensão de GALERIA_EXTENSOES_VIDEO,
- * maiúscula e minúscula, e devolve null se nada for encontrado (quem
- * chamar decide o que fazer nesse caso, ex.: esconder a seção toda).
+ * coloca na pasta) — o arquivo precisa estar salvo como .mp4. Devolve
+ * null se não for encontrado (quem chamar decide o que fazer nesse
+ * caso, ex.: esconder a seção toda).
  */
 const __cacheResolverVideoPorBase = {};
 async function resolverVideoPorBase(arquivoBase) {
     if (!arquivoBase) return null;
     if (arquivoBase in __cacheResolverVideoPorBase) return __cacheResolverVideoPorBase[arquivoBase];
 
-    const candidatos = GALERIA_EXTENSOES_VIDEO.flatMap(ext => [ext, ext.toUpperCase()]);
-    for (const ext of candidatos) {
-        const caminho = `assets/video/${arquivoBase}.${ext}`;
-        if (await arquivoExisteNoServidor(caminho)) {
-            __cacheResolverVideoPorBase[arquivoBase] = caminho;
-            return caminho;
-        }
+    const caminho = `assets/video/${arquivoBase}.mp4`;
+    if (await arquivoExisteNoServidor(caminho)) {
+        __cacheResolverVideoPorBase[arquivoBase] = caminho;
+        return caminho;
     }
     return null; // não guarda no cache — se o arquivo for adicionado depois, uma nova tentativa pode encontrar
 }
