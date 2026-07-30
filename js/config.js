@@ -1247,7 +1247,7 @@ const LOJA_EASTER_EGGS = {
 
     destaquePrataCard: {
         titulo: 'Prata 950? Interessante...',
-        texto: `No fim, nenhum número gravado em uma joia conseguiria explicar o valor desse dia. Porque algumas coisas não têm medida: o primeiro olhar, as risadas, as conversas no carro e tudo que fez você se tornar tão importante para mim.`
+        texto: `No fim, nenhum número gravado em uma joia conseguiria explicar o valor desse dia. Porque algumas coisas não têm medida: o primeiro olhar, as risadas, as conversas no carro e tudo que fez você se tornar tão importante para mim. - Q3ZTN`
     },
 
     pulseiraEsgrifaCard: {
