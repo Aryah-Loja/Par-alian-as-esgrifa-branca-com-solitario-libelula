@@ -428,20 +428,28 @@ async function galeriaDescobrirItem(numero, tipoAlvo) {
 
 /**
  * Varre uma faixa de números da galeria (de `inicio` até `teto`, ou até
- * bater a tolerância de buracos seguidos — GALERIA_LACUNA_PARA_PARAR),
- * chamando `aoEncontrar(numero, resultado)` pra cada item real que achar.
+ * bater a tolerância de buracos seguidos — `lacunaTolerancia`), chamando
+ * `aoEncontrar(numero, resultado)` pra cada item real que achar.
  * Extraída como função própria (em vez de duplicar o laço em cada lugar
  * que precisa dela: descobrirFotosParaDestaque(), galeriaEscanearCompleta()
  * pra dar suporte a DUAS faixas independentes — uma pra fotos, outra pra
  * vídeos (ver GALERIA_INICIO_VIDEOS em js/config.js) — sem duplicar a
  * lógica de descoberta em cada lugar que precisa dela.
+ *
+ * `lacunaTolerancia` (padrão GALERIA_LACUNA_PARA_PARAR) permite que quem
+ * chama desative a parada antecipada por buraco (passando Infinity) —
+ * usado na faixa de fotos abaixo, que já é naturalmente pequena e
+ * limitada por GALERIA_INICIO_VIDEOS, então não há necessidade da
+ * otimização de "desistir cedo" e ela só causava fotos reais que vinham
+ * depois de um buraco na numeração (ex.: pulou um número ao subir as
+ * fotos) serem cortadas da galeria.
  */
-async function galeriaVarrerFaixa(inicio, teto, aoEncontrar, aoProgredir, tipoAlvo) {
+async function galeriaVarrerFaixa(inicio, teto, aoEncontrar, aoProgredir, tipoAlvo, lacunaTolerancia = GALERIA_LACUNA_PARA_PARAR) {
     const TAMANHO_LOTE = 8;
     let proximoNumero = inicio;
     let lacunaAtual = 0;
 
-    while (proximoNumero <= teto && lacunaAtual < GALERIA_LACUNA_PARA_PARAR) {
+    while (proximoNumero <= teto && lacunaAtual < lacunaTolerancia) {
         const numerosDoLote = [];
         for (let i = 0; i < TAMANHO_LOTE; i++) numerosDoLote.push(proximoNumero + i);
 
@@ -453,7 +461,7 @@ async function galeriaVarrerFaixa(inicio, teto, aoEncontrar, aoProgredir, tipoAl
                 aoEncontrar(numerosDoLote[i], resultados[i]);
             } else {
                 lacunaAtual++;
-                if (lacunaAtual >= GALERIA_LACUNA_PARA_PARAR) break; // já sabe que vai parar — não precisa olhar o resto do lote
+                if (lacunaAtual >= lacunaTolerancia) break; // já sabe que vai parar — não precisa olhar o resto do lote
             }
         }
 
@@ -469,12 +477,35 @@ async function galeriaVarrerFaixa(inicio, teto, aoEncontrar, aoProgredir, tipoAl
  * completa — e a única que tem uma barra de carregamento visível pra
  * cobrir o tempo dessa varredura. `aoProgredir`, se passado, é chamado a
  * cada lote conferido, pra alimentar essa barra.
+ *
+ * `aoEncontrarItem`, se passado, é chamado IMEDIATAMENTE a cada item
+ * real encontrado (em vez de só no final) — permite que quem chama já
+ * comece a carregar/exibir a foto/vídeo assim que ela é descoberta, ao
+ * invés de esperar a varredura inteira (fotos + vídeos) terminar pra só
+ * então começar a mostrar qualquer coisa na tela.
+ *
+ * CORREÇÃO (galeria demorando pra aparecer e "parando" antes da hora):
+ * cada item agora é entregue via `aoEncontrarItem` assim que é achado —
+ * quem chama (galeria.js) já bota a foto na grade e começa a carregá-la
+ * na hora, sem esperar a varredura inteira terminar primeiro. As duas
+ * faixas continuam em sequência (fotos, depois vídeos) pra manter a
+ * ordem de exibição (fotos em ordem crescente, depois os vídeos), mas
+ * como as fotos já vão aparecendo desde o primeiro lote, a demora
+ * percebida cai bastante mesmo sem paralelizar as faixas. Além disso, a
+ * faixa de fotos agora varre até o fim sem desistir por causa de
+ * buracos na numeração (ver `lacunaTolerancia` em galeriaVarrerFaixa) —
+ * evita cortar fotos reais que vêm depois de um número faltando/pulado
+ * (a faixa de vídeos continua com a tolerância normal, já que ali sim
+ * vale a pena desistir cedo pra não varrer até GALERIA_MAX_NUMERO à toa).
  */
-async function galeriaEscanearCompleta(aoProgredir) {
+async function galeriaEscanearCompleta(aoProgredir, aoEncontrarItem) {
     const itensEncontrados = [];
-    const aoEncontrar = (numero, resultado) => itensEncontrados.push({ numero, ...resultado });
+    const aoEncontrar = (numero, resultado) => {
+        itensEncontrados.push({ numero, ...resultado });
+        if (aoEncontrarItem) aoEncontrarItem({ numero, ...resultado });
+    };
 
-    await galeriaVarrerFaixa(1, GALERIA_INICIO_VIDEOS - 1, aoEncontrar, aoProgredir, 'foto');
+    await galeriaVarrerFaixa(1, GALERIA_INICIO_VIDEOS - 1, aoEncontrar, aoProgredir, 'foto', Infinity);
     await galeriaVarrerFaixa(GALERIA_INICIO_VIDEOS, GALERIA_MAX_NUMERO, aoEncontrar, aoProgredir, 'video');
 
     return itensEncontrados;

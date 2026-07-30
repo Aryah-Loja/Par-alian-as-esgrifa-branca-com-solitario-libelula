@@ -38,46 +38,40 @@ async function montarGaleria() {
         if (texto && mensagem) texto.textContent = mensagem;
     };
 
-    // Fase 1: descobrir quais números de foto/vídeo existem de verdade no
-    // servidor. Varre em DUAS faixas (fotos: 1 até GALERIA_INICIO_VIDEOS -
-    // 1; vídeos: GALERIA_INICIO_VIDEOS em diante — ver js/config.js) em
-    // vez de uma sequência única, senão o buraco proposital entre as duas
-    // faixas (a margem de segurança pra fotos crescerem sem esbarrar nos
-    // vídeos) seria confundido com "acabaram os itens" pela tolerância a
-    // buracos (GALERIA_LACUNA_PARA_PARAR). A barra aqui acompanha o
-    // quanto já foi varrido do total possível (GALERIA_MAX_NUMERO), só
-    // pra dar uma ideia de progresso — não sabemos quantos itens existem
-    // de fato até terminar de procurar.
-    //
-    // Essa é a varredura completa (galeriaEscanearCompleta, js/utils.js) —
-    // roda só aqui, ao entrar na galeria de verdade, e não mais também na
-    // home ("Nossos momentos" agora usa uma varredura própria bem mais
-    // leve, sem duplicar esse trabalho pesado).
-    const aoProgredir = (numeroAtual) => atualizarBarra((numeroAtual / GALERIA_MAX_NUMERO) * 0.4, 'Procurando fotos...');
-    const itensEncontrados = await galeriaEscanearCompleta(aoProgredir);
-
-    // Fase 2: os itens já foram encontrados, agora é acompanhar o
-    // carregamento de verdade (o navegador ainda precisa baixar cada
-    // imagem/vídeo). A barra passa a refletir quantas mídias já
-    // terminaram de carregar, não só quantas foram descobertas.
-    const totalParaCarregar = itensEncontrados.length;
-    let carregados = 0;
-    const contarCarregado = () => {
-        carregados++;
-        atualizarBarra(0.4 + (carregados / Math.max(totalParaCarregar, 1)) * 0.6, `Carregando fotos: ${carregados}/${totalParaCarregar}`);
-        if (carregados >= totalParaCarregar && barraWrap) {
+    // CORREÇÃO (galeria demorando muito pra aparecer): antes, a varredura
+    // (achar quais números existem) e o carregamento (o navegador baixar
+    // cada imagem/vídeo) eram duas fases sequenciais — nada aparecia na
+    // tela até a varredura INTEIRA (fotos + vídeos) terminar. Agora cada
+    // item já entra na grade e começa a carregar assim que é descoberto
+    // (aoEncontrarItem abaixo), sem esperar o resto da varredura terminar
+    // — então a primeira foto já aparece logo no primeiro lote conferido,
+    // em vez de só depois de toda a galeria ser varrida.
+    let totalEncontrados = 0;
+    let totalCarregados = 0;
+    let varreduraTerminou = false;
+    const atualizarProgresso = () => {
+        if (totalEncontrados === 0) {
+            atualizarBarra(0, varreduraTerminou ? '' : 'Procurando fotos...');
+            return;
+        }
+        const fracao = totalCarregados / totalEncontrados;
+        atualizarBarra(fracao, `Carregando fotos: ${totalCarregados}/${totalEncontrados}`);
+        if (varreduraTerminou && totalCarregados >= totalEncontrados && barraWrap) {
             setTimeout(() => barraWrap.classList.add('d-none'), 400);
         }
     };
+    const contarCarregado = () => { totalCarregados++; atualizarProgresso(); };
+    const aoEncontrarItem = (item) => {
+        totalEncontrados++;
+        adicionarItemNaGrade(item.numero, item.caminho, item.tipo, masonry, contarCarregado);
+        atualizarProgresso();
+    };
 
-    if (totalParaCarregar === 0) {
-        if (barraWrap) barraWrap.classList.add('d-none');
-    } else {
-        atualizarBarra(0.4, `Carregando fotos: 0/${totalParaCarregar}`);
-        itensEncontrados.forEach(item => {
-            adicionarItemNaGrade(item.numero, item.caminho, item.tipo, masonry, contarCarregado);
-        });
-    }
+    await galeriaEscanearCompleta(null, aoEncontrarItem);
+    varreduraTerminou = true;
+
+    if (totalEncontrados === 0 && barraWrap) barraWrap.classList.add('d-none');
+    atualizarProgresso();
 
     montarItensYoutube(masonry);
 
