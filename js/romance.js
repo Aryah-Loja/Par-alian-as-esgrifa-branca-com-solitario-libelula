@@ -339,11 +339,39 @@ async function iniciarGaleriaMomentos() {
         fotos = [];
     }
 
+    // CORREÇÃO ("é inaceitável espaço vazio"): a varredura rápida acima é
+    // deliberadamente limitada (só a faixa de fotos, para de procurar ao
+    // achar GALERIA_DESTAQUE_FOTOS_ALVO) para não pesar na home. Se por
+    // qualquer motivo ela não achar fotos suficientes para preencher os 4
+    // cartões, refaz a busca com a varredura COMPLETA e exaustiva (a
+    // mesma que a página da Galeria usa, sem nenhum limite de tolerância
+    // a buracos) antes de aceitar que realmente não há fotos.
+    if (fotos.length < cartoes.length) {
+        try {
+            const todosOsItens = await galeriaEscanearCompleta(null, null);
+            const todasAsFotos = todosOsItens.filter(item => item.tipo === 'foto').map(item => item.caminho);
+            if (todasAsFotos.length > fotos.length) fotos = todasAsFotos;
+        } catch (e) {
+            // mantém o que a varredura rápida já tinha achado
+        }
+    }
+
     // Sorteia até 4 fotos, sem repetir nenhuma (embaralha e pega as
     // primeiras N) — toda vez que a página é aberta, uma seleção
     // diferente de momentos aparece aqui.
     const embaralhadas = fotos.slice().sort(() => Math.random() - 0.5);
-    const escolhidas = embaralhadas.slice(0, cartoes.length);
+    let escolhidas = embaralhadas.slice(0, cartoes.length);
+
+    // CORREÇÃO (espaço vazio inaceitável): se existir pelo menos UMA foto
+    // real mas menos de 4 no total (ex.: site recém-criado, ainda subindo
+    // fotos), repete as que existem para preencher os 4 cartões em vez de
+    // deixar quadros vazios com placeholder — só cai no placeholder "adicione
+    // esta foto" se não existir NENHUMA foto real na galeria.
+    if (escolhidas.length > 0 && escolhidas.length < cartoes.length) {
+        const preenchidas = [];
+        for (let i = 0; i < cartoes.length; i++) preenchidas.push(escolhidas[i % escolhidas.length]);
+        escolhidas = preenchidas;
+    }
 
     cartoes.forEach((cartao, i) => {
         const img = cartao.querySelector('img');
@@ -352,9 +380,9 @@ async function iniciarGaleriaMomentos() {
             img.alt = 'Foto do casal';
             cartao.classList.remove('d-none');
         } else {
-            // Menos de 4 fotos na galeria ainda (ex.: site recém criado) —
-            // cai no mesmo SVG "adicione esta foto" usado no resto do site,
-            // em vez de simplesmente sumir ou quebrar.
+            // Só chega aqui se a galeria não tiver NENHUMA foto real ainda
+            // (site recém criado) — cai no mesmo SVG "adicione esta foto"
+            // usado no resto do site, em vez de simplesmente sumir ou quebrar.
             aplicarImagemPlaceholder(img, null, 'Foto do casal');
         }
         cartao.style.cursor = escolhidas[i] ? 'pointer' : '';

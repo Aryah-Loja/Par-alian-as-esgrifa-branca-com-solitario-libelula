@@ -384,25 +384,37 @@ async function galeriaDescobrirItem(numero, tipoAlvo) {
 
     const testarUmaExtensao = async (c, controlador) => {
         const caminho = `${PASTA_GALERIA}/galeria_${numero}.${c.ext}`;
-        try {
+        const tentar = async () => {
             const resposta = await fetch(caminho, { method: 'HEAD', cache: 'no-store', signal: controlador.signal });
-            if (resposta.ok) return { caminho, tipo: c.tipo };
-            return null; // 404 de verdade: arquivo não existe, sem retry — resposta rápida e definitiva
+            if (resposta.ok) return { encontrado: true, resultado: { caminho, tipo: c.tipo } };
+            // CORREÇÃO ("Nossos momentos" às vezes não achava foto nenhuma):
+            // só um 404 de verdade significa "o arquivo não existe". Qualquer
+            // outro status (429 de limite de requisições, 503/500 de
+            // instabilidade do servidor, etc.) é uma falha PASSAGEIRA, não uma
+            // confirmação de ausência — tratar isso como "não encontrado" sem
+            // repetir a tentativa fazia buscas com rede instável (comum em
+            // 4G) confundirem "servidor engasgou" com "essa foto não existe",
+            // cortando fotos reais da seleção.
+            return { encontrado: false, confirmado: resposta.status === 404 };
+        };
+        try {
+            const r = await tentar();
+            if (r.encontrado) return r.resultado;
+            if (r.confirmado) return null; // 404 de verdade: sem retry, resposta rápida e definitiva
         } catch (e) {
             if (controlador.signal.aborted) throw e; // cancelado porque outra extensão já achou — não é erro de rede, não faz sentido re-tentar
-            // Erro de rede de verdade (soluço momentâneo de conexão, comum em
-            // 4G/wifi instável) — diferente do 404 acima, aqui NÃO temos
-            // certeza se o arquivo existe ou não, então vale uma segunda
-            // tentativa rápida antes de desistir. Sem essa distinção, um
-            // arquivo que EXISTE de verdade podia sumir de "Nossos momentos"
-            // (ou da galeria) só por causa de uma falha de rede passageira.
-            try {
-                const resposta = await fetch(caminho, { method: 'HEAD', cache: 'no-store', signal: controlador.signal });
-                if (resposta.ok) return { caminho, tipo: c.tipo };
-                return null;
-            } catch (e2) {
-                return null; // falhou de novo — aí sim trata como "não achou"
-            }
+        }
+        // Erro de rede ou status ambíguo (não é um 404 confirmado) — sempre
+        // vale uma segunda tentativa antes de desistir de vez, porque aqui
+        // NÃO temos certeza se o arquivo existe ou não. Sem essa distinção,
+        // um arquivo que EXISTE de verdade podia sumir de "Nossos momentos"
+        // (ou da galeria) só por causa de uma falha de rede passageira.
+        try {
+            const r2 = await tentar();
+            if (r2.encontrado) return r2.resultado;
+            return null;
+        } catch (e2) {
+            return null; // falhou de novo — aí sim trata como "não achou"
         }
     };
 
@@ -566,7 +578,16 @@ async function galeriaVarrerAteAlvoDestaque(inicio, teto, aoEncontrar, fotosEnco
     let proximoInicio = inicio;
     while (proximoInicio <= teto && fotosEncontradas.length < GALERIA_DESTAQUE_FOTOS_ALVO) {
         const proximoTeto = Math.min(proximoInicio + TAMANHO_LOTE_DESTAQUE - 1, teto);
-        await galeriaVarrerFaixa(proximoInicio, proximoTeto, aoEncontrar, null, 'foto');
+        // CORREÇÃO ("Nossos momentos" às vezes ficava sem foto nenhuma):
+        // sem `Infinity` aqui, essa varredura usava a tolerância padrão de 6
+        // buracos seguidos (GALERIA_LACUNA_PARA_PARAR) e desistia cedo demais
+        // — bastava a numeração ter um trecho com poucas fotos (ou, com a
+        // rede instável do celular, algumas falhas de HEAD em sequência)
+        // para a busca parar ali mesmo, mesmo com fotos de verdade logo à
+        // frente. Como essa faixa já é pequena (no máximo GALERIA_DESTAQUE_TETO_MAX
+        // números) e usa HEAD (bem leve), varrer até o fim sem desistir por
+        // buraco não pesa em nada e garante achar todas as fotos reais.
+        await galeriaVarrerFaixa(proximoInicio, proximoTeto, aoEncontrar, null, 'foto', Infinity);
         proximoInicio = proximoTeto + 1;
     }
 }
