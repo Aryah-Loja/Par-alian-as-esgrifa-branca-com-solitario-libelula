@@ -221,8 +221,26 @@ async function resolverFotoPlaceholder(id) {
    .mp4/.mov/.webm = vídeo).
 
    O site para de procurar depois de alguns números seguidos sem
-   encontrar nada — então não precisa "reservar" números, nem se
-   preocupar em deixar buracos na numeração.
+   encontrar nada — então, DENTRO de cada faixa (ver
+   GALERIA_INICIO_VIDEOS abaixo), não precisa se preocupar em deixar
+   buracos pequenos na numeração.
+
+   MARGEM DE SEGURANÇA ENTRE FOTOS E VÍDEOS: por padrão, fotos e vídeos
+   dividem a mesma sequência de números, então inserir uma foto nova no
+   meio obrigaria a renumerar todo vídeo que viesse depois dela. Pra
+   evitar isso, o site varre a galeria em DUAS faixas separadas:
+   de 1 até (GALERIA_INICIO_VIDEOS - 1) pra fotos, e de
+   GALERIA_INICIO_VIDEOS em diante pra vídeos — cada faixa com sua
+   própria tolerância a buracos, então uma faixa vazia não atrapalha a
+   outra. Isso dá uma margem despreocupada: pode ir salvando fotos novas
+   (galeria_1, galeria_2, ...) até o número logo abaixo do valor de
+   GALERIA_INICIO_VIDEOS sem nunca precisar renomear vídeo nenhum. Se um
+   dia chegar perto do limite, basta AUMENTAR o valor de
+   GALERIA_INICIO_VIDEOS (não precisa renomear nada, só abre mais espaço
+   pra fotos) — só não pode DIMINUIR se já existir vídeo com número menor
+   que o novo valor, senão ele passaria a ser varrido na faixa errada
+   (não teria problema técnico, ele ainda seria achado, só ficaria fora
+   da faixa "oficial" dele).
 
    VÍDEOS DO YOUTUBE (sem precisar do arquivo — ótimo pra vídeos
    grandes): como esses não são um arquivo local, adicione o link numa
@@ -237,6 +255,12 @@ async function resolverFotoPlaceholder(id) {
    GALERIA_YOUTUBE.
    ---------------------------------------------------------------------- */
 const PASTA_GALERIA = 'assets/img/galeria';
+
+// A partir de qual número os VÍDEOS começam — tudo abaixo disso é faixa
+// reservada pra fotos (ver explicação completa acima). 101 dá margem pra
+// 100 fotos (galeria_1 a galeria_100) sem mexer em vídeo nenhum; aumente
+// esse número quando quiser mais espaço.
+const GALERIA_INICIO_VIDEOS = 101;
 
 const GALERIA_LEGENDAS = {
     // 1: 'O dia do atoleiro — rimos até doer a barriga.',

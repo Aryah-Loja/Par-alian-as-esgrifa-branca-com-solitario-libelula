@@ -399,18 +399,21 @@ async function galeriaDescobrirItem(numero) {
 }
 
 /**
- * Varre a galeria inteira (mesma lógica de descoberta usada em
- * galeria.html) e devolve só os itens do tipo "foto" encontrados. Usado
- * por "Nossos momentos" (js/romance.js) pra sortear fotos aleatórias
- * reais da galeria, em vez de depender de 4 arquivos fixos.
+ * Varre uma faixa de números da galeria (de `inicio` até `teto`, ou até
+ * bater a tolerância de buracos seguidos — GALERIA_LACUNA_PARA_PARAR),
+ * chamando `aoEncontrar(numero, resultado)` pra cada item real que achar.
+ * Extraída como função própria (em vez de duplicar o laço em
+ * descobrirTodasAsFotosDaGaleria() e em montarGaleria(), js/galeria.js)
+ * pra dar suporte a DUAS faixas independentes — uma pra fotos, outra pra
+ * vídeos (ver GALERIA_INICIO_VIDEOS em js/config.js) — sem duplicar a
+ * lógica de descoberta em cada lugar que precisa dela.
  */
-async function descobrirTodasAsFotosDaGaleria() {
+async function galeriaVarrerFaixa(inicio, teto, aoEncontrar, aoProgredir) {
     const TAMANHO_LOTE = 8;
-    let proximoNumero = 1;
+    let proximoNumero = inicio;
     let lacunaAtual = 0;
-    const fotosEncontradas = [];
 
-    while (proximoNumero <= GALERIA_MAX_NUMERO && lacunaAtual < GALERIA_LACUNA_PARA_PARAR) {
+    while (proximoNumero <= teto && lacunaAtual < GALERIA_LACUNA_PARA_PARAR) {
         const numerosDoLote = [];
         for (let i = 0; i < TAMANHO_LOTE; i++) numerosDoLote.push(proximoNumero + i);
 
@@ -419,14 +422,38 @@ async function descobrirTodasAsFotosDaGaleria() {
         for (let i = 0; i < resultados.length; i++) {
             if (resultados[i]) {
                 lacunaAtual = 0;
-                if (resultados[i].tipo === 'foto') fotosEncontradas.push(resultados[i].caminho);
+                aoEncontrar(numerosDoLote[i], resultados[i]);
             } else {
                 lacunaAtual++;
-                if (lacunaAtual >= GALERIA_LACUNA_PARA_PARAR) break;
+                if (lacunaAtual >= GALERIA_LACUNA_PARA_PARAR) break; // já sabe que vai parar — não precisa olhar o resto do lote
             }
         }
+
         proximoNumero += TAMANHO_LOTE;
+        if (aoProgredir) aoProgredir(proximoNumero);
     }
+}
+
+/**
+ * Varre a galeria inteira (mesma lógica de descoberta usada em
+ * galeria.html) e devolve só os itens do tipo "foto" encontrados. Usado
+ * por "Nossos momentos" (js/romance.js) pra sortear fotos aleatórias
+ * reais da galeria, em vez de depender de 4 arquivos fixos.
+ *
+ * Varre em DUAS faixas (fotos: 1 até GALERIA_INICIO_VIDEOS - 1; vídeos:
+ * GALERIA_INICIO_VIDEOS em diante) em vez de uma sequência única — assim
+ * o buraco propositalmente deixado entre as duas faixas (a margem de
+ * segurança pra fotos crescerem sem esbarrar nos vídeos) nunca é
+ * confundido com "acabaram os itens" pela tolerância a buracos.
+ */
+async function descobrirTodasAsFotosDaGaleria() {
+    const fotosEncontradas = [];
+    const aoEncontrar = (numero, resultado) => {
+        if (resultado.tipo === 'foto') fotosEncontradas.push(resultado.caminho);
+    };
+
+    await galeriaVarrerFaixa(1, GALERIA_INICIO_VIDEOS - 1, aoEncontrar);
+    await galeriaVarrerFaixa(GALERIA_INICIO_VIDEOS, GALERIA_MAX_NUMERO, aoEncontrar);
 
     return fotosEncontradas;
 }

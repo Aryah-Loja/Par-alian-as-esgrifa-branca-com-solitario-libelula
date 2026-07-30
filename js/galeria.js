@@ -38,34 +38,23 @@ async function montarGaleria() {
         if (texto && mensagem) texto.textContent = mensagem;
     };
 
-    const TAMANHO_LOTE = 8; // testa vários números em paralelo por vez — bem mais rápido que um por um conforme a galeria cresce
-    let proximoNumero = 1;
-    let lacunaAtual = 0;
     const itensEncontrados = [];
 
     // Fase 1: descobrir quais números de foto/vídeo existem de verdade no
-    // servidor. A barra aqui acompanha o quanto já foi varrido do total
-    // possível (GALERIA_MAX_NUMERO), só pra dar uma ideia de progresso —
-    // não sabemos quantos itens existem de fato até terminar de procurar.
-    while (proximoNumero <= GALERIA_MAX_NUMERO && lacunaAtual < GALERIA_LACUNA_PARA_PARAR) {
-        const numerosDoLote = [];
-        for (let i = 0; i < TAMANHO_LOTE; i++) numerosDoLote.push(proximoNumero + i);
+    // servidor. Varre em DUAS faixas (fotos: 1 até GALERIA_INICIO_VIDEOS -
+    // 1; vídeos: GALERIA_INICIO_VIDEOS em diante — ver js/config.js) em
+    // vez de uma sequência única, senão o buraco proposital entre as duas
+    // faixas (a margem de segurança pra fotos crescerem sem esbarrar nos
+    // vídeos) seria confundido com "acabaram os itens" pela tolerância a
+    // buracos (GALERIA_LACUNA_PARA_PARAR). A barra aqui acompanha o
+    // quanto já foi varrido do total possível (GALERIA_MAX_NUMERO), só
+    // pra dar uma ideia de progresso — não sabemos quantos itens existem
+    // de fato até terminar de procurar.
+    const aoEncontrar = (numero, resultado) => itensEncontrados.push({ numero, ...resultado });
+    const aoProgredir = (numeroAtual) => atualizarBarra((numeroAtual / GALERIA_MAX_NUMERO) * 0.4, 'Procurando fotos...');
 
-        const resultados = await Promise.all(numerosDoLote.map(n => galeriaDescobrirItem(n)));
-
-        for (let i = 0; i < resultados.length; i++) {
-            if (resultados[i]) {
-                lacunaAtual = 0;
-                itensEncontrados.push({ numero: numerosDoLote[i], ...resultados[i] });
-            } else {
-                lacunaAtual++;
-                if (lacunaAtual >= GALERIA_LACUNA_PARA_PARAR) break; // já sabe que vai parar — não precisa olhar o resto do lote
-            }
-        }
-
-        proximoNumero += TAMANHO_LOTE;
-        atualizarBarra((proximoNumero / GALERIA_MAX_NUMERO) * 0.4, 'Procurando fotos...');
-    }
+    await galeriaVarrerFaixa(1, GALERIA_INICIO_VIDEOS - 1, aoEncontrar, aoProgredir);
+    await galeriaVarrerFaixa(GALERIA_INICIO_VIDEOS, GALERIA_MAX_NUMERO, aoEncontrar, aoProgredir);
 
     // Fase 2: os itens já foram encontrados, agora é acompanhar o
     // carregamento de verdade (o navegador ainda precisa baixar cada
