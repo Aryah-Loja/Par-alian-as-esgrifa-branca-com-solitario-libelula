@@ -334,7 +334,7 @@ async function iniciarGaleriaMomentos() {
 
     let fotos = [];
     try {
-        fotos = await descobrirTodasAsFotosDaGaleria();
+        fotos = await descobrirFotosParaDestaque();
     } catch (e) {
         fotos = [];
     }

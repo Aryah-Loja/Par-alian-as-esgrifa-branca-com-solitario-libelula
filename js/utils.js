@@ -428,8 +428,8 @@ async function galeriaDescobrirItem(numero) {
  * Varre uma faixa de números da galeria (de `inicio` até `teto`, ou até
  * bater a tolerância de buracos seguidos — GALERIA_LACUNA_PARA_PARAR),
  * chamando `aoEncontrar(numero, resultado)` pra cada item real que achar.
- * Extraída como função própria (em vez de duplicar o laço em
- * descobrirTodasAsFotosDaGaleria() e em montarGaleria(), js/galeria.js)
+ * Extraída como função própria (em vez de duplicar o laço em cada lugar
+ * que precisa dela: descobrirFotosParaDestaque(), galeriaEscanearCompleta()
  * pra dar suporte a DUAS faixas independentes — uma pra fotos, outra pra
  * vídeos (ver GALERIA_INICIO_VIDEOS em js/config.js) — sem duplicar a
  * lógica de descoberta em cada lugar que precisa dela.
@@ -461,80 +461,81 @@ async function galeriaVarrerFaixa(inicio, teto, aoEncontrar, aoProgredir) {
 }
 
 /**
- * CORREÇÃO (checagem duplicada): "Nossos momentos" (index.html, via
- * descobrirTodasAsFotosDaGaleria abaixo) e a página galeria.html faziam,
- * cada uma por conta própria, a MESMA varredura completa do servidor
- * (centenas de requisições HEAD testando galeria_1, galeria_2, ...) — ou
- * seja, ao entrar no site a galeria já era checada uma vez, e checada de
- * novo do zero ao entrar em galeria.html logo em seguida, mesmo sem nada
- * ter mudado nesse meio tempo.
- *
- * Essa varredura de verdade agora só roda uma vez por visita: o
- * resultado fica guardado em sessionStorage (dura só enquanto a aba
- * estiver aberta — fecha a aba ou abre de novo depois e ele refaz a
- * varredura, então nunca fica "desatualizado" de uma visita pra outra) e
- * é reaproveitado pela segunda tela que precisar dele, seja ela
- * index.html ou galeria.html, não importa a ordem.
+ * Varre a galeria inteira (fotos e vídeos) e devolve TODOS os itens
+ * encontrados ({ numero, caminho, tipo }). Usada só dentro de
+ * galeria.html (js/galeria.js), a única tela que precisa mesmo da lista
+ * completa — e a única que tem uma barra de carregamento visível pra
+ * cobrir o tempo dessa varredura. `aoProgredir`, se passado, é chamado a
+ * cada lote conferido, pra alimentar essa barra.
  */
-const GALERIA_CACHE_CHAVE = 'galeriaItensDescobertosNestaVisita';
-
-function galeriaLerCache() {
-    try {
-        const bruto = sessionStorage.getItem(GALERIA_CACHE_CHAVE);
-        return bruto ? JSON.parse(bruto) : null;
-    } catch (e) {
-        return null; // sessionStorage indisponível (ex.: aba anônima/modo privado) — sem cache, mas nada quebra
-    }
-}
-
-function galeriaGravarCache(itens) {
-    try {
-        sessionStorage.setItem(GALERIA_CACHE_CHAVE, JSON.stringify(itens));
-    } catch (e) {
-        // sem espaço ou indisponível — sem problema, só não terá cache desta vez
-    }
-}
-
-/**
- * Varre a galeria inteira (mesma lógica de descoberta usada em
- * galeria.html) e devolve TODOS os itens encontrados ({ numero, caminho,
- * tipo }), fotos e vídeos. Se já existe um resultado guardado desta
- * mesma visita ao site (ver GALERIA_CACHE_CHAVE acima), devolve ele na
- * hora, sem gerar nenhuma requisição nova.
- *
- * `aoProgredir`, se passado, só é chamado quando a varredura de verdade
- * roda (não é chamado num acerto de cache, já que não há nada pra
- * progredir).
- *
- * Varre em DUAS faixas (fotos: 1 até GALERIA_INICIO_VIDEOS - 1; vídeos:
- * GALERIA_INICIO_VIDEOS em diante) em vez de uma sequência única — assim
- * o buraco propositalmente deixado entre as duas faixas (a margem de
- * segurança pra fotos crescerem sem esbarrar nos vídeos) nunca é
- * confundido com "acabaram os itens" pela tolerância a buracos.
- */
-async function galeriaEscanearComCache(aoProgredir) {
-    const cache = galeriaLerCache();
-    if (cache) return cache;
-
+async function galeriaEscanearCompleta(aoProgredir) {
     const itensEncontrados = [];
     const aoEncontrar = (numero, resultado) => itensEncontrados.push({ numero, ...resultado });
 
     await galeriaVarrerFaixa(1, GALERIA_INICIO_VIDEOS - 1, aoEncontrar, aoProgredir);
     await galeriaVarrerFaixa(GALERIA_INICIO_VIDEOS, GALERIA_MAX_NUMERO, aoEncontrar, aoProgredir);
 
-    galeriaGravarCache(itensEncontrados);
     return itensEncontrados;
 }
 
 /**
- * Devolve só os itens do tipo "foto" (caminho de cada uma) já
- * descobertos na galeria. Usado por "Nossos momentos" (js/romance.js)
- * pra sortear fotos aleatórias reais da galeria, em vez de depender de 4
- * arquivos fixos. Reaproveita o cache de galeriaEscanearComCache acima.
+ * CORREÇÃO (checagem duplicada/pesada na home): "Nossos momentos"
+ * (index.html) só precisa de umas poucas fotos pra sortear entre elas —
+ * não faz sentido ela repetir a MESMA varredura pesada e completa (até
+ * GALERIA_MAX_NUMERO, fotos e vídeos) que a página galeria.html já faz
+ * direito, com barra de carregamento própria pra isso. Aqui a varredura é
+ * bem mais leve: olha só o começo da faixa de fotos (nem entra na faixa
+ * de vídeo, que "Nossos momentos" nem usa) e para assim que achar fotos
+ * suficientes pra ter uma boa variedade — geralmente termina bem mais
+ * rápido que a varredura completa, sem travar nada na home.
  */
-async function descobrirTodasAsFotosDaGaleria() {
-    const itens = await galeriaEscanearComCache();
-    return itens.filter(item => item.tipo === 'foto').map(item => item.caminho);
+const GALERIA_DESTAQUE_TETO_MAX = 150;   // trava de segurança: mesmo que GALERIA_INICIO_VIDEOS seja configurado bem alto no futuro, essa varredura continua leve
+const GALERIA_DESTAQUE_FOTOS_ALVO = 15;  // para de procurar assim que achar essa quantidade
+
+async function descobrirFotosParaDestaque() {
+    const tetoFotos = Math.min(GALERIA_INICIO_VIDEOS - 1, GALERIA_DESTAQUE_TETO_MAX);
+    if (tetoFotos < 1) return [];
+
+    const fotosEncontradas = [];
+    const aoEncontrar = (numero, resultado) => {
+        if (resultado.tipo === 'foto') fotosEncontradas.push(resultado.caminho);
+    };
+
+    /*
+        CORREÇÃO (sempre as mesmas fotos): antes a varredura sempre
+        começava do número 1 e parava assim que achava
+        GALERIA_DESTAQUE_FOTOS_ALVO fotos — então o CONJUNTO de fotos
+        candidatas era sempre o mesmo (as primeiras que existem), e só a
+        escolha de quais 4 dela aparecer mudava a cada visita. Fotos
+        adicionadas depois (com número mais alto) praticamente nunca
+        apareciam em "Nossos momentos". Agora o ponto de partida é
+        sorteado dentro da faixa de fotos a cada abertura do site — assim
+        a área da galeria explorada muda de visita pra visita, incluindo
+        fotos mais recentes, e continua rápida porque a faixa de fotos é
+        pequena (até GALERIA_INICIO_VIDEOS - 1).
+    */
+    const inicioSorteado = 1 + Math.floor(Math.random() * tetoFotos);
+    await galeriaVarrerAteAlvoDestaque(inicioSorteado, tetoFotos, aoEncontrar, fotosEncontradas);
+
+    // Não achou o suficiente a partir do ponto sorteado (ex.: sorteou
+    // perto do fim da faixa, ou a galeria ainda tem poucas fotos no
+    // total) — completa dando a volta, varrendo do início até onde tinha
+    // começado, sem repetir nenhum número.
+    if (fotosEncontradas.length < GALERIA_DESTAQUE_FOTOS_ALVO && inicioSorteado > 1) {
+        await galeriaVarrerAteAlvoDestaque(1, inicioSorteado - 1, aoEncontrar, fotosEncontradas);
+    }
+
+    return fotosEncontradas;
+}
+
+async function galeriaVarrerAteAlvoDestaque(inicio, teto, aoEncontrar, fotosEncontradas) {
+    const TAMANHO_LOTE_DESTAQUE = 8;
+    let proximoInicio = inicio;
+    while (proximoInicio <= teto && fotosEncontradas.length < GALERIA_DESTAQUE_FOTOS_ALVO) {
+        const proximoTeto = Math.min(proximoInicio + TAMANHO_LOTE_DESTAQUE - 1, teto);
+        await galeriaVarrerFaixa(proximoInicio, proximoTeto, aoEncontrar);
+        proximoInicio = proximoTeto + 1;
+    }
 }
 
 function bloquearZoom() {

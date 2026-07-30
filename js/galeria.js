@@ -49,13 +49,12 @@ async function montarGaleria() {
     // pra dar uma ideia de progresso — não sabemos quantos itens existem
     // de fato até terminar de procurar.
     //
-    // CORREÇÃO (checagem duplicada): se a pessoa já passou por "Nossos
-    // momentos" no index.html nesta mesma visita, a varredura completa já
-    // rodou uma vez e o resultado está guardado (ver
-    // galeriaEscanearComCache, js/utils.js) — aqui ele só é reaproveitado,
-    // sem gerar nenhuma requisição nova ao servidor.
+    // Essa é a varredura completa (galeriaEscanearCompleta, js/utils.js) —
+    // roda só aqui, ao entrar na galeria de verdade, e não mais também na
+    // home ("Nossos momentos" agora usa uma varredura própria bem mais
+    // leve, sem duplicar esse trabalho pesado).
     const aoProgredir = (numeroAtual) => atualizarBarra((numeroAtual / GALERIA_MAX_NUMERO) * 0.4, 'Procurando fotos...');
-    const itensEncontrados = await galeriaEscanearComCache(aoProgredir);
+    const itensEncontrados = await galeriaEscanearCompleta(aoProgredir);
 
     // Fase 2: os itens já foram encontrados, agora é acompanhar o
     // carregamento de verdade (o navegador ainda precisa baixar cada
