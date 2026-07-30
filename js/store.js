@@ -80,6 +80,7 @@ function cancelarCupomFalsoPendente() {
 function fecharCupomFalso() {
     document.getElementById('cupomPopup').classList.add('d-none');
     desbloquearScrollFundoLembranca();
+    forcarRecalculoDeLayout();
 }
 
 /* ---------------- Carrossel promocional ---------------- */
@@ -235,9 +236,10 @@ function iniciarEasterEggsLoja() {
     document.getElementById('btnFecharLojaEasterEgg').addEventListener('click', () => {
         document.getElementById('lojaEasterEggOverlay').classList.add('d-none');
         desbloquearScrollFundoLembranca();
+        forcarRecalculoDeLayout();
     });
     document.getElementById('lojaEasterEggOverlay').addEventListener('click', (evt) => {
-        if (evt.target.id === 'lojaEasterEggOverlay') { evt.target.classList.add('d-none'); desbloquearScrollFundoLembranca(); }
+        if (evt.target.id === 'lojaEasterEggOverlay') { evt.target.classList.add('d-none'); desbloquearScrollFundoLembranca(); forcarRecalculoDeLayout(); }
     });
 }
 
@@ -308,7 +310,7 @@ function iniciarLoja() {
             atualizarResumoCheckout();
             cancelarCupomFalsoPendente();
             const cupomPopup = document.getElementById('cupomPopup');
-            if (!cupomPopup.classList.contains('d-none')) { cupomPopup.classList.add('d-none'); desbloquearScrollFundoLembranca(); }
+            if (!cupomPopup.classList.contains('d-none')) { cupomPopup.classList.add('d-none'); desbloquearScrollFundoLembranca(); forcarRecalculoDeLayout(); }
             document.getElementById('lojaScreen').style.display = 'none';
             document.getElementById('checkoutScreen').style.display = 'block';
             window.scrollTo(0, 0);

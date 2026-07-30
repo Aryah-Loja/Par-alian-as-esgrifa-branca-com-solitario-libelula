@@ -129,7 +129,7 @@ function iniciarEasterEggDaLua() {
         marcarEasterEggEncontrado('luaMorse');
     });
 
-    const fecharLuaEasterEgg = () => { overlay.classList.add('d-none'); desbloquearScrollFundoLembranca(); };
+    const fecharLuaEasterEgg = () => { overlay.classList.add('d-none'); desbloquearScrollFundoLembranca(); forcarRecalculoDeLayout(); };
     document.getElementById('btnFecharLuaEasterEgg').addEventListener('click', fecharLuaEasterEgg);
     overlay.addEventListener('click', (evt) => { if (evt.target === overlay) fecharLuaEasterEgg(); });
 }
@@ -1255,8 +1255,8 @@ function iniciarCartaDiscussao() {
         document.getElementById('btnCartaDiscussaoNao').classList.add('d-none');
     });
 
-    fechar.addEventListener('click', () => { overlay.classList.add('d-none'); desbloquearScrollFundoLembranca(); });
-    overlay.addEventListener('click', (evt) => { if (evt.target === overlay) { overlay.classList.add('d-none'); desbloquearScrollFundoLembranca(); } });
+    fechar.addEventListener('click', () => { overlay.classList.add('d-none'); desbloquearScrollFundoLembranca(); forcarRecalculoDeLayout(); });
+    overlay.addEventListener('click', (evt) => { if (evt.target === overlay) { overlay.classList.add('d-none'); desbloquearScrollFundoLembranca(); forcarRecalculoDeLayout(); } });
 }
 
 /* ---------------- "Nosso mapa" ---------------- */
@@ -1336,7 +1336,7 @@ function iniciarMapaModal() {
         overlay.scrollTop = 0;
         bloquearScrollFundoLembranca();
     };
-    const fechar = () => { overlay.classList.add('d-none'); desbloquearScrollFundoLembranca(); };
+    const fechar = () => { overlay.classList.add('d-none'); desbloquearScrollFundoLembranca(); forcarRecalculoDeLayout(); };
 
     btnAbrir.addEventListener('click', abrir);
     btnFechar.addEventListener('click', fechar);
