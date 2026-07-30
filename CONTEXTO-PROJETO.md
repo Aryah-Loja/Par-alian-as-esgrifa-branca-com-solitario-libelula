@@ -266,6 +266,23 @@ está comentada no código, mas vale saber de antemão:
     verdade, mutando e persistindo sempre o MESMO objeto, nunca relendo do
     banco entre uma mudança e outra.
 
+14. **Botão "anterior"/"próxima" entre lembranças em "Nosso céu" travava o
+    site e deixava um fundo roxo depois de fechar o modal.**
+    `abrirEstrelaModal()` (`js/romance.js`) é chamada tanto pra abrir o
+    modal do zero quanto pra trocar de lembrança com o modal já aberto
+    (`estrelaModalAnterior()`/`estrelaModalProxima()`), mas chamava
+    `bloquearScrollFundoLembranca()` (trava de scroll por CONTAGEM DE
+    REFERÊNCIAS, ver item 5 acima) toda vez, sem checar se o modal já
+    estava aberto. Resultado: cada troca de lembrança somava mais uma
+    trava, mas só existe UM `desbloquearScrollFundoLembranca()` (ao
+    fechar o modal de vez), então a contagem nunca voltava a 0 depois de
+    navegar por mais de uma lembrança, deixando a trava de scroll
+    (`aurora-scroll-lock`) presa pra sempre, o site "travado" (sem
+    resposta a toque/scroll) e um fundo roxo aparecendo por baixo.
+    Corrigido guardando se o overlay já estava visível ANTES da chamada
+    (`jaEstavaAberto`) e só chamando `bloquearScrollFundoLembranca()`
+    quando ele estava realmente fechado.
+
 ## Checklist de encontros ("Nosso Checklist")
 
 Página separada `checklist.html` (+ `js/checklist.js`), acessível pelo botão

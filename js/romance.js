@@ -237,6 +237,16 @@ async function abrirEstrelaModal(indice) {
     if (!marco) return;
     estrelaIndiceAtual = indice;
     const overlay = document.getElementById('estrelaModalOverlay');
+    // CORREÇÃO (site travando/fundo roxo ao usar "anterior"/"próxima"):
+    // essa função também é chamada ao NAVEGAR entre lembranças com o modal
+    // já aberto (estrelaModalAnterior/estrelaModalProxima), não só ao abrir
+    // do zero. bloquearScrollFundoLembranca() usa contagem de referências
+    // (ver js/utils.js) — travar de novo a cada troca de lembrança, sem um
+    // desbloquear correspondente (só existe UM desbloquear, ao fechar o
+    // modal), fazia a contagem nunca voltar a 0, deixando a trava de
+    // scroll (aurora-scroll-lock) presa pra sempre depois de fechar. Só
+    // trava aqui se o modal estava REALMENTE fechado antes desta chamada.
+    const jaEstavaAberto = !overlay.classList.contains('d-none');
     const foto = document.getElementById('estrelaModalFoto');
     const dataEl = document.getElementById('estrelaModalData');
     const textoEl = document.getElementById('estrelaModalTexto');
@@ -265,7 +275,7 @@ async function abrirEstrelaModal(indice) {
     textoEl.textContent = marco.texto || '';
     overlay.classList.remove('d-none');
     overlay.scrollTop = 0; // sempre abre mostrando o começo do texto, nunca no meio
-    bloquearScrollFundoLembranca();
+    if (!jaEstavaAberto) bloquearScrollFundoLembranca();
 
     foto.onclick = async () => {
         const todasFotos = await Promise.all(TIMELINE_MARCOS.map(m => resolverFotoPlaceholderOuAsset(m.foto)));
