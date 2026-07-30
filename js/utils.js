@@ -371,6 +371,18 @@ async function galeriaArquivoExiste(caminho) {
  * Tenta descobrir o item "galeria_N" testando cada extensão de foto e
  * vídeo aceita, em paralelo. Devolve { caminho, tipo } da primeira que
  * existir, ou `null` se nenhuma existir.
+ *
+ * CORREÇÃO (checagem excessiva): antes, mesmo depois de achar a extensão
+ * certa, o código continuava esperando TODAS as outras combinações
+ * terminarem (13 requisições 404 desperdiçadas pra cada número que já
+ * tem arquivo de verdade, a cada carregamento da página). Agora, assim
+ * que uma combinação responde que existe, as outras que ainda estavam
+ * em andamento são canceladas (AbortController) em vez de esperadas até
+ * o fim — não muda o resultado (a primeira extensão real encontrada
+ * sempre vence), só corta o ruído de rede/console pra números que já
+ * têm arquivo. Quando NENHUMA combinação existe (número realmente
+ * vazio), o comportamento continua igual a antes: precisa mesmo
+ * terminar de testar todas pra ter certeza que não existe.
  */
 async function galeriaDescobrirItem(numero) {
     // Testa cada extensão tanto em minúsculo quanto em MAIÚSCULO — celular
@@ -389,13 +401,27 @@ async function galeriaDescobrirItem(numero) {
         ]))
     ];
 
-    const resultados = await Promise.all(candidatos.map(async (c) => {
+    const controlador = new AbortController();
+    const tentativas = candidatos.map(async (c) => {
         const caminho = `${PASTA_GALERIA}/galeria_${numero}.${c.ext}`;
-        const existe = await galeriaArquivoExiste(caminho);
-        return existe ? { caminho, tipo: c.tipo } : null;
-    }));
+        try {
+            const resposta = await fetch(caminho, { method: 'HEAD', cache: 'no-store', signal: controlador.signal });
+            if (resposta.ok) return { caminho, tipo: c.tipo };
+        } catch (e) {
+            // 404 (fetch não trata como erro, então normalmente nem cai
+            // aqui), sem internet, ou cancelado pelo controlador acima —
+            // em qualquer um desses casos, essa combinação "não achou".
+        }
+        throw new Error('galeria: extensão não encontrada'); // faz Promise.any pular essa tentativa
+    });
 
-    return resultados.find(r => r !== null) || null;
+    try {
+        const achou = await Promise.any(tentativas);
+        controlador.abort(); // corta as combinações que ainda estavam em andamento — não precisa mais delas
+        return achou;
+    } catch (erroAgregado) {
+        return null; // nenhuma das combinações existe
+    }
 }
 
 /**
