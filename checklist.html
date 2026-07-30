@@ -43,6 +43,9 @@
                 <div id="checklistProgressoBarra" class="checklist-progresso-barra-preenchida" style="width:0%"></div>
             </div>
             <p id="checklistProgressoFaltam" class="checklist-progresso-faltam"></p>
+            <div class="checklist-adicionar-wrap">
+                <button type="button" id="btnChecklistAdicionarItem" class="btn btn-outline-light btn-sm rounded-pill"><i class="bi bi-plus-lg me-1"></i>Adicionar item</button>
+            </div>
         </div>
 
         <div id="checklistCarregando" class="checklist-carregando">
@@ -52,6 +55,25 @@
 
         <div id="checklistCategorias" class="checklist-categorias"></div>
     </main>
+
+    <!-- Modal "Adicionar item": escolhe uma categoria já existente e escreve o texto do item novo. -->
+    <div id="checklistModalOverlay" class="carta-discussao-overlay d-none">
+        <div class="mapa-modal-caixa checklist-modal-caixa">
+            <p class="mapa-modal-titulo">Adicionar um item novo</p>
+            <form id="checklistFormAdicionar" class="checklist-form-adicionar">
+                <label class="checklist-form-label" for="checklistSelectCategoria">Categoria</label>
+                <select id="checklistSelectCategoria" required></select>
+
+                <label class="checklist-form-label" for="checklistInputTexto">O que ainda falta viver?</label>
+                <textarea id="checklistInputTexto" rows="2" maxlength="140" required placeholder="Ex.: Assistir ao pôr do sol na represa"></textarea>
+
+                <div class="checklist-form-botoes">
+                    <button type="button" id="btnChecklistCancelarAdicionar" class="checklist-form-btn checklist-form-btn-cancelar">Cancelar</button>
+                    <button type="submit" class="checklist-form-btn checklist-form-btn-confirmar">Adicionar</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <script src="js/config.js"></script>
     <script src="js/db.js"></script>

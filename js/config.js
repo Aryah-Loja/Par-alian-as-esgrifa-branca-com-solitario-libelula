@@ -199,6 +199,32 @@ async function resolverFotoPlaceholder(id) {
     return gerarSvgPlaceholderComLegenda(item.descricao);
 }
 
+/**
+ * Igual a resolverFotoPlaceholder, mas recebe o "arquivoBase" diretamente
+ * em vez de um id cadastrado em PLACEHOLDERS. Usada pelos locais do "Nosso
+ * mapa" adicionados pelo painel (diagnostico.html → "Adicionar local ao
+ * mapa"), que não passam por PLACEHOLDERS — o nome do arquivo é gerado
+ * automaticamente a partir do nome do local, e o Gabriel só precisa
+ * salvar a foto em assets/img/ com esse nome (qualquer extensão de
+ * EXTENSOES_FOTO_ACEITAS).
+ */
+const __cacheResolverFotoPorBase = {};
+async function resolverFotoPorBase(arquivoBase, legenda) {
+    if (!arquivoBase) return gerarSvgPlaceholderComLegenda(legenda);
+    if (arquivoBase in __cacheResolverFotoPorBase) return __cacheResolverFotoPorBase[arquivoBase];
+
+    const candidatos = EXTENSOES_FOTO_ACEITAS.flatMap(ext => [ext, ext.toUpperCase()]);
+    for (const ext of candidatos) {
+        const caminho = `assets/img/${arquivoBase}.${ext}`;
+        if (await arquivoExisteNoServidor(caminho)) {
+            __cacheResolverFotoPorBase[arquivoBase] = caminho;
+            return caminho;
+        }
+    }
+
+    return gerarSvgPlaceholderComLegenda(legenda);
+}
+
 /* ----------------------------------------------------------------------
    GALERIA DE LEMBRANÇAS (página própria — galeria.html)
    ----------------------------------------------------------------------

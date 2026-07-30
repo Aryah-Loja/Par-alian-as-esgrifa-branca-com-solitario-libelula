@@ -125,6 +125,46 @@
         <p id="trocarVideoStatus" class="save-status mt-2"></p>
     </div>
 
+    <p class="diag-secao-titulo">Adicionar local ao mapa</p>
+    <div class="text-start mx-auto mb-2" style="max-width: 480px;">
+        <p class="small text-white-50 mb-3 text-center">Adiciona um local novo no "Nosso mapa" sem mexer em código — fica salvo na nuvem, então aparece em qualquer aparelho que abrir o site. Depois de salvar aqui, falta só colocar a foto na pasta <code>assets/img/</code> com o nome indicado abaixo.</p>
+
+        <div class="mb-2">
+            <label class="form-label small text-white-50 mb-1">Nome do local</label>
+            <input type="text" id="mapaAdminNome" class="form-control form-control-sm" placeholder="Ex.: Praia Nova">
+        </div>
+        <div class="mb-2">
+            <label class="form-label small text-white-50 mb-1">Cidade (aparece embaixo do nome)</label>
+            <input type="text" id="mapaAdminCidade" class="form-control form-control-sm" placeholder="Ex.: Ribeirão Preto">
+        </div>
+        <div class="mb-2">
+            <label class="form-label small text-white-50 mb-1">Frase curta sobre o local (opcional)</label>
+            <input type="text" id="mapaAdminTexto" class="form-control form-control-sm" placeholder="O que esse lugar significa pra vocês">
+        </div>
+        <div class="mb-2">
+            <label class="form-label small text-white-50 mb-1">Ícone (Bootstrap Icons)</label>
+            <div class="d-flex gap-2 align-items-center">
+                <i id="mapaAdminIconePreview" class="bi bi-geo-alt-fill" style="font-size: 1.3rem; color: var(--rosegold); width: 24px;"></i>
+                <input type="text" id="mapaAdminIcone" class="form-control form-control-sm" value="bi-geo-alt-fill" placeholder="bi-geo-alt-fill">
+            </div>
+            <p class="small text-white-50 mt-1 mb-0">Nome do ícone em <a href="https://icons.getbootstrap.com" target="_blank" rel="noopener" class="text-rosegold">icons.getbootstrap.com</a> (ex.: bi-heart-fill, bi-cup-hot-fill, bi-tree-fill).</p>
+        </div>
+        <div class="mb-3">
+            <label class="form-label small text-white-50 mb-1">Nome do arquivo da foto (gerado sozinho)</label>
+            <input type="text" id="mapaAdminFotoBase" class="form-control form-control-sm" readonly>
+            <p class="small text-white-50 mt-1 mb-0">Salve a foto em <code>assets/img/</code> com esse nome + <code>.jpg</code>, <code>.jpeg</code>, <code>.png</code> ou <code>.webp</code>.</p>
+        </div>
+
+        <div class="text-center">
+            <button id="btnMapaAdminSalvar" type="button" class="btn btn-rosegold rounded-pill fw-bold px-4"><i class="bi bi-plus-circle me-1"></i>Adicionar local</button>
+            <button id="btnMapaAdminCancelar" type="button" class="btn btn-outline-light rounded-pill fw-bold px-4 d-none"><i class="bi bi-x-lg me-1"></i>Cancelar edição</button>
+            <p id="mapaAdminStatus" class="save-status mt-2"></p>
+        </div>
+    </div>
+
+    <p class="diag-secao-titulo">Locais adicionados por aqui</p>
+    <div id="mapaAdminLista" class="d-flex flex-column gap-2 mx-auto mb-2" style="max-width: 480px;"></div>
+
     <!-- ===================== CÓDIGOS SECRETOS (área administrativa) =====================
          Só lista, nesta página de uso interno, os códigos cadastrados em
          secret/secret.js (objeto CODIGOS_SECRETOS). Não valida nem abre
@@ -144,6 +184,7 @@
     <script src="js/utils.js"></script>
     <script src="js/sync.js"></script>
     <script src="js/diagnostics.js"></script>
+    <script src="js/mapa-admin.js"></script>
 
     <!-- Isolado: só lê o objeto CODIGOS_SECRETOS pra listar, nunca escreve
          nem depende de nada dos outros scripts acima. -->

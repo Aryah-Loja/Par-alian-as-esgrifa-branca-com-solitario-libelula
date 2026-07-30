@@ -387,6 +387,8 @@ async function gerarBackupZipBlob() {
         quizRespostas: JSON.parse(await obterConfiguracao('aurora_quiz_respostas') || 'null'),
         videoPedidoYoutube: await obterConfiguracao('aurora_video_pedido_youtube'),
         checklistEncontros: JSON.parse(await obterConfiguracao('aurora_checklist_encontros') || 'null'),
+        checklistItensCustomizados: JSON.parse(await obterConfiguracao('aurora_checklist_itens_customizados') || 'null'),
+        mapaLugaresExtra: JSON.parse(await obterConfiguracao('aurora_mapa_lugares_extra') || 'null'),
         medias: []
     };
 
@@ -510,6 +512,8 @@ async function aplicarBackupDeZip(zipDados) {
     if (manifest.quizRespostas) await salvarConfiguracao('aurora_quiz_respostas', JSON.stringify(manifest.quizRespostas));
     if (manifest.videoPedidoYoutube) await salvarConfiguracao('aurora_video_pedido_youtube', manifest.videoPedidoYoutube);
     if (manifest.checklistEncontros) await salvarConfiguracao('aurora_checklist_encontros', JSON.stringify(manifest.checklistEncontros));
+    if (manifest.checklistItensCustomizados) await salvarConfiguracao('aurora_checklist_itens_customizados', JSON.stringify(manifest.checklistItensCustomizados));
+    if (manifest.mapaLugaresExtra) await salvarConfiguracao('aurora_mapa_lugares_extra', JSON.stringify(manifest.mapaLugaresExtra));
 
     // Listas (mensagens para o futuro / lembranças): o backup é sempre a
     // "fotografia completa" da experiência naquele instante, então as
@@ -567,6 +571,7 @@ async function aplicarBackupLegadoDeJson(backup) {
     if (backup.regrasContrato) await salvarConfiguracao('aurora_regras_contrato', JSON.stringify(backup.regrasContrato));
     if (backup.quizRespostas) await salvarConfiguracao('aurora_quiz_respostas', JSON.stringify(backup.quizRespostas));
     if (backup.checklistEncontros) await salvarConfiguracao('aurora_checklist_encontros', JSON.stringify(backup.checklistEncontros));
+    if (backup.checklistItensCustomizados) await salvarConfiguracao('aurora_checklist_itens_customizados', JSON.stringify(backup.checklistItensCustomizados));
 
     if (backup.assinatura) await salvarMedia({ id: 'assinatura', tipo: 'assinatura', texto: backup.assinatura });
 

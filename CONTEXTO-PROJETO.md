@@ -323,6 +323,29 @@ reescrito sem necessidade).
   dentro de "Nossa História" (`renderizarResumoChecklist()`, em
   `js/romance.js`), sem precisar abrir a página separada.
 
+**Adicionar item pelo site (novo, 30/07/2026):** botão "Adicionar item"
+no card de progresso de `checklist.html` abre um modal (escolher uma das
+9 categorias já existentes + escrever o texto). Itens adicionados assim
+NÃO entram em `CHECKLIST_ENCONTROS` (que continua só com o conteúdo
+original) — ficam numa lista separada, chave de config
+`aurora_checklist_itens_customizados` (array de
+`{ id, catIdx, texto, criadoEm }`, `id` gerado na hora tipo
+`custom_<timestamp>_<random>`, `catIdx` aponta pra uma categoria já
+existente). Isso evita o problema de "IDs por posição" descrito acima:
+um item customizado pode ser removido sem bagunçar a marcação dos
+vizinhos, porque o id dele nunca é reaproveitado. Marcado/desmarcado usa
+o MESMO objeto `aurora_checklist_encontros` de sempre, só que com esse
+id como chave em vez de `<catIdx>_<itemIdx>`. Item customizado aparece
+no fim da categoria escolhida, com borda tracejada + botão "x" pra
+remover (com confirmação) — itens originais não têm esse botão.
+**Entra no backup/sincronização** como qualquer config nova: adicionado
+em `js/export.js` (`gerarBackupZipBlob` e `aplicarBackupDeZip`, igual
+ao que já existia pra `aurora_checklist_encontros`). O total usado no
+card de progresso (`checklistTotalItens()`, `js/checklist.js`) e no
+resumo dentro de "Nossa História" (`renderizarResumoChecklist()`,
+`js/romance.js`) foi ajustado pra somar os itens customizados ao total
+original de 132.
+
 ## Reset parcial do contrato de namoro (adicionado nesta sessão)
 
 `diagnostico.html` agora tem, além do "Resetar site" (total), um botão

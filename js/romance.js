@@ -1314,7 +1314,11 @@ async function preencherGridDoMapa(grid, lugares) {
     // Resolve a foto de cada lugar em paralelo (mesma lógica usada em
     // "Seus bichos") pra já nascer sabendo quais pins mostram foto de
     // verdade e quais ainda caem no ícone.
-    const fotosResolvidas = await Promise.all(lugares.map(lugar => lugar.foto ? resolverFotoPlaceholder(lugar.foto) : Promise.resolve(null)));
+    const fotosResolvidas = await Promise.all(lugares.map(lugar => {
+        if (lugar.foto) return resolverFotoPlaceholder(lugar.foto); // lugares fixos (js/config.js)
+        if (lugar.fotoBase) return resolverFotoPorBase(lugar.fotoBase, lugar.nome); // lugares adicionados pelo painel
+        return Promise.resolve(null);
+    }));
 
     lugares.forEach((lugar, i) => {
         const foto = fotosResolvidas[i];
@@ -1346,15 +1350,36 @@ async function preencherGridDoMapa(grid, lugares) {
     });
 }
 
-function renderizarMapaDaRelacao() {
+// Locais adicionados pelo painel "Adicionar local ao mapa" (diagnostico.html)
+// ficam guardados nessa chave de configuração — mesmo mecanismo de
+// salvarConfiguracao()/obterConfiguracao() (js/db.js) usado pelo resto do
+// site, então entram automaticamente no backup/sincronização com a nuvem
+// (ver js/export.js) e aparecem em qualquer aparelho que abrir o site.
+const CHAVE_MAPA_LUGARES_EXTRA = 'aurora_mapa_lugares_extra';
+
+async function obterLugaresExtrasDoMapa() {
+    try {
+        const bruto = await obterConfiguracao(CHAVE_MAPA_LUGARES_EXTRA);
+        const lista = JSON.parse(bruto || '[]');
+        return Array.isArray(lista) ? lista : [];
+    } catch (e) {
+        console.error('Falha ao ler locais extras do mapa:', e);
+        return [];
+    }
+}
+
+async function renderizarMapaDaRelacao() {
     const gridPrevia = document.getElementById('mapaTrilhaGrid');
     const gridCompleto = document.getElementById('mapaTrilhaGridCompleto');
     const verTodosWrap = document.getElementById('mapaVerTodosWrap');
     if (!gridPrevia || !Array.isArray(MAPA_LUGARES)) return;
 
-    const temMais = MAPA_LUGARES.length > MAPA_QUANTIDADE_PREVIA;
-    preencherGridDoMapa(gridPrevia, temMais ? MAPA_LUGARES.slice(0, MAPA_QUANTIDADE_PREVIA) : MAPA_LUGARES);
-    preencherGridDoMapa(gridCompleto, MAPA_LUGARES);
+    const extras = await obterLugaresExtrasDoMapa();
+    const todosOsLugares = MAPA_LUGARES.concat(extras);
+
+    const temMais = todosOsLugares.length > MAPA_QUANTIDADE_PREVIA;
+    preencherGridDoMapa(gridPrevia, temMais ? todosOsLugares.slice(0, MAPA_QUANTIDADE_PREVIA) : todosOsLugares);
+    preencherGridDoMapa(gridCompleto, todosOsLugares);
 
     if (verTodosWrap) verTodosWrap.classList.toggle('d-none', !temMais);
 }
@@ -1395,7 +1420,13 @@ async function renderizarResumoChecklist() {
     const barraEl = document.getElementById('checklistResumoBarra');
     if (!textoEl || typeof CHECKLIST_ENCONTROS === 'undefined') return;
 
-    const total = CHECKLIST_ENCONTROS.reduce((soma, cat) => soma + cat.itens.length, 0);
+    let total = CHECKLIST_ENCONTROS.reduce((soma, cat) => soma + cat.itens.length, 0);
+    try {
+        const brutoCustom = await obterConfiguracao('aurora_checklist_itens_customizados');
+        const listaCustom = brutoCustom ? JSON.parse(brutoCustom) : [];
+        if (Array.isArray(listaCustom)) total += listaCustom.length;
+    } catch (e) { /* mantém só o total original em caso de erro */ }
+
     let estado = {};
     try {
         const bruto = await obterConfiguracao('aurora_checklist_encontros');

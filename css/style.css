@@ -1290,6 +1290,49 @@ html.checklist-html { background-color: #1c1014; }
 .checklist-item-feito .checklist-item-check { background: var(--rosegold); border-color: var(--rosegold); color: #fff; }
 .checklist-item-feito .checklist-item-texto { color: rgba(240,217,221,0.5); text-decoration: line-through; opacity: 0.8; }
 
+/* Item adicionado pelo casal direto pela tela (não faz parte da lista original) — borda tracejada discreta pra diferenciar, mais o botão de remover ao lado. */
+.checklist-item-linha { display: flex; align-items: center; gap: 2px; }
+.checklist-item-linha .checklist-item { flex: 1 1 auto; min-width: 0; }
+.checklist-item-personalizado { border: 1px dashed rgba(183,110,121,0.4); }
+.checklist-item-remover {
+    flex: 0 0 auto;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: rgba(240,217,221,0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+.checklist-item-remover:hover, .checklist-item-remover:active { color: #f0d9dd; background: rgba(255,255,255,0.06); }
+
+/* Botão "Adicionar item" + modal com categoria (select) e texto (textarea) — reaproveita .carta-discussao-overlay e .mapa-modal-caixa (mesmo padrão de modal já usado no mapa da relação, em index.html). */
+.checklist-adicionar-wrap { text-align: center; margin-top: 16px; }
+.checklist-modal-caixa { max-width: 420px; }
+.checklist-form-adicionar { display: flex; flex-direction: column; }
+.checklist-form-label { font-family: 'Jost', sans-serif; font-size: 0.75rem; letter-spacing: 0.4px; color: rgba(240,217,221,0.65); margin: 10px 0 6px; }
+.checklist-form-adicionar select, .checklist-form-adicionar textarea {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(183,110,121,0.35);
+    color: #f8e9ec;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 1rem;
+}
+.checklist-form-adicionar select:focus, .checklist-form-adicionar textarea:focus { outline: none; border-color: var(--rosegold); box-shadow: 0 0 0 2px rgba(183,110,121,0.25); }
+.checklist-form-adicionar textarea { resize: vertical; min-height: 60px; }
+.checklist-form-adicionar option { background: #1c1014; color: #f8e9ec; }
+.checklist-form-botoes { display: flex; gap: 10px; margin-top: 18px; }
+.checklist-form-btn { flex: 1 1 0; padding: 10px 14px; border-radius: 999px; font-family: 'Jost', sans-serif; font-size: 0.85rem; border: 1px solid rgba(183,110,121,0.4); background: transparent; color: #f0d9dd; }
+.checklist-form-btn-confirmar { background: var(--rosegold); border-color: var(--rosegold); color: #fff; }
+.checklist-form-btn-confirmar:hover, .checklist-form-btn-confirmar:active { background: #a05d67; }
+.checklist-form-btn-cancelar:hover, .checklist-form-btn-cancelar:active { background: rgba(255,255,255,0.06); }
+
 @media (prefers-reduced-motion: reduce) {
     .checklist-progresso-barra-preenchida, .checklist-resumo-barra-preenchida, .checklist-categorias, .checklist-item, .checklist-item-check { transition: none !important; }
 }
