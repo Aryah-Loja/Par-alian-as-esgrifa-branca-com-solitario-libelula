@@ -721,9 +721,7 @@ Antes de você aparecer, minha vida seguia normalmente, quase no automático. Eu
 
 Então guarda isso comigo, {AMOR}: você chegou de repente, mudou meus dias e trouxe uma felicidade que eu nem sabia que estava procurando. Você tem esse jeito único de iluminar os lugares, de cuidar das pessoas e dos animais que ama, de sorrir e fazer tudo parecer mais leve.
 
-Se um dia você esquecer o tamanho do espaço que ocupa na minha vida, lembra disso: desde que você chegou, meus dias ficaram melhores, e eu só quero continuar escrevendo essa história ao seu lado.
-
-Porque no fim, é isso que eu vejo quando olho para você: você não carrega apenas o sol nos olhos, você carrega o dia inteiro. Não carrega apenas a lua no sorriso, carrega todo o universo. Eu amo você!`;
+Desde que você chegou, meus dias ficaram melhores, e eu só quero continuar escrevendo essa história ao seu lado, você não carrega apenas o sol nos olhos, você carrega o dia inteiro. Não carrega apenas a lua no sorriso, carrega todo o universo. Eu amo você!`;
 }
 
 /* ----------------------------------------------------------------------
