@@ -173,7 +173,19 @@ async function montarGaleria() {
     if (fotosEmCache && fotosEmCache.length) {
         fotosEmCache.forEach(aoEncontrarItem);
         varreduraTerminou = true;
-        if (barraWrap) barraWrap.classList.add('d-none');
+        // CORREÇÃO (barra de carregamento sumindo): antes a barra era
+        // escondida AQUI, na hora, assim que os itens do cache eram
+        // conhecidos — mas conhecer os itens não é o mesmo que as fotos
+        // já terem carregado de verdade no navegador (cada <img> ainda
+        // precisa baixar, ver adicionarItemNaGrade). Como a partir da
+        // segunda visita ao mesmo aparelho é o cache que sempre roda
+        // (ver galeriaLerCache acima), a barra passou a sumir na hora em
+        // TODA abertura normal da Galeria, sem nunca mostrar o
+        // progresso de verdade. Chamar atualizarProgresso() aqui, como já
+        // acontece no ramo sem cache logo abaixo, deixa a MESMA lógica
+        // (dentro de atualizarProgresso) decidir quando esconder — só
+        // depois que totalCarregados alcançar totalEncontrados.
+        atualizarProgresso();
     } else {
         await galeriaEscanearFotos(null, aoEncontrarItem);
         varreduraTerminou = true;
