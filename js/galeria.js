@@ -37,17 +37,23 @@ let __galeriaItens = [];
 // reiniciar o carregamento ao restaurar a página de um congelamento.
 let __galeriaCarregamentoCompleto = false;
 
-// Colunas do masonry, guardadas em nível de módulo (não só dentro de
-// montarGaleria) porque a seção de vídeos (carregarVideosDaGaleria,
-// disparada pelo botão "Ver vídeos" — ver mais abaixo) precisa continuar
-// adicionando itens nas MESMAS colunas depois que a montagem inicial (só
-// fotos) já terminou.
-let __galeriaColunas = [];
+// Colunas do masonry, uma lista por "galeria" — a de fotos (sempre visível
+// na abertura) e a de vídeos (seção própria, ver #galeriaSecaoVideos em
+// galeria.html), guardadas em nível de módulo pra sobreviver a
+// redimensionamentos de tela sem precisar refazer nenhuma busca no
+// servidor.
+let __galeriaColunasFotos = [];
+let __galeriaColunasVideos = [];
 let __galeriaUltimoNumeroColunas = 0;
 
-// Evita escanear/montar a seção de vídeos mais de uma vez se a pessoa
-// apertar "Ver vídeos" de novo depois que a seção já carregou (ou
-// enquanto ainda está carregando).
+// Qual das duas "galerias" está visível agora — controla o texto/ícone do
+// botão e o que verificarSeGaleriaFicouVazia() deve checar.
+let __galeriaModoAtual = 'fotos'; // 'fotos' | 'videos'
+
+// Evita escanear a seção de vídeos mais de uma vez se a pessoa apertar
+// "Ver vídeos" de novo depois que a seção já carregou (ou enquanto ainda
+// está carregando) — depois da primeira vez, alternar só troca qual seção
+// está visível, sem varrer o servidor de novo.
 let __galeriaVideosCarregamentoIniciado = false;
 
 // As "colunas" são divs de verdade (ver CSS .galeria-coluna), não a
@@ -77,21 +83,55 @@ function galeriaMontarColunas(masonry, qtd) {
     return colunas;
 }
 
+/**
+ * Reconstrói as colunas de UM masonry específico (fotos OU vídeos) e
+ * redistribui nelas os itens que já estavam montados, sem refazer nenhuma
+ * busca no servidor — usada tanto na abertura quanto no redimensionamento
+ * de tela (ver listener de "resize" em montarGaleria).
+ */
+function galeriaRedistribuirColunas(masonry, novoNumero) {
+    const itensAtuais = Array.from(masonry.querySelectorAll('.galeria-item'))
+        .sort((a, b) => Number(a.dataset.ordem) - Number(b.dataset.ordem));
+    const colunas = galeriaMontarColunas(masonry, novoNumero);
+    itensAtuais.forEach((item, indice) => colunas[indice % colunas.length].appendChild(item));
+    return colunas;
+}
+
 async function montarGaleria() {
     __galeriaCarregamentoCompleto = false;
     __galeriaItens = [];
     __galeriaFotosCarregadas = 0;
     __galeriaVideosCarregamentoIniciado = false;
+    __galeriaModoAtual = 'fotos';
 
     const masonry = document.getElementById('galeriaMasonry');
     if (!masonry) return;
 
-    __galeriaColunas = galeriaMontarColunas(masonry, galeriaNumeroDeColunas());
+    // Garante que a página sempre abre mostrando a galeria de FOTOS (a
+    // seção de vídeos, se tinha ficado visível de uma restauração de
+    // congelamento do navegador — ver pageshow mais abaixo —, é escondida
+    // e zerada de novo).
+    const secaoVideos = document.getElementById('galeriaSecaoVideos');
+    if (secaoVideos) secaoVideos.classList.add('d-none');
+    const masonryVideos = document.getElementById('galeriaMasonryVideos');
+    if (masonryVideos) masonryVideos.innerHTML = '';
+    __galeriaColunasVideos = [];
+    const vazioVideos = document.getElementById('galeriaVideosVazio');
+    if (vazioVideos) vazioVideos.classList.add('d-none');
+    const btnVideos = document.getElementById('btnGaleriaVerVideos');
+    if (btnVideos) {
+        btnVideos.disabled = false;
+        btnVideos.innerHTML = '<i class="bi bi-camera-reels me-1"></i>Ver vídeos';
+    }
+
+    __galeriaColunasFotos = galeriaMontarColunas(masonry, galeriaNumeroDeColunas());
 
     // Se a tela girar/redimensionar a ponto de mudar a quantidade de
     // colunas, reconstrói as colunas e redistribui os itens já montados
-    // (sem refazer nenhuma busca no servidor) — mantém a mesma ordem.
-    __galeriaUltimoNumeroColunas = __galeriaColunas.length;
+    // (sem refazer nenhuma busca no servidor) — mantém a mesma ordem. Faz
+    // isso pras DUAS galerias (fotos e vídeos), já que qualquer uma das
+    // duas pode estar com itens montados na hora do redimensionamento.
+    __galeriaUltimoNumeroColunas = __galeriaColunasFotos.length;
     // CORREÇÃO (performance mobile — item 1 da revisão): sem debounce, o
     // navegador dispara "resize" repetidas vezes durante um redimensionamento
     // contínuo ou rotação de tela, recalculando/reordenando o DOM a cada
@@ -103,10 +143,11 @@ async function montarGaleria() {
             const novoNumero = galeriaNumeroDeColunas();
             if (novoNumero === __galeriaUltimoNumeroColunas) return;
             __galeriaUltimoNumeroColunas = novoNumero;
-            const itensAtuais = Array.from(masonry.querySelectorAll('.galeria-item'))
-                .sort((a, b) => Number(a.dataset.ordem) - Number(b.dataset.ordem));
-            __galeriaColunas = galeriaMontarColunas(masonry, novoNumero);
-            itensAtuais.forEach((item, indice) => __galeriaColunas[indice % __galeriaColunas.length].appendChild(item));
+            __galeriaColunasFotos = galeriaRedistribuirColunas(masonry, novoNumero);
+            const masonryVideosAtual = document.getElementById('galeriaMasonryVideos');
+            if (masonryVideosAtual && masonryVideosAtual.querySelector('.galeria-item')) {
+                __galeriaColunasVideos = galeriaRedistribuirColunas(masonryVideosAtual, novoNumero);
+            }
         }, 150);
     });
 
@@ -149,7 +190,7 @@ async function montarGaleria() {
         // diferente do balanceamento automático do CSS column-count, que
         // reordenava tudo conforme as alturas reais iam ficando
         // conhecidas.
-        const colunaAlvo = __galeriaColunas[__galeriaItens.length % __galeriaColunas.length];
+        const colunaAlvo = __galeriaColunasFotos[__galeriaItens.length % __galeriaColunasFotos.length];
         adicionarItemNaGrade(item.numero, item.caminho, item.tipo, colunaAlvo, contarCarregado);
         atualizarProgresso();
     };
@@ -206,33 +247,85 @@ async function montarGaleria() {
 }
 
 /**
+ * Alterna entre as duas "galerias" (fotos e vídeos) — chamada pelo clique
+ * no botão único #btnGaleriaVerVideos (ver galeria.html). Na primeira vez
+ * que a pessoa pede pra ver vídeos, dispara a varredura de verdade
+ * (carregarVideosDaGaleria); nas vezes seguintes só troca qual seção está
+ * visível, sem varrer o servidor de novo.
+ */
+async function alternarSecaoVideos() {
+    if (__galeriaModoAtual === 'videos') {
+        mostrarSecaoFotos();
+        return;
+    }
+    if (__galeriaVideosCarregamentoIniciado) {
+        mostrarSecaoVideos();
+        return;
+    }
+    await carregarVideosDaGaleria();
+}
+
+/** Mostra a galeria de FOTOS e esconde a de vídeos (sem mexer no que já foi carregado em nenhuma das duas). */
+function mostrarSecaoFotos() {
+    __galeriaModoAtual = 'fotos';
+    const masonryFotos = document.getElementById('galeriaMasonry');
+    const secaoVideos = document.getElementById('galeriaSecaoVideos');
+    if (masonryFotos) masonryFotos.classList.remove('d-none');
+    if (secaoVideos) secaoVideos.classList.add('d-none');
+    const btn = document.getElementById('btnGaleriaVerVideos');
+    if (btn) btn.innerHTML = '<i class="bi bi-camera-reels me-1"></i>Ver vídeos';
+    verificarSeGaleriaFicouVazia();
+}
+
+/** Mostra a galeria de VÍDEOS e esconde a de fotos. */
+function mostrarSecaoVideos() {
+    __galeriaModoAtual = 'videos';
+    const masonryFotos = document.getElementById('galeriaMasonry');
+    const vazioFotos = document.getElementById('galeriaVazio');
+    const secaoVideos = document.getElementById('galeriaSecaoVideos');
+    if (masonryFotos) masonryFotos.classList.add('d-none');
+    if (vazioFotos) vazioFotos.classList.add('d-none'); // recado de "álbum de fotos vazio" não faz sentido aqui
+    if (secaoVideos) secaoVideos.classList.remove('d-none');
+    const btn = document.getElementById('btnGaleriaVerVideos');
+    if (btn) btn.innerHTML = '<i class="bi bi-images me-1"></i>Ver fotos';
+}
+
+/**
  * Varre/monta a seção de vídeos (locais, a partir de GALERIA_INICIO_VIDEOS,
- * e do YouTube — GALERIA_YOUTUBE em js/config.js) na grade da Galeria.
- * Chamada só pelo clique no botão "Ver vídeos" (#btnGaleriaVerVideos, ver
- * galeria.html), nunca sozinha na abertura da página.
+ * e do YouTube — GALERIA_YOUTUBE em js/config.js) na grade PRÓPRIA de
+ * #galeriaSecaoVideos — uma "galeria" separada da grade de fotos, não mais
+ * itens acrescentados no fim dela. Chamada só pela primeira vez que a
+ * pessoa aperta "Ver vídeos" (ver alternarSecaoVideos acima); da segunda
+ * vez em diante só alterna a visibilidade das seções já montadas.
  */
 async function carregarVideosDaGaleria() {
-    if (__galeriaVideosCarregamentoIniciado) return;
     __galeriaVideosCarregamentoIniciado = true;
 
-    const wrap = document.getElementById('galeriaVideosToggleWrap');
     const btn = document.getElementById('btnGaleriaVerVideos');
+    const masonryVideos = document.getElementById('galeriaMasonryVideos');
     const barraWrap = document.getElementById('galeriaCarregandoVideos');
-    const barraLinha = document.getElementById('galeriaCarregandoVideosBarraWrap');
     const barra = document.getElementById('galeriaCarregandoVideosBarra');
     const texto = document.getElementById('galeriaCarregandoVideosTexto');
-    const atualizarBarra = (fracao, mensagem) => {
-        if (barra) barra.style.width = `${Math.max(0, Math.min(100, fracao * 100))}%`;
-        if (texto && mensagem) texto.textContent = mensagem;
-    };
+    const vazio = document.getElementById('galeriaVideosVazio');
+    if (!masonryVideos) return;
 
+    // Já troca pra "outra galeria" (só vídeos) no clique — a seção aparece
+    // vazia, com a própria barra de carregamento, em vez de ficar
+    // acrescentando itens embaixo da grade de fotos que já estava na tela.
+    mostrarSecaoVideos();
+    if (vazio) vazio.classList.add('d-none');
+    if (barraWrap) barraWrap.classList.remove('d-none');
     if (btn) {
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Carregando vídeos...';
     }
-    if (barraLinha) barraLinha.classList.remove('d-none');
-    if (barraWrap) barraWrap.classList.remove('d-none');
-    atualizarBarra(0, 'Procurando vídeos...');
+
+    __galeriaColunasVideos = galeriaMontarColunas(masonryVideos, galeriaNumeroDeColunas());
+
+    const atualizarBarra = (fracao, mensagem) => {
+        if (barra) barra.style.width = `${Math.max(0, Math.min(100, fracao * 100))}%`;
+        if (texto && mensagem) texto.textContent = mensagem;
+    };
 
     let totalEncontrados = 0;
     let totalCarregados = 0;
@@ -243,7 +336,7 @@ async function carregarVideosDaGaleria() {
     const contarCarregado = () => { totalCarregados++; atualizarProgresso(); };
     const aoEncontrarItem = (item) => {
         totalEncontrados++;
-        const colunaAlvo = __galeriaColunas[__galeriaItens.length % __galeriaColunas.length];
+        const colunaAlvo = __galeriaColunasVideos[__galeriaItens.length % __galeriaColunasVideos.length];
         adicionarItemNaGrade(item.numero, item.caminho, item.tipo, colunaAlvo, contarCarregado);
         atualizarProgresso();
     };
@@ -268,29 +361,24 @@ async function carregarVideosDaGaleria() {
         // já que não dependem de nenhuma varredura no servidor.
     }
 
-    montarItensYoutube(__galeriaColunas);
+    montarItensYoutube(__galeriaColunasVideos);
 
     if (barraWrap) barraWrap.classList.add('d-none');
+    if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-images me-1"></i>Ver fotos';
+    }
 
     const totalItensDeVideo = __galeriaItens.filter(item => item.tipo === 'video' || item.tipo === 'youtube').length;
     if (totalItensDeVideo === 0) {
-        // Ainda não tem nenhum vídeo na pasta/config: mostra um recado no
-        // lugar do botão e permite tentar de novo mais tarde (ex.: depois
-        // que Gabriel subir o primeiro vídeo).
-        if (barraLinha) barraLinha.classList.add('d-none');
-        if (barraWrap) barraWrap.classList.remove('d-none');
-        if (texto) texto.textContent = 'Nenhum vídeo por aqui ainda.';
-        if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-camera-reels me-1"></i>Ver vídeos';
-        }
+        // Ainda não tem nenhum vídeo na pasta/config: mostra o recado na
+        // própria seção de vídeos (a pessoa pode voltar pra fotos pelo
+        // botão, que continua "Ver fotos") e permite tentar de novo numa
+        // próxima abertura da Galeria (ex.: depois que Gabriel subir o
+        // primeiro vídeo) — ver reset em montarGaleria().
+        if (vazio) vazio.classList.remove('d-none');
         __galeriaVideosCarregamentoIniciado = false;
-    } else if (wrap) {
-        // Vídeos já estão na grade: some com o botão, não precisa mais dele.
-        wrap.classList.add('d-none');
     }
-
-    setTimeout(verificarSeGaleriaFicouVazia, 300);
 }
 
 function adicionarItemNaGrade(numero, src, tipo, masonry, aoCarregar) {
@@ -326,7 +414,7 @@ function adicionarItemNaGrade(numero, src, tipo, masonry, aoCarregar) {
 
         video.onloadedmetadata = revelarUmaVez;
         video.onloadeddata = revelarUmaVez; // fallback extra — dispara em mais casos que onloadedmetadata
-        video.onerror = () => { clearTimeout(timeoutRevelacao); item.remove(); verificarSeGaleriaFicouVazia(); if (aoCarregar) aoCarregar(); };
+        video.onerror = () => { clearTimeout(timeoutRevelacao); item.remove(); verificarSeVideosFicaramVazios(); if (aoCarregar) aoCarregar(); };
 
         // CORREÇÃO (performance mobile — item 1 da revisão): antes o vídeo
         // baixava os metadados (uma requisição de rede) assim que era
@@ -396,7 +484,7 @@ function montarItensYoutube(colunas) {
         // hqdefault sempre existe pra qualquer vídeo público/não-listado do YouTube, sem precisar de chave de API.
         capa.src = `https://img.youtube.com/vi/${idYoutube}/hqdefault.jpg`;
         capa.onload = () => { __galeriaFotosCarregadas++; observarRevelacao(item); };
-        capa.onerror = () => { item.remove(); verificarSeGaleriaFicouVazia(); };
+        capa.onerror = () => { item.remove(); verificarSeVideosFicaramVazios(); };
 
         const iconePlay = document.createElement('div');
         iconePlay.className = 'galeria-video-play galeria-video-play-youtube';
@@ -421,9 +509,26 @@ function montarItensYoutube(colunas) {
 }
 
 function verificarSeGaleriaFicouVazia() {
+    if (__galeriaModoAtual !== 'fotos') return; // a seção de vídeos cuida do próprio recado de vazio (ver verificarSeVideosFicaramVazios, abaixo)
     const masonry = document.getElementById('galeriaMasonry');
     const vazio = document.getElementById('galeriaVazio');
     if (masonry && masonry.querySelectorAll('.galeria-item').length === 0) vazio.classList.remove('d-none');
+}
+
+/**
+ * Mesma ideia de verificarSeGaleriaFicouVazia(), mas pra seção de vídeos —
+ * separada porque um item de vídeo pode falhar ao carregar (onerror, ver
+ * adicionarItemNaGrade/montarItensYoutube) bem depois da varredura inicial
+ * já ter terminado e contado esse item como "encontrado". Não precisa
+ * checar __galeriaModoAtual como a de fotos faz: #galeriaVideosVazio já
+ * vive DENTRO de #galeriaSecaoVideos, que fica com d-none quando a seção
+ * não está em exibição — então "revelar" essa mensagem enquanto a seção
+ * está escondida não vaza nada pra tela.
+ */
+function verificarSeVideosFicaramVazios() {
+    const masonry = document.getElementById('galeriaMasonryVideos');
+    const vazio = document.getElementById('galeriaVideosVazio');
+    if (masonry && vazio && masonry.querySelectorAll('.galeria-item').length === 0) vazio.classList.remove('d-none');
 }
 
 // Observer separado do de revelação (observarRevelacao): este dispara mais
@@ -583,7 +688,7 @@ document.addEventListener('DOMContentLoaded', () => {
     montarGaleria();
 
     const btnVerVideos = document.getElementById('btnGaleriaVerVideos');
-    if (btnVerVideos) btnVerVideos.addEventListener('click', carregarVideosDaGaleria);
+    if (btnVerVideos) btnVerVideos.addEventListener('click', alternarSecaoVideos);
 
     document.getElementById('galeriaLightboxClose').addEventListener('click', fecharLightbox);
     document.getElementById('galeriaLightbox').addEventListener('click', (evt) => {
