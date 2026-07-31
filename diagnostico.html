@@ -65,6 +65,9 @@
 
         <button id="btnTestarMediaReal" class="btn btn-share rounded-pill fw-bold px-4 mt-2"><i class="bi bi-camera-reels me-1"></i>Testar upload de mídia real (8MB)</button>
         <p id="diagResultadoMediaReal" class="save-status mt-2"></p>
+
+        <button id="btnForcarSincronizacao" class="btn btn-share rounded-pill fw-bold px-4 mt-2"><i class="bi bi-cloud-arrow-up me-1"></i>Forçar sincronização agora</button>
+        <p id="diagForcarSyncStatus" class="save-status mt-2"></p>
     </div>
 
     <p class="diag-secao-titulo">Estado do reset (local x nuvem)</p>
@@ -82,6 +85,13 @@
         <p class="small text-white-50 mt-4 mb-2">Desde a reformulação de 30/07/2026, a abertura da Galeria carrega só as FOTOS (mais rápido, arquivo é mais leve) — os vídeos (locais, a partir de galeria_101, e os do YouTube) só carregam quando a pessoa aperta o botão "Ver vídeos" dentro da própria galeria.html, nunca sozinhos. "Nossos momentos" (index.html) segue igual, só usa fotos mesmo. A partir da segunda abertura em cada aparelho, um cache local deixa tudo isso pronto na hora (sem varrer a rede de novo) — ele se atualiza sozinho de tempos em tempos (só a parte de fotos, em segundo plano; a de vídeos só quando o botão é apertado), mas se você acabou de adicionar/remover fotos ou vídeos e quer ver a mudança JÁ na próxima abertura deste aparelho, limpe o cache abaixo (limpa fotos e vídeos juntos).</p>
         <button id="btnLimparCacheGaleria" class="btn btn-outline-light rounded-pill fw-bold px-4"><i class="bi bi-arrow-repeat me-1"></i>Limpar cache da Galeria</button>
         <p id="diagLimparCacheStatus" class="save-status mt-2"></p>
+    </div>
+
+    <p class="diag-secao-titulo">Verificar mídias fixas do site</p>
+    <div class="text-center">
+        <p class="small text-white-50 mb-3">Confere, de uma vez só, todas as fotos/vídeos/áudios fixos que o site espera fora da Galeria (produtos da loja falsa, timeline, "seus bichos", mapa, flashback, "nossos momentos", playlist) — mostra exatamente o que ainda falta antes do grande dia. Também informa, à parte, o status dos arquivos opcionais (câmera lenta, especial de aniversário, vídeo secreto), que não são obrigatórios.</p>
+        <button id="btnVerificarMidiasSite" class="btn btn-share rounded-pill fw-bold px-4"><i class="bi bi-card-checklist me-1"></i>Verificar mídias do site</button>
+        <div id="diagMidiasSiteResultado" class="diag-estado-reset d-none"></div>
     </div>
 
     <p class="diag-secao-titulo">Resetar o site</p>
