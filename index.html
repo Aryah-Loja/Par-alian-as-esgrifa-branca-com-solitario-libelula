@@ -6,6 +6,20 @@
     <meta name="theme-color" content="#FAF9F6">
     <title>Aryah Joias | Aliança Esgrifa Branca+ Solitário Libélula</title>
 
+    <!-- CORREÇÃO (performance mobile): abre a conexão com os domínios externos
+         em paralelo enquanto o HTML ainda está sendo lido, em vez de só
+         começar o DNS/TLS quando o parser chega em cada <link>/<script>.
+         Isso adianta a parte mais cara de rede (handshake), que pesa muito
+         mais em 4G/5G do celular do que em wifi/cabo de computador. -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://unpkg.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    <link rel="dns-prefetch" href="https://unpkg.com">
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -13,13 +27,17 @@
     <!-- CSS exclusivo do sistema de Códigos Secretos (isolado, ver /secret/) -->
     <link rel="stylesheet" href="secret/secret.css">
 
-    <!-- Bibliotecas de terceiros (mantidas via CDN, como no projeto original) -->
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
-    <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <!-- Bibliotecas de terceiros (mantidas via CDN, como no projeto original).
+         CORREÇÃO (performance mobile): `defer` faz o navegador baixar estes
+         arquivos SEM travar a leitura do resto do HTML — eles continuam
+         rodando na mesma ordem de antes (e antes dos scripts locais abaixo),
+         só deixam de bloquear a primeira renderização da página. -->
+    <script defer src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+    <script defer src="https://unpkg.com/dexie/dist/dexie.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 </head>
 <body>
     <!-- Chuva de corações e balões subindo de baixo pra cima, mostrada só no
@@ -1278,21 +1296,21 @@ Se existe uma certeza que eu tenho, é esta: enquanto eu puder, vou continuar es
     </audio>
 
     <!-- ===================== SCRIPTS DO PROJETO (ordem importa) ===================== -->
-    <script src="js/config.js"></script>
-    <script src="js/db.js"></script>
-    <script src="js/utils.js"></script>
-    <script src="js/desktop-block.js"></script>
-    <script src="js/store.js"></script>
-    <script src="js/futuro.js"></script>
-    <script src="js/romance.js"></script>
-    <script src="js/mapa-admin.js"></script>
-    <script src="js/export.js"></script>
-    <script src="js/sync.js"></script>
-    <script src="js/suspense.js"></script>
-    <script src="js/main.js"></script>
+    <script defer src="js/config.js"></script>
+    <script defer src="js/db.js"></script>
+    <script defer src="js/utils.js"></script>
+    <script defer src="js/desktop-block.js"></script>
+    <script defer src="js/store.js"></script>
+    <script defer src="js/futuro.js"></script>
+    <script defer src="js/romance.js"></script>
+    <script defer src="js/mapa-admin.js"></script>
+    <script defer src="js/export.js"></script>
+    <script defer src="js/sync.js"></script>
+    <script defer src="js/suspense.js"></script>
+    <script defer src="js/main.js"></script>
 
     <!-- Sistema de Códigos Secretos: 100% isolado, não depende de nenhum
          script acima nem é usado por eles. Ver /secret/secret.js. -->
-    <script src="secret/secret.js"></script>
+    <script defer src="secret/secret.js"></script>
 </body>
 </html>
