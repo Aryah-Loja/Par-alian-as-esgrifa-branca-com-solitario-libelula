@@ -752,6 +752,64 @@ botão "Ver todos os lugares" fica escondido automaticamente e a prévia já
 mostra a trilha inteira — não precisa de nenhum ajuste manual ao
 adicionar/remover lugares no futuro, só editar `MAPA_LUGARES` como sempre.
 
+## Reformulação da descoberta da Galeria (novo, 30/07/2026)
+
+**Problema relatado:** a Galeria (`galeria.html`) demorava muito pra
+carregar, e a ABERTURA do site também estava mais lenta que o normal.
+
+**Causa raiz:** tanto `galeriaEscanearCompleta()` (Galeria) quanto
+`descobrirFotosParaDestaque()` ("Nossos momentos", dentro de "Nossa
+História") descobrem o que existe em `assets/img/galeria/` "no chute":
+testam `galeria_1`, `galeria_2`, `galeria_3`... em lotes, via requisições
+HEAD, contra o servidor. Isso sempre rodava DO ZERO a cada abertura de
+página — e, o que é pior, depois que o pedido de namoro já aconteceu,
+`js/main.js` manda a abertura do site inteiro direto pra
+`goToRomancePage()` (que inclui "Nossos momentos"), ou seja, essa
+varredura passou a rodar em TODA abertura do link, não só na primeira.
+
+**Solução (mantendo o fluxo "só jogar o arquivo numerado na pasta, sem
+editar nada em lugar nenhum" — ver comentário grande em `js/config.js`,
+não mudou):**
+
+1. **Cache local por aparelho** (`localStorage`, chave
+   `aurora_galeria_cache_v1`, funções `galeriaLerCache`/
+   `galeriaLerCache(true)`/`galeriaSalvarCacheSeMelhor`/
+   `galeriaLimparCache`, todas em `js/utils.js`). Da segunda abertura em
+   diante no mesmo aparelho/navegador, a Galeria e "Nossos momentos" usam
+   esse cache e aparecem NA HORA, sem esperar nenhuma requisição de rede.
+   Um cache "completo" (fotos + vídeos, gerado só por
+   `galeriaEscanearCompleta`, usado pela Galeria) nunca é sobrescrito por
+   um cache "parcial" (só fotos, gerado por `descobrirFotosParaDestaque`,
+   usado por "Nossos momentos") — assim a Galeria nunca perde itens que já
+   sabia que existiam.
+2. **Revalidação em segundo plano, throttlada**
+   (`galeriaRevalidarEmSegundoPlano()`, `js/utils.js`): tanto a Galeria
+   quanto "Nossos momentos" disparam, DEPOIS de já mostrar algo na tela
+   (cache ou varredura própria), uma nova varredura completa em segundo
+   plano — mas só se o cache não existir ou já tiver mais de 3 horas
+   (`GALERIA_REVALIDACAO_INTERVALO_MS`). Fotos/vídeos novos que Gabriel
+   adicionar aparecem na PRÓXIMA abertura, nunca travando a abertura
+   atual.
+3. **Mais paralelismo na varredura em si** (`galeriaVarrerFaixa`, em
+   `js/utils.js`): lote aumentado de 8 para 24 números por vez — só
+   importa mesmo na primeiríssima abertura de cada aparelho (quando ainda
+   não existe cache nenhum), bem menos idas-e-voltas até o servidor no
+   total.
+4. **Botão "Limpar cache da Galeria"** em `diagnostico.html` (seção
+   "Galeria de lembranças", `executarLimparCacheGaleria()` em
+   `js/diagnostics.js`) — força uma varredura de verdade na PRÓXIMA
+   abertura deste aparelho específico, útil se Gabriel acabou de
+   adicionar/remover fotos e quer ver a mudança sem esperar as 3 horas de
+   throttle.
+
+**Não muda:** o formato dos arquivos (`galeria_N.jpg`/`galeria_N.mp4`,
+faixas separadas por `GALERIA_INICIO_VIDEOS`), `GALERIA_LEGENDAS`,
+`GALERIA_YOUTUBE`, o lightbox, o masonry por colunas, a lógica de
+"Nossos momentos" escolher fotos espalhadas pela numeração
+(`escolherFotosEspalhadas`) — só a CAMADA DE DESCOBERTA foi reformulada.
+Sintaxe de `js/utils.js`, `js/galeria.js`, `js/romance.js` e
+`js/diagnostics.js` validada com `node --check` depois da mudança.
+
 ## Pendências / sugestões em aberto
 
 - Sincronização de reset entre aparelhos foi reportada como
