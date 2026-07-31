@@ -140,17 +140,26 @@
     <main class="galeria-wrap">
         <div class="text-center galeria-videos-toggle" id="galeriaVideosToggleWrap">
             <button type="button" id="btnGaleriaVerVideos" class="btn btn-outline-light btn-sm rounded-pill"><i class="bi bi-camera-reels me-1"></i>Ver vídeos</button>
-            <div id="galeriaCarregandoVideos" class="galeria-carregando d-none">
-                <div class="galeria-carregando-barra" id="galeriaCarregandoVideosBarraWrap"><div class="galeria-carregando-barra-preenchida" id="galeriaCarregandoVideosBarra"></div></div>
-                <p class="galeria-carregando-texto" id="galeriaCarregandoVideosTexto">Procurando vídeos...</p>
-            </div>
         </div>
+
+        <!-- "Galeria" das fotos -->
         <div id="galeriaCarregando" class="galeria-carregando">
             <div class="galeria-carregando-barra"><div class="galeria-carregando-barra-preenchida" id="galeriaCarregandoBarra"></div></div>
             <p class="galeria-carregando-texto" id="galeriaCarregandoTexto">Procurando fotos...</p>
         </div>
         <div class="galeria-masonry" id="galeriaMasonry"></div>
         <p class="galeria-vazio d-none" id="galeriaVazio">Este álbum ainda está esperando as primeiras fotos. Em breve, vai se encher de nós.</p>
+
+        <!-- "Galeria" dos vídeos: seção própria, separada da grade de fotos acima,
+             escondida até a pessoa apertar "Ver vídeos" -->
+        <section id="galeriaSecaoVideos" class="d-none">
+            <div id="galeriaCarregandoVideos" class="galeria-carregando">
+                <div class="galeria-carregando-barra"><div class="galeria-carregando-barra-preenchida" id="galeriaCarregandoVideosBarra"></div></div>
+                <p class="galeria-carregando-texto" id="galeriaCarregandoVideosTexto">Procurando vídeos...</p>
+            </div>
+            <div class="galeria-masonry" id="galeriaMasonryVideos"></div>
+            <p class="galeria-vazio d-none" id="galeriaVideosVazio">Nenhum vídeo por aqui ainda.</p>
+        </section>
     </main>
 
     <div class="galeria-lightbox" id="galeriaLightbox">
