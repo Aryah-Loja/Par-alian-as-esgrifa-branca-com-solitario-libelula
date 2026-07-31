@@ -326,7 +326,28 @@ const GALERIA_LEGENDAS = {
     46: 'Você é minha pessoa favorita.',
     47: 'Você é o melhor dos meus dias.',
     48: 'Você sempre será a minha resposta.',
-    49: 'teste.'
+    101: 'Eu te amo.',
+    102: 'Eu te amo muito.',
+    103: 'Eu te amo mais do que ontem.',
+    104: 'Eu te amo de verdade.',
+    105: 'Eu te amo por inteiro.',
+    106: 'Eu te amo em cada detalhe.',
+    107: 'Eu te amo sem medida.',
+    108: 'Eu te amo todos os dias.',
+    109: 'Eu te amo mais do que consigo explicar.',
+    110: 'Eu te amo com todo o meu coração.',
+    111: 'Eu te amo mais do que as palavras alcançam.',
+    112: 'Eu te amo do jeitinho que você é.',
+    113: 'Eu te amo infinitamente.',
+    114: 'Eu te amo e escolheria você outra vez.',
+    115: 'Eu te amo mais a cada dia.',
+    116: 'Eu te amo além do tempo.',
+    117: 'Eu te amo hoje, amanhã e sempre.',
+    118: 'Eu te amo mais do que você imagina.',
+    119: 'Eu te amo por tudo o que você é.',
+    120: 'Eu te amo, simplesmente.',
+    121: 'Eu te amo. Sempre.'
+
 };
 
 /* Vídeos do YouTube (não precisam de arquivo — ver explicação acima).
