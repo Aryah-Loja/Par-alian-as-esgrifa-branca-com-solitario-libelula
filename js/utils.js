@@ -430,23 +430,36 @@ function galeriaCarregarManifesto() {
 
     __galeriaManifestoPromise = (async () => {
         try {
-            // GET normal (com cache do navegador/CDN) — bem mais barato que
-            // as centenas de HEAD "no-store" da varredura manual, e ainda
-            // se beneficia de cache HTTP entre visitas.
-            const resposta = await fetch(`${PASTA_GALERIA}/manifesto.json`);
+            // 'no-cache' (diferente de 'no-store'): permite que o navegador
+            // guarde a resposta, mas OBRIGA a revalidar com o servidor antes
+            // de usá-la (requisição condicional via ETag/Last-Modified) —
+            // sem isso, o cache HTTP padrão do navegador/CDN podia continuar
+            // servindo um manifesto.json ANTIGO por vários minutos depois do
+            // Gabriel subir fotos novas, escondendo o conteúdo mais recente
+            // sem nenhum aviso. Ainda assim é bem mais barato que a
+            // varredura por HEAD: na maioria das vezes o servidor responde
+            // "304 não mudou" quase sem custo nenhum.
+            const resposta = await fetch(`${PASTA_GALERIA}/manifesto.json`, { cache: 'no-cache' });
             if (!resposta.ok) return null;
             const dados = await resposta.json();
             if (!dados || !Array.isArray(dados.itens)) return null;
 
-            const itens = dados.itens
+            // CORREÇÃO (galeria genuinamente vazia sendo tratada como "sem
+            // manifesto"): antes, uma lista de itens vazia (situação normal
+            // antes do Gabriel subir a primeira foto) fazia esta função
+            // devolver `null` — o mesmo sinal usado para "manifesto não
+            // existe" — e isso disparava a varredura lenta por HEAD à toa,
+            // justamente o problema que o manifesto existe pra evitar. Um
+            // array vazio agora é um resultado válido e definitivo (a
+            // galeria está mesmo vazia), só `null` significa "sem
+            // manifesto, tenta do jeito antigo".
+            return dados.itens
                 .filter(item => item && Number.isFinite(item.numero) && (item.tipo === 'foto' || item.tipo === 'video') && item.ext)
                 .map(item => ({
                     numero: item.numero,
                     tipo: item.tipo,
                     caminho: `${PASTA_GALERIA}/galeria_${item.numero}.${item.ext}`
                 }));
-
-            return itens.length ? itens : null;
         } catch (e) {
             return null; // sem manifesto (404), JSON inválido, ou rede falhou — segue com a varredura antiga
         }
@@ -745,6 +758,12 @@ async function descobrirFotosParaDestaque() {
     // manifesto (quando existir) resolve os dois casos de uma vez.
     const doManifesto = await galeriaCarregarManifesto();
     if (doManifesto) {
+        // Aproveita para alimentar o MESMO cache completo que
+        // galeriaEscanearCompleta() usaria — o manifesto já traz fotos E
+        // vídeos, então não faz sentido guardar só a parte de fotos aqui.
+        // Isso faz a Galeria (galeria.html) abrir direto do cache na
+        // próxima visita, sem precisar nem buscar o manifesto de novo.
+        galeriaSalvarCacheSeMelhor(doManifesto, true);
         return doManifesto
             .filter(item => item.tipo === 'foto')
             .map(item => ({ numero: item.numero, caminho: item.caminho }));

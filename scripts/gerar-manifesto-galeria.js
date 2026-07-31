@@ -49,7 +49,16 @@ function gerarManifesto() {
     }
 
     const arquivos = fs.readdirSync(PASTA_GALERIA);
-    const padrao = /^galeria_(\d+)\.(jpg|jpeg|mp4)$/i;
+    // Case-sensitive de propósito: js/config.js é explícito que o site só
+    // testa ".jpg"/".mp4" em minúsculo, nenhuma variação de maiúscula
+    // (ver EXTENSOES_FOTO_ACEITAS/GALERIA_EXTENSOES_VIDEO). Se o padrão
+    // aqui fosse case-insensitive, um arquivo salvo como "galeria_3.JPG"
+    // entraria no manifesto apontando para "galeria_3.jpg" — um caminho
+    // que não existe de verdade (servidores como o GitHub Pages são
+    // case-sensitive) — e o item quebraria na galeria. Mantendo os dois
+    // lados (gerador e site) de acordo com a mesma regra evita esse
+    // descompasso silencioso.
+    const padrao = /^galeria_(\d+)\.(jpg|mp4)$/;
 
     const itens = [];
     for (const nomeArquivo of arquivos) {
@@ -70,12 +79,36 @@ function gerarManifesto() {
 
     itens.sort((a, b) => a.numero - b.numero);
 
+    const caminhoSaida = path.join(PASTA_GALERIA, NOME_MANIFESTO);
+
+    // CORREÇÃO (commit automático toda vez que o workflow rodasse, mesmo
+    // sem foto/vídeo novo nenhum): antes, `geradoEm` recebia um timestamp
+    // novo em TODA execução — então o arquivo mudava sempre, mesmo quando
+    // a lista de itens era idêntica à anterior, fazendo o passo "commitar
+    // só se algo mudou" do workflow (ver .github/workflows/
+    // gerar-manifesto-galeria.yml) nunca conseguir pular um commit de
+    // verdade. Agora só reescreve o arquivo (com um `geradoEm` novo) se a
+    // lista de itens for DIFERENTE da que já estava salva — sem mudança
+    // real, o arquivo (e o timestamp) ficam exatamente como estavam.
+    let itensAntigos = null;
+    try {
+        const anterior = JSON.parse(fs.readFileSync(caminhoSaida, 'utf8'));
+        if (anterior && Array.isArray(anterior.itens)) itensAntigos = anterior.itens;
+    } catch (e) {
+        itensAntigos = null; // manifesto ainda não existe, ou está corrompido — gera do zero
+    }
+
+    const normalizar = (lista) => JSON.stringify(lista.map(i => ({ numero: i.numero, tipo: i.tipo, ext: i.ext })));
+    if (itensAntigos && normalizar(itensAntigos) === normalizar(itens)) {
+        console.log(`[manifesto] ${itens.length} item(ns) encontrados, igual ao manifesto já salvo — nada para atualizar.`);
+        return;
+    }
+
     const manifesto = {
         geradoEm: new Date().toISOString(),
         itens
     };
 
-    const caminhoSaida = path.join(PASTA_GALERIA, NOME_MANIFESTO);
     fs.writeFileSync(caminhoSaida, JSON.stringify(manifesto, null, 2) + '\n');
 
     console.log(`[manifesto] ${itens.length} item(ns) encontrados. Escrito em ${caminhoSaida}`);
