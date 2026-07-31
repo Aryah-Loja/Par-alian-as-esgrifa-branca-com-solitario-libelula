@@ -1,0 +1,1376 @@
+/* ============================================================================
+   STYLE.CSS — Estilos do projeto Aurora Joias
+   ============================================================================
+   Organizado em seções: variáveis, base/reset, loja, checkout, suspense,
+   carta final, flashback, romance/nossa-história, exportação, bloqueio de
+   desktop e acessibilidade (prefers-reduced-motion).
+   ============================================================================ */
+
+:root {
+    --rosegold: #B76E79;
+    --rosegold-dark: #8f4d57;
+    --offwhite: #FAF9F6;
+    --text-dark: #333333;
+}
+
+/* ---------------- Base / reset ----------------
+   CORREÇÃO (Prioridade 1, item 4): elimina completamente o scroll/overflow
+   horizontal em qualquer navegador. box-sizing garante que paddings não
+   estourem a largura de nenhum elemento. */
+*, *::before, *::after { box-sizing: border-box; }
+
+button, a, .easter-egg-gatilho, .ceu-lua, .ceu-estrela, [role="button"] { touch-action: manipulation; }
+
+html {
+    background-color: var(--offwhite);
+    height: 100%;
+    overflow-x: hidden;
+    width: 100%;
+    /* CORREÇÃO: o iOS moderno ignora "user-scalable=no" do viewport (a Apple
+       decidiu isso por acessibilidade), então toques rápidos repetidos
+       (como os easter eggs de 5 toques) ainda disparavam o zoom nativo do
+       Safari, mesmo com o bloqueio em JS. touch-action:manipulation é a
+       forma correta, nativa do navegador, de desligar esse gesto de zoom
+       por toque duplo/repetido, sem atrapalhar rolagem nem toque único. */
+    touch-action: manipulation;
+}
+
+body {
+    margin: 0;
+    background-color: var(--offwhite);
+    font-family: 'Jost', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--text-dark);
+    overflow-x: hidden;
+    touch-action: manipulation;
+    min-height: 100%;
+    width: 100%;
+    max-width: 100vw;
+    transition: background-color 0.4s ease; /* acompanha a troca de tela (corrige "áreas brancas") */
+}
+
+img { max-width: 100%; }
+
+.text-rosegold { color: var(--rosegold) !important; }
+.bg-rosegold { background-color: var(--rosegold) !important; color: white; }
+.border-rosegold { border-color: #e0b4bc !important; }
+.btn-rosegold { background-color: var(--rosegold); color: white; border: none; }
+.btn-rosegold:hover, .btn-rosegold:active { background-color: #a05d67; color: white; }
+.btn-rosegold:disabled { background-color: #d9b4ba; }
+.tracking-wide { letter-spacing: 2px; }
+.placeholder-link:active { opacity: 0.5; }
+
+/* ---------------- Placeholder de imagem (Prioridade 3) ----------------
+   Exibido automaticamente quando o arquivo real ainda não foi enviado
+   para /assets — evita o ícone de "imagem quebrada". */
+.imagem-placeholder-vazio {
+    width: 100%; height: 100%; min-height: 90px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 6px; background: linear-gradient(135deg, #f3e6e8, #f7eef0);
+    border: 1px dashed #e0b4bc; border-radius: 8px; color: var(--rosegold-dark); font-size: 0.7rem; text-align: center; padding: 8px;
+}
+.imagem-placeholder-vazio i { font-size: 1.4rem; }
+
+.product-image-container img { width: 100%; object-fit: cover; max-height: 400px; background-color: #eee; }
+.product-image-container .imagem-placeholder-vazio { min-height: 320px; border-radius: 8px; }
+.related-img { height: 150px; object-fit: cover; background-color: #eee; }
+
+/* ---------------- Home / vitrine da joalheria ---------------- */
+.promo-carousel { position: relative; }
+.promo-slide {
+    min-height: 190px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 26px 20px; color: white; position: relative; overflow: hidden;
+}
+.promo-slide.slide-a { background: linear-gradient(135deg, #8f4d57 0%, #B76E79 60%, #c98d96 100%); }
+.promo-slide.slide-b { background: linear-gradient(135deg, #3a2029 0%, #4a2c34 60%, #6a3f49 100%); }
+.promo-slide.slide-c { background: linear-gradient(135deg, #B76E79 0%, #d9a5ac 70%, #f0d9dd 100%); }
+.promo-slide::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.12), transparent 55%);
+    pointer-events: none;
+}
+.promo-eyebrow { font-size: 0.68rem; letter-spacing: 3px; text-transform: uppercase; opacity: 0.85; margin-bottom: 6px; }
+.promo-title { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.65rem; font-weight: 600; margin-bottom: 6px; }
+.promo-sub { font-size: 0.82rem; opacity: 0.9; max-width: 300px; }
+.carousel-indicators-custom { position: absolute; bottom: 10px; left: 0; right: 0; display: flex; justify-content: center; gap: 6px; z-index: 5; }
+.carousel-indicators-custom button { width: 6px; height: 6px; border-radius: 50%; border: none; background: rgba(255,255,255,0.4); padding: 0; }
+.carousel-indicators-custom button.active { background: #fff; width: 16px; border-radius: 3px; }
+
+.thumb-strip { display: flex; gap: 8px; justify-content: center; margin-top: 10px; flex-wrap: wrap; }
+.thumb-item { width: 60px; height: 60px; border-radius: 8px; overflow: hidden; cursor: pointer; border: 2px solid transparent; opacity: 0.65; transition: opacity 0.2s ease, border-color 0.2s ease; background: #eee; }
+.thumb-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb-item.active, .thumb-item:active { opacity: 1; border-color: var(--rosegold); }
+
+.featured-ribbon { display: inline-flex; align-items: center; gap: 6px; background: rgba(183,110,121,0.1); border: 1px solid rgba(183,110,121,0.35); color: var(--rosegold-dark); font-size: 0.72rem; letter-spacing: 1px; text-transform: uppercase; font-weight: 600; padding: 5px 12px; border-radius: 999px; }
+
+.section-divider { display: flex; align-items: center; gap: 12px; margin: 8px 0 18px; }
+.section-divider .line { flex: 1; height: 1px; background: linear-gradient(90deg, transparent, #e0b4bc, transparent); }
+.section-divider i { color: var(--rosegold); font-size: 0.85rem; }
+
+.about-section { background: linear-gradient(180deg, #FAF9F6 0%, #f3e6e8 100%); border-radius: 14px; padding: 26px 20px; text-align: center; position: relative; border: 1px solid #f0d9dd; }
+.about-section .about-eyebrow { font-size: 0.68rem; letter-spacing: 3px; text-transform: uppercase; color: var(--rosegold-dark); font-weight: 600; }
+.about-section h4 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.5rem; font-weight: 600; margin: 6px 0 12px; }
+.about-section p { font-size: 0.88rem; color: #5a5048; line-height: 1.7; max-width: 420px; margin: 0 auto; }
+.about-badges { display: flex; justify-content: center; gap: 22px; margin-top: 18px; flex-wrap: wrap; }
+.about-badges .about-badge { text-align: center; }
+.about-badges .about-badge i { font-size: 1.4rem; color: var(--rosegold); }
+.about-badges .about-badge span { display: block; font-size: 0.68rem; color: #8a7a5c; margin-top: 4px; max-width: 80px; }
+
+/* Easter egg discreto (item 2 do prompt): girassol quase invisível, decorativo,
+   não captura toque e não atrapalha a leitura. */
+.loja-girassol-discreto { position: absolute; top: 10px; right: 12px; width: 26px; height: 26px; opacity: 0.14; pointer-events: none; }
+
+.highlight-strip { display: flex; gap: 10px; overflow-x: auto; padding: 4px 2px 10px; scrollbar-width: none; }
+.highlight-strip::-webkit-scrollbar { display: none; }
+.highlight-card { flex: 0 0 auto; width: 130px; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.06); border: 1px solid #f2e6e8; }
+.highlight-card img, .highlight-card .imagem-placeholder-vazio { width: 100%; height: 90px; object-fit: cover; background: #eee; }
+.highlight-card .hc-label { font-size: 0.68rem; font-weight: 600; text-align: center; padding: 6px 4px; color: #5a5048; }
+
+.trust-badges i { font-size: 1.8rem; color: #555; }
+.security-bar { font-size: 0.75rem; background-color: #f1f1f1; }
+
+/* ---------------- Telas de tela cheia (loja/checkout) ---------------- */
+.fullscreen-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--offwhite); z-index: 9999; overflow-y: auto; display: none; overscroll-behavior: contain; }
+
+/* ---------------- Overlay de suspense ----------------
+   Usa dvh (dynamic viewport height) com fallback para vh: em navegadores
+   móveis, a barra de endereço aparece/some e "100vh" tradicional deixa
+   sobras brancas embaixo — dvh acompanha o tamanho real visível.
+   overscroll-behavior: contain evita o "scroll chaining": sem isso, ao
+   chegar no topo/fim do scroll interno deste overlay no iOS, o gesto de
+   arrastar "vaza" pro body por trás (efeito bounce do Safari), revelando
+   por uma fração de segundo o que estiver escondido atrás (ex.: a loja). */
+.suspense-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100vh; height: 100dvh;
+    background-color: rgba(20, 20, 20, 0.97); z-index: 10000;
+    display: none; align-items: center; justify-content: center; flex-direction: column;
+    backdrop-filter: blur(10px); overflow-y: auto; overscroll-behavior: contain;
+}
+
+.processing-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(20, 20, 20, 0.97); z-index: 10600; display: none; align-items: center; justify-content: center; flex-direction: column; color: white; text-align: center; padding: 20px; overscroll-behavior: contain; }
+.processing-steps { list-style: none; padding: 0; margin: 24px 0 0; text-align: left; max-width: 320px; }
+.processing-steps li { padding: 8px 0; opacity: 0.35; transition: opacity 0.3s ease; font-size: 0.95rem; }
+.processing-steps li.active { opacity: 1; font-weight: 600; }
+.processing-steps li.done { opacity: 0.7; }
+.processing-steps li i { margin-right: 10px; width: 18px; display: inline-block; }
+
+.checkout-box { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+.icon-circle { width: 40px; height: 40px; border-radius: 50%; background: #f0f0f0; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+.fade-in { animation: fadeIn 1s ease-in forwards; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+.reveal-up { animation: fadeUp 0.8s ease forwards; opacity: 0; }
+
+/* ---------------- Perguntas do suspense (com botão "Não" fujão) ---------------- */
+.question-card { background: white; padding: 28px 24px; border-radius: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.4); text-align: center; width: 100%; max-width: 400px; position: relative; overflow: hidden; }
+.question-eyebrow { font-size: 0.7rem; letter-spacing: 3px; text-transform: uppercase; color: var(--rosegold); font-weight: 600; }
+.question-dots { display: flex; justify-content: center; gap: 6px; margin: 10px 0 4px; }
+.question-dots span { width: 6px; height: 6px; border-radius: 50%; background: #e6d3d6; transition: all 0.3s ease; }
+.question-dots span.done { background: var(--rosegold); }
+#btnNoLegenda { font-size: 0.75rem; color: var(--rosegold-dark); min-height: 18px; margin-top: 6px; }
+
+.polaroid { background: white; padding: 16px 16px 44px 16px; box-shadow: 0 18px 40px rgba(0,0,0,0.5); border-radius: 6px; max-width: 95%; width: 320px; opacity: 0; transition: opacity 1.15s cubic-bezier(0.22, 1, 0.36, 1); }
+.polaroid.foto-visivel { opacity: 1; }
+.polaroid img, .polaroid .imagem-placeholder-vazio { width: 100%; height: auto; aspect-ratio: 1/1; object-fit: cover; border-radius: 3px; display: block; }
+.polaroid-caption { font-family: 'Courier New', Courier, monospace; text-align: center; margin-top: 14px; font-weight: bold; color: #333; font-size: 1.05rem; }
+.polaroid-stack { position: relative; width: 100%; max-width: 96vw; height: 480px; margin: 0 auto; }
+@media (min-width: 400px) { .polaroid-stack { max-width: 440px; height: 520px; } }
+.polaroid-stack .polaroid { position: absolute; top: 0; left: 50%; }
+
+.typing-container { min-height: 150px; padding: 20px; font-size: 1.25rem; font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; color: white; text-align: center; line-height: 1.7; display: none; max-width: 440px; }
+.cursor { display: inline-block; width: 3px; background-color: white; margin-left: 2px; animation: blink 1s step-end infinite; }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+.text-shadow { text-shadow: 2px 2px 10px rgba(0,0,0,0.5); }
+.final-photo { max-height: 52vh; width: 100%; max-width: 420px; object-fit: cover; border: 4px solid var(--rosegold); border-radius: 12px; background-color: #eee; }
+
+.maintenance-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); z-index: 10500; display: flex; align-items: center; justify-content: center; overscroll-behavior: contain; }
+.maintenance-box { background: white; border-radius: 16px; padding: 25px; max-width: 340px; margin: 0 20px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+
+.signature-pad-wrap { background: white; border-radius: 16px; padding: 20px; width: 100%; max-width: 400px; margin: 0 auto; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+#signatureCanvas { border: 2px dashed var(--rosegold); border-radius: 8px; touch-action: none; width: 100%; height: 160px; background: #fff; display: block; }
+.signature-hint { font-size: 0.75rem; color: #999; margin-top: 8px; }
+
+.tracking-box { text-align: center; color: white; width: 100%; max-width: 420px; }
+.tracking-distance { font-size: 3rem; font-weight: bold; font-variant-numeric: tabular-nums; }
+.tracking-bar-outer { width: 90%; max-width: 320px; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; margin: 15px auto; overflow: hidden; }
+.tracking-bar-inner { height: 100%; background: var(--rosegold); width: 0%; transition: width 0.4s linear; }
+
+.verification-box { text-align: center; color: white; width: 100%; max-width: 380px; padding: 10px; }
+.verification-icon { width: 64px; height: 64px; border-radius: 50%; margin: 0 auto 14px; background: rgba(240, 173, 78, 0.15); border: 1px solid rgba(240, 173, 78, 0.5); display: flex; align-items: center; justify-content: center; font-size: 1.7rem; color: #f0ad4e; }
+.verification-eyebrow { font-size: 0.7rem; letter-spacing: 3px; text-transform: uppercase; color: #f0ad4e; font-weight: 600; margin-bottom: 6px; }
+.verification-title { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.5rem; font-weight: 600; margin-bottom: 10px; }
+.verification-text { font-size: 0.92rem; color: rgba(255,255,255,0.75); line-height: 1.6; margin-bottom: 18px; }
+
+@keyframes glowPulse { 0%, 100% { box-shadow: 0 0 15px 4px rgba(183, 110, 121, 0.6); } 50% { box-shadow: 0 0 35px 12px rgba(183, 110, 121, 0.95); } }
+.glow-effect { animation: glowPulse 1.6s ease-in-out infinite; }
+
+.rotate-hint { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
+.rotate-hint .phone-icon { font-size: 3.2rem; display: inline-block; animation: rotatePhone 1.8s ease-in-out infinite; }
+@keyframes rotatePhone { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(90deg); } }
+#conteudoGravacao .signature-pad-wrap { max-width: 520px !important; }
+#videoPreview, #videoPlayback { aspect-ratio: 16 / 9 !important; object-fit: cover; }
+#videoPreview { transform: scaleX(-1); } /* espelha só a prévia ao vivo (conforto de enquadrar) — o arquivo gravado já sai espelhado corretamente por conta própria, ver criarStreamEspelhado em js/utils.js */
+.rec-dot { width: 10px; height: 10px; background: #ff3b3b; border-radius: 50%; display: inline-block; margin-right: 6px; animation: recBlink 1s step-start infinite; }
+@keyframes recBlink { 50% { opacity: 0; } }
+.save-status { font-size: 0.75rem; margin-top: 8px; min-height: 16px; }
+.save-status.ok { color: #7ee787; }
+.save-status.pending { color: #f0d9dd; }
+.save-status.err { color: #ff8a8a; }
+
+.post-record-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; color: white; text-align: center; padding: 10px; }
+.post-record-screen .check-circle { width: 64px; height: 64px; border-radius: 50%; background: rgba(183,110,121,0.18); border: 1px solid rgba(183,110,121,0.6); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; color: var(--rosegold); }
+.post-record-screen .phone-icon-portrait { font-size: 3rem; display: inline-block; animation: rotatePhoneBack 1.8s ease-in-out infinite; color: var(--rosegold); }
+@keyframes rotatePhoneBack { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(-90deg); } }
+.btn-link-muted { color: rgba(255,255,255,0.5); font-size: 0.8rem; background: none; border: none; text-decoration: underline; margin-top: 6px; }
+
+/* ---------------- Flashback cinematográfico ---------------- */
+.flashback-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; height: 100dvh; background: #0a0608; z-index: 10800; display: none; align-items: center; justify-content: center; overflow: hidden; overscroll-behavior: contain; }
+.flashback-photo { position: absolute; width: 62vw; max-width: 300px; border-radius: 8px; box-shadow: 0 20px 60px rgba(0,0,0,0.7); opacity: 0; filter: blur(6px); transform: scale(0.85); transition: opacity 0.28s ease, transform 0.55s ease, filter 0.45s ease; }
+.flashback-photo img, .flashback-photo .imagem-placeholder-vazio { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; border-radius: 8px; }
+.flashback-photo.fb-ativa { opacity: 1; filter: blur(0); transform: scale(1.04); }
+.flashback-flash { position: absolute; inset: 0; background: white; opacity: 0; pointer-events: none; transition: opacity 0.12s ease; }
+.flashback-flash.fb-piscar { opacity: 0.22; }
+.flashback-label { position: absolute; bottom: 12%; left: 0; right: 0; text-align: center; color: rgba(255,255,255,0.55); font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; font-size: 1rem; letter-spacing: 1px; opacity: 0; transition: opacity 0.6s ease; }
+.flashback-label.fb-visivel { opacity: 1; }
+.flashback-continuar { position: absolute; bottom: 5%; left: 50%; transform: translateX(-50%); z-index: 3; animation: fadeUp 0.6s ease forwards; }
+
+/* ---------------- Carta final (envelope + carta manuscrita) ---------------- */
+.letter-stage { perspective: 1400px; width: 100%; max-width: 320px; margin: 22px auto 6px; min-height: 300px; position: relative; }
+.envelope { position: relative; width: 100%; padding-top: 68%; cursor: pointer; opacity: 0; transform: translateY(14px) scale(0.96); transition: opacity 0.9s ease, transform 0.9s ease; }
+.envelope.envelope-visivel { opacity: 1; transform: translateY(0) scale(1); }
+.envelope-back { position: absolute; inset: 0; border-radius: 6px; background: linear-gradient(160deg, #f4ead9 0%, #e6d5b8 100%); box-shadow: 0 22px 45px rgba(0,0,0,0.55); }
+.envelope-back::before, .envelope-back::after { content: ''; position: absolute; bottom: 0; width: 52%; height: 78%; background: linear-gradient(135deg, #efe1c9, #ddc79f); z-index: 2; }
+.envelope-back::before { left: 0; clip-path: polygon(0 0, 100% 50%, 0 100%); }
+.envelope-back::after { right: 0; clip-path: polygon(100% 0, 0 50%, 100% 100%); }
+.envelope-flap { position: absolute; top: 0; left: 0; width: 100%; height: 58%; background: linear-gradient(150deg, #eaddc4, #d7c39c); clip-path: polygon(0 0, 100% 0, 50% 92%); transform-origin: top center; transform-style: preserve-3d; transition: transform 1.15s cubic-bezier(0.65, 0, 0.35, 1); z-index: 4; border-radius: 6px 6px 0 0; }
+.envelope.aberto .envelope-flap { transform: rotateX(180deg); }
+.envelope-seal { position: absolute; top: 50%; left: 50%; width: 42px; height: 42px; transform: translate(-50%, -50%); border-radius: 50%; background: var(--rosegold); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1.15rem; box-shadow: 0 6px 14px rgba(0,0,0,0.45); z-index: 6; transition: opacity 0.35s ease, transform 0.35s ease; }
+.envelope.aberto .envelope-seal { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
+.letter-paper {
+    position: absolute; left: 50%; bottom: 4%; width: 86%;
+    max-height: 62%;
+    min-height: 62%; background: #FBF7F0; border-radius: 3px; box-shadow: 0 14px 34px rgba(0,0,0,0.4);
+    padding: 20px 16px 16px; z-index: 3;
+    transform: translate(-50%, 6%) scale(0.82); opacity: 0;
+    transition: transform 1.3s cubic-bezier(0.22, 1, 0.36, 1) 0.55s, opacity 0.9s ease 0.55s, z-index 0s 0.55s;
+    display: flex; flex-direction: column;
+}
+/* Área com o texto da carta em si — é ELA que rola, se o texto for
+   grande demais pra caber. O rodapé (luz de vela + Continuar) fica FORA
+   dessa rolagem, sempre visível e sempre depois do texto, nunca por
+   cima dele. */
+.letter-paper-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.letter-paper-rodape { flex: 0 0 auto; text-align: center; padding-top: 10px; margin-top: 6px; border-top: 1px solid rgba(43,37,35,0.12); }
+.btn-modo-vela { margin-top: 10px; background: none; border: 1px solid rgba(43,37,35,0.3); color: rgba(43,37,35,0.75); font-size: 0.75rem; padding: 6px 14px; border-radius: 999px; display: inline-flex; align-items: center; gap: 6px; }
+.btn-modo-vela:active { background: rgba(43,37,35,0.08); }
+/* CORREÇÃO (carta saindo da tela / "puxar pra cima recarrega a página"): as
+   versões anteriores tentavam posicionar a carta calculando um deslocamento
+   a partir de onde o envelope está NA PÁGINA — mas isso depende de quanto a
+   pessoa já rolou a tela até ali, e uma carta longa de verdade (vários
+   parágrafos) podia ficar parcialmente ACIMA da área que dá pra rolar até,
+   não só fora da tela visível. Quando a pessoa tentava "puxar pra cima" pra
+   alcançar aquele trecho, na real ela já estava no topo da rolagem — e esse
+   gesto vira "puxar pra atualizar" no Safari/Chrome do iPhone, recarregando
+   a página sem querer.
+   Agora, quando aberta, a carta gruda direto no CENTRO DA TELA (position:
+   fixed), não mais relativa ao envelope — sempre alcançável. Só o TEXTO
+   (".letter-paper-scroll") rola por dentro; o cartão inteiro (com a
+   moldura rosé e o botão "Continuar" no rodapé) tem altura definida pelo
+   conteúdo, então a moldura sempre chega até o fim de verdade, e o botão
+   "Continuar" sempre aparece deitado embaixo do texto, nunca por cima. */
+.envelope.aberto .letter-paper {
+    position: fixed;
+    top: 50%; left: 50%; bottom: auto;
+    width: min(86vw, 400px);
+    max-height: 78vh;
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1; z-index: 9000;
+}
+/* CORREÇÃO (carta da cápsula do tempo ficando "flutuando" na tela mesmo
+   depois de fechar o modo vela): a carta final (#envelope) nunca fecha
+   sozinha antes de "Continuar" ser clicado, então virar um cartão fixo é
+   seguro pra ela. Já a cápsula do tempo (#capsulaEnvelope) pode ser aberta
+   e fechada várias vezes, e o modo vela é a ÚNICA forma como o texto dela
+   deve aparecer — por isso essa regra mais específica cancela o cartão
+   fixo só pra ela, mesmo com a classe "aberto" (usada apenas para a
+   animação do envelope abrindo/fechando). */
+#capsulaEnvelope.aberto .letter-paper {
+    position: absolute;
+    top: auto; left: 50%; bottom: 4%;
+    transform: translate(-50%, 6%) scale(0.82);
+    opacity: 0; z-index: 3; pointer-events: none;
+}
+.letter-paper::before { content: ''; position: absolute; inset: 6px; border: 1px solid #e3d5ba; pointer-events: none; }
+.letter-eyebrow { font-family: 'Jost', sans-serif; font-size: 0.65rem; letter-spacing: 3px; text-transform: uppercase; color: var(--rosegold-dark); text-align: center; margin-bottom: 10px; opacity: 0; transition: opacity 0.8s ease; }
+.letter-eyebrow.visivel { opacity: 1; }
+
+/* Botão discreto pra entrar no modo vela, some até a carta estar aberta (ver JS) */
+
+/* ----------------------------------------------------------------------
+   MODO "LUZ DE VELA" — escurece tudo ao redor e ilumina só o papel, como
+   se estivesse sendo lido à luz de uma vela de verdade. As duas divs de
+   "chama" são só glows radiais que tremem em CSS puro (sem imagem, sem
+   canvas) — leve o bastante pra rodar bem em qualquer celular.
+   ---------------------------------------------------------------------- */
+.modo-vela-overlay { position: fixed; inset: 0; z-index: 12500; background: #050303; display: flex; align-items: flex-start; justify-content: center; padding: calc(clamp(28px, 8vh, 60px) + env(safe-area-inset-top, 0px)) clamp(18px, 6vw, 40px) calc(clamp(28px, 8vh, 60px) + env(safe-area-inset-bottom, 0px)); overflow-y: auto; overscroll-behavior: contain; animation: modoVelaAcender 1.1s ease forwards; }
+@keyframes modoVelaAcender { from { opacity: 0; } to { opacity: 1; } }
+
+.modo-vela-vinheta { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 38%, rgba(255,183,110,0.14) 0%, rgba(5,3,3,0) 42%, #050303 78%); pointer-events: none; }
+
+.modo-vela-chama { position: absolute; top: 30%; left: 50%; width: 340px; height: 340px; margin-left: -170px; margin-top: -170px; border-radius: 50%; background: radial-gradient(circle, rgba(255,196,120,0.5) 0%, rgba(255,140,60,0.16) 40%, rgba(255,140,60,0) 70%); filter: blur(6px); pointer-events: none; animation: modoVelaTremer 2.6s ease-in-out infinite; }
+.modo-vela-chama-2 { animation-duration: 3.4s; animation-delay: 0.4s; opacity: 0.6; }
+@keyframes modoVelaTremer {
+    0%, 100% { transform: scale(1) translate(0, 0); opacity: 0.85; }
+    25% { transform: scale(1.04) translate(3px, -2px); opacity: 0.95; }
+    50% { transform: scale(0.97) translate(-2px, 1px); opacity: 0.75; }
+    75% { transform: scale(1.02) translate(1px, 2px); opacity: 0.9; }
+}
+@media (prefers-reduced-motion: reduce) { .modo-vela-chama, .modo-vela-chama-2 { animation: none; } }
+
+.modo-vela-fechar { position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.06); border: none; color: rgba(255,220,190,0.75); width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 2; }
+
+.modo-vela-papel { position: relative; z-index: 1; max-width: 380px; width: 100%; background: rgba(250,240,225,0.97); border-radius: 4px; padding: 30px 24px; box-shadow: 0 0 60px 10px rgba(255,170,90,0.12), 0 20px 50px rgba(0,0,0,0.6); }
+.modo-vela-papel .letter-text { color: #2b2523; }
+/* Player do vídeo da cápsula do tempo (ver abrirModoVela em js/utils.js e
+   a chamada em iniciarEnvelopeCapsula, js/romance.js) — só aparece quando
+   opcoes.videoYoutubeId é passado, então não afeta as outras cartas
+   (carta final, carta de discussão) que usam este mesmo modal. */
+#modoVelaVideoWrap:not(.d-none) { position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 8px; overflow: hidden; margin-top: 16px; background: #000; box-shadow: 0 12px 30px rgba(0,0,0,0.35); }
+#modoVelaVideoWrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.letter-text { font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; font-size: 1.02rem; line-height: 1.75; color: #2b2523; text-align: left; min-height: 90px; margin: 0; white-space: pre-wrap; opacity: 0; transition: opacity 1s ease; }
+.letter-text.versiculo-visivel { opacity: 1; }
+.letter-signoff { font-family: 'Alex Brush', cursive; font-size: 1.7rem; color: var(--rosegold-dark); margin-top: 10px; opacity: 0; transition: opacity 0.6s ease; }
+.letter-signoff.visivel { opacity: 1; }
+.envelope-hint { text-align: center; color: rgba(255,255,255,0.45); font-size: 0.72rem; letter-spacing: 1px; text-transform: uppercase; margin-top: 8px; opacity: 0; transition: opacity 0.6s ease; }
+.envelope-hint.visivel { opacity: 1; }
+
+/* ---------------- Seleção de regras do contrato ---------------- */
+.rules-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.rule-card { background: rgba(255,255,255,0.06); border: 1px solid rgba(183,110,121,0.35); border-radius: 12px; padding: 16px 10px 14px; text-align: center; cursor: pointer; transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease, opacity 0.2s ease; position: relative; user-select: none; }
+.rule-card i.rule-icon { font-size: 1.35rem; color: var(--rosegold); display: block; margin-bottom: 8px; }
+.rule-card p { font-size: 0.74rem; color: #f0d9dd; margin: 0; line-height: 1.4; }
+.rule-card:active { transform: scale(0.97); }
+.rule-card.selecionada { background: rgba(183,110,121,0.28); border-color: var(--rosegold); }
+.rule-card.disabled { opacity: 0.35; pointer-events: none; }
+.rule-check { position: absolute; top: 8px; right: 8px; width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.35); background: rgba(0,0,0,0.15); display: flex; align-items: center; justify-content: center; font-size: 0.6rem; color: transparent; }
+.rule-card.selecionada .rule-check { background: var(--rosegold); border-color: var(--rosegold); color: #fff; }
+#btnGerarContrato:disabled { opacity: 0.5; }
+
+/* ---------------- Vinheta de abertura ---------------- */
+.vinheta-abertura { position: fixed; inset: 0; z-index: 11000; background: radial-gradient(circle at 50% 40%, #3a2029 0%, #1a0f13 75%); display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; transition: opacity 0.7s ease; }
+.vinheta-abertura.vinheta-saida { opacity: 0; pointer-events: none; }
+.vinheta-brilho { position: absolute; width: 340px; height: 340px; border-radius: 50%; background: radial-gradient(circle, rgba(183,110,121,0.55) 0%, transparent 70%); animation: vinhetaBrilhoPulse 2.4s ease-in-out infinite; }
+@keyframes vinhetaBrilhoPulse { 0%, 100% { transform: scale(0.9); opacity: 0.7; } 50% { transform: scale(1.15); opacity: 1; } }
+.vinheta-logo { font-family: 'Cormorant Garamond', Georgia, serif; color: #FAF9F6; font-size: 2.6rem; letter-spacing: 8px; font-weight: 600; z-index: 2; margin: 0; animation: vinhetaLogoEntra 1.4s ease forwards; opacity: 0; }
+.vinheta-sub { font-family: 'Jost', sans-serif; color: var(--rosegold); font-size: 0.75rem; letter-spacing: 6px; z-index: 2; margin-top: 6px; animation: vinhetaLogoEntra 1.4s ease 0.3s forwards; opacity: 0; }
+@keyframes vinhetaLogoEntra { from { opacity: 0; transform: translateY(10px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+.vinheta-particula { position: absolute; width: 4px; height: 4px; border-radius: 50%; background: var(--rosegold); opacity: 0; z-index: 1; animation: vinhetaParticulaFlutuar 3.2s ease-in-out infinite; }
+.vinheta-particula.p1 { top: 30%; left: 25%; animation-delay: 0s; }
+.vinheta-particula.p2 { top: 65%; left: 70%; animation-delay: 0.5s; }
+.vinheta-particula.p3 { top: 40%; left: 78%; animation-delay: 1s; }
+.vinheta-particula.p4 { top: 70%; left: 30%; animation-delay: 1.5s; }
+.vinheta-particula.p5 { top: 20%; left: 55%; animation-delay: 2s; }
+@keyframes vinhetaParticulaFlutuar { 0%, 100% { opacity: 0; transform: translateY(0); } 50% { opacity: 0.9; transform: translateY(-18px); } }
+
+/* ---------------- Popup de cupom falso ---------------- */
+.cupom-overlay { position: fixed; inset: 0; z-index: 10400; background: rgba(20,20,20,0.55); display: flex; align-items: center; justify-content: center; padding: 20px; overscroll-behavior: contain; }
+.cupom-box { background: white; border-radius: 18px; padding: 30px 24px 24px; max-width: 340px; width: 100%; text-align: center; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.35); animation: fadeUp 0.5s ease forwards; }
+.cupom-close { position: absolute; top: 12px; right: 14px; background: none; border: none; font-size: 1.4rem; line-height: 1; color: #999; }
+.cupom-icon { width: 56px; height: 56px; border-radius: 50%; margin: 0 auto 12px; background: rgba(183,110,121,0.12); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: var(--rosegold); }
+.cupom-eyebrow { font-size: 0.68rem; letter-spacing: 2px; text-transform: uppercase; color: var(--rosegold-dark); font-weight: 600; margin-bottom: 4px; }
+.cupom-title { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.5rem; font-weight: 600; margin-bottom: 8px; }
+.cupom-text { font-size: 0.9rem; color: #5a5048; margin-bottom: 14px; }
+.cupom-code-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: #999; margin-bottom: 4px; }
+.cupom-code { display: inline-block; border: 2px dashed var(--rosegold); border-radius: 8px; padding: 8px 20px; font-weight: bold; letter-spacing: 3px; color: var(--rosegold-dark); font-size: 1.1rem; background: rgba(183,110,121,0.06); }
+
+/* ---------------- Nossa história: fundo, título, contador vivo ---------------- */
+.romance-page { display: none; position: relative; overflow: hidden; min-height: 100vh; min-height: 100dvh; width: 100%; background: linear-gradient(180deg, #241419 0%, #3a2029 55%, #4a2c34 100%); color: white; padding: 50px 20px 60px; }
+
+/* Tela de carregamento discreta enquanto "Nossa História" busca vídeo,
+   assinatura, timeline, cápsula do tempo etc. no IndexedDB — some sozinha
+   assim que tudo estiver pronto (ver goToRomancePage em js/romance.js). */
+.romance-loading-overlay { position: fixed; inset: 0; z-index: 10900; background: linear-gradient(180deg, #241419 0%, #3a2029 55%, #4a2c34 100%); display: flex; align-items: center; justify-content: center; overscroll-behavior: contain; transition: opacity 0.3s ease; }
+.romance-loading-box { width: min(78vw, 260px); text-align: center; }
+.romance-loading-texto { font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; font-size: 1rem; color: rgba(240,217,221,0.75); margin-bottom: 14px; }
+.romance-loading-barra-fundo { width: 100%; height: 3px; background: rgba(255,255,255,0.15); border-radius: 3px; overflow: hidden; }
+.romance-loading-barra { height: 100%; width: 6%; background: var(--rosegold); border-radius: 3px; transition: width 0.35s ease; }
+.romance-title { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 2.6rem; font-weight: 600; }
+.romance-divider { width: 60px; height: 1px; background: var(--rosegold); margin: 22px auto; position: relative; }
+.romance-divider::before { content: '♥'; position: absolute; top: -9px; left: 50%; transform: translateX(-50%); color: var(--rosegold); font-size: 0.8rem; background: transparent; }
+.romance-date-badge { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.05rem; letter-spacing: 1px; color: #f0d9dd; margin-top: 6px; }
+.easter-egg-sobrenome { font-size: 0.78rem; color: rgba(255,255,255,0.5); font-style: italic; max-width: 380px; margin: 14px auto 0; }
+.timeline-item { background: rgba(255,255,255,0.06); border-left: 3px solid var(--rosegold); border-radius: 8px; padding: 16px 18px; margin-bottom: 15px; }
+.timeline-item strong { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.1rem; color: #f0d9dd; }
+.timeline-item-inner { display: flex; gap: 12px; align-items: flex-start; }
+.timeline-thumb, .timeline-item-inner .imagem-placeholder-vazio { width: 56px; height: 56px; border-radius: 8px; object-fit: cover; flex-shrink: 0; background: #3a2a2f; border: 1px solid rgba(183,110,121,0.4); cursor: pointer; }
+.romance-section-title { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.4rem; text-align:center; margin-bottom: 20px; }
+.romance-video-wrap video { width: 100%; border-radius: 12px; border: 3px solid var(--rosegold); background:#000; }
+.contract-box { background: rgba(255,255,255,0.08); border: 1px solid rgba(183,110,121,0.5); border-radius: 14px; padding: 20px; text-align:center; }
+.contract-signature-img { max-width: 260px; width: 100%; border-radius: 8px; padding: 6px; margin-top: 10px; background: transparent; }
+.contract-box p.text-start { text-align: left !important; }
+
+/* ---------------- Contrato de namoro (papel impresso) ---------------- */
+.contract-paper { background: #FBF7F0; color: #2b2523; border-radius: 4px; border: 1px solid #d9c9ab; box-shadow: 0 22px 45px rgba(0,0,0,0.45); padding: clamp(22px, 6vw, 40px) clamp(18px, 5vw, 34px); position: relative; }
+.contract-paper::before { content: ''; position: absolute; inset: 8px; border: 1px solid #e3d5ba; border-radius: 2px; pointer-events: none; }
+.contract-inner { position: relative; font-family: 'Cormorant Garamond', Georgia, serif; }
+.contract-kicker { text-align: center; font-family: 'Jost', sans-serif; font-size: 0.68rem; letter-spacing: 3px; text-transform: uppercase; color: var(--rosegold-dark); margin-bottom: 6px; font-weight: 600; }
+.contract-title { text-align: center; font-size: 1.55rem; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px; color: #2b2523; }
+.contract-paper .romance-divider { background: var(--rosegold-dark); }
+.contract-paper .romance-divider::before { color: var(--rosegold-dark); }
+.contract-intro { font-size: 1rem; line-height: 1.75; text-align: justify; margin-bottom: 16px; }
+.contract-parties { font-family: 'Jost', sans-serif; font-size: 0.85rem; line-height: 1.8; margin-bottom: 20px; }
+.contract-articles { list-style: none; padding: 0; margin: 0 0 18px; }
+.contract-articles li { font-size: 0.95rem; line-height: 1.7; text-align: justify; margin-bottom: 13px; }
+.contract-articles li strong { color: var(--rosegold-dark); margin-right: 4px; }
+.contract-closing { font-size: 0.95rem; line-height: 1.75; text-align: justify; font-style: italic; margin-bottom: 22px; }
+.contract-local-data { text-align: center; font-family: 'Jost', sans-serif; font-size: 0.8rem; letter-spacing: 0.5px; color: #5a5048; margin-bottom: 30px; }
+.contract-signatures { display: flex; flex-wrap: wrap; gap: 26px; justify-content: center; margin-bottom: 26px; }
+.signature-block { flex: 1 1 200px; max-width: 240px; text-align: center; }
+.signature-img { max-height: 68px; max-width: 100%; object-fit: contain; display: block; margin: 0 auto; }
+.signature-cursive { font-family: 'Alex Brush', cursive; font-size: 2.5rem; color: #2b2523; line-height: 1; transform: rotate(-2deg); margin: 4px 0 2px; }
+.signature-line { border-top: 1px solid #b3a184; margin-top: 6px; padding-top: 6px; }
+.signature-name { font-family: 'Jost', sans-serif; font-size: 0.85rem; font-weight: 600; margin: 0; color: #2b2523; }
+.signature-role { font-family: 'Jost', sans-serif; font-size: 0.68rem; letter-spacing: 1.5px; text-transform: uppercase; color: #8a7a5c; margin: 2px 0 0; }
+.contract-witness { max-width: 240px; margin: 0 auto; text-align: center; }
+.contract-witness .signature-line { border-top-style: dashed; }
+.counter-badge { display: inline-block; background: rgba(183,110,121,0.15); border: 1px solid rgba(183,110,121,0.5); border-radius: 999px; padding: 8px 18px; font-size: 0.85rem; margin-top: 14px; }
+.btn-share { background: transparent; border: 1px solid var(--rosegold); color: var(--rosegold); border-radius: 999px; padding: 10px 22px; font-weight: bold; }
+.btn-share:hover { background: var(--rosegold); color: white; }
+
+/* ---------------- Mesa de fotos ("Nossos momentos") ---------------- */
+.table-gallery { position: relative; max-width: 480px; margin: 0 auto; padding: 34px 8px 55px; }
+.table-photo { background: #fff; padding: 10px 10px 32px 10px; border-radius: 3px; box-shadow: 0 10px 26px rgba(0,0,0,0.5); width: 47%; display: inline-block; margin: 2.5% 1%; vertical-align: top; transition: transform 0.25s ease, box-shadow 0.25s ease, z-index 0s; }
+.table-photo img, .table-photo .imagem-placeholder-vazio { width: 100%; height: 190px; object-fit: cover; display: block; border-radius: 1px; background:#3a2a2f; }
+.table-photo:active { transform: scale(1.08) rotate(0deg) !important; z-index: 20; box-shadow: 0 14px 30px rgba(0,0,0,0.55); }
+.table-photo:nth-child(1) { transform: rotate(-6deg) translateY(6px); margin-right: -4%; z-index: 4; }
+.table-photo:nth-child(2) { transform: rotate(4deg); z-index: 3; }
+.table-photo:nth-child(3) { transform: rotate(3deg) translateY(10px); margin-top: -6%; z-index: 2; margin-left: -3%; }
+.table-photo:nth-child(4) { transform: rotate(-4deg); z-index: 1; }
+
+.skip-link { color: rgba(255,255,255,0.35); font-size: 0.72rem; text-decoration: underline; background: none; border: none; margin-top: 18px; }
+
+/* ---------------- "Coisas que a Poloni ama" ---------------- */
+.ama-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.ama-card { background: rgba(255,255,255,0.06); border: 1px solid rgba(183,110,121,0.35); border-radius: 12px; padding: 16px 12px; text-align: center; }
+.ama-card i { font-size: 1.3rem; color: var(--rosegold); display: block; margin-bottom: 8px; }
+.ama-card p { font-size: 0.78rem; color: #f0d9dd; margin: 0; line-height: 1.45; }
+
+/* Nossos bichos: cartõezinhos discretos, com fundo levemente esverdeado
+   (bem sutil) pra remeter a "campo aberto", sem sair da paleta rosé do
+   resto do site. */
+.bichos-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.bicho-card { background: linear-gradient(160deg, rgba(122,144,101,0.12), rgba(255,255,255,0.05)); border: 1px solid rgba(183,110,121,0.3); border-radius: 14px; padding: 12px 6px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; transition: transform 0.15s ease, background 0.15s ease; }
+.bicho-card:active { transform: scale(0.96); background: linear-gradient(160deg, rgba(122,144,101,0.22), rgba(255,255,255,0.08)); }
+.bicho-emoji { font-size: 1.5rem; line-height: 1; }
+.bicho-nome { font-size: 0.72rem; color: #f0d9dd; }
+.bichos-memoria { text-align: center; font-size: 0.78rem; color: rgba(240,217,221,0.65); font-style: italic; margin-top: 14px; margin-bottom: 0; }
+.bicho-memoria-nome { cursor: pointer; text-decoration: underline; text-decoration-color: rgba(240,217,221,0.35); text-underline-offset: 3px; }
+
+/* Destaque especial do Slinky — um pouco mais presente que os demais "em
+   memória", porque o texto ao lado é mais longo e mais pessoal. */
+.bicho-slinky-destaque { margin-top: 16px; padding: 16px; border-radius: 14px; background: linear-gradient(160deg, rgba(122,144,101,0.14), rgba(255,255,255,0.04)); border: 1px solid rgba(183,110,121,0.3); text-align: center; cursor: pointer; }
+.bicho-slinky-emoji { font-size: 1.6rem; display: block; margin-bottom: 4px; }
+.bicho-slinky-nome { font-size: 0.85rem; font-weight: 600; color: var(--rosegold); margin: 0 0 6px; }
+.bicho-slinky-texto { font-size: 0.78rem; color: rgba(240,217,221,0.85); line-height: 1.5; margin: 0; font-style: italic; }
+@media (max-width: 380px) { .bichos-grid { grid-template-columns: repeat(3, 1fr); } }
+
+/* Mapa da relação: trilha vertical com um "pin" por lugar, conectados por
+   uma linha pontilhada, tipo um roteiro de viagem desenhado à mão. A
+   linha é posicionada de forma absoluta (não em grid) porque sua altura
+   precisa acompanhar a altura real do texto de cada card, que varia. */
+.mapa-trilha { display: flex; flex-direction: column; }
+.mapa-card { display: flex; column-gap: 12px; position: relative; padding-bottom: 22px; }
+.mapa-card:last-child { padding-bottom: 0; }
+.mapa-pin { flex: none; width: 36px; height: 36px; border-radius: 50%; background: rgba(183,110,121,0.18); border: 1px solid rgba(183,110,121,0.45); display: flex; align-items: center; justify-content: center; color: var(--rosegold); font-size: 1rem; z-index: 1; overflow: hidden; }
+.mapa-pin-foto { padding: 0; }
+.mapa-pin-foto img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.mapa-card-clicavel { cursor: pointer; }
+.mapa-card-clicavel:hover .mapa-pin-foto { border-color: var(--rosegold); box-shadow: 0 0 0 2px rgba(183,110,121,0.35); }
+.mapa-linha { position: absolute; left: 17px; top: 36px; bottom: 0; width: 0; border-left: 2px dashed rgba(183,110,121,0.35); }
+.mapa-card:last-child .mapa-linha { display: none; }
+.mapa-conteudo { flex: 1; min-width: 0; }
+.mapa-nome { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.05rem; font-weight: 600; color: #fff; margin: 2px 0 0; }
+.mapa-cidade { font-size: 0.7rem; letter-spacing: 0.5px; text-transform: uppercase; color: rgba(240,217,221,0.55); margin: 0 0 6px; }
+.mapa-texto { font-size: 0.82rem; color: #f0d9dd; margin: 0; line-height: 1.5; }
+.mapa-card-futuro .mapa-pin { background: rgba(122,144,101,0.18); border-color: rgba(122,144,101,0.5); color: #a9c48d; }
+.mapa-card-futuro .mapa-nome { color: #d9e8c8; }
+.mapa-card-futuro .mapa-texto { font-style: italic; opacity: 0.9; }
+
+/* ---------------- Modal "todos os nossos lugares" (trilha completa do mapa) ---------------- */
+.mapa-modal-caixa { max-width: 440px; width: 100%; background: rgba(20,14,17,0.97); border: 1px solid rgba(183,110,121,0.4); border-radius: 12px; padding: 24px 20px; margin: auto; max-height: 85vh; overflow-y: auto; }
+.mapa-modal-titulo { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.15rem; font-weight: 600; color: #fff; text-align: center; margin-bottom: 18px; }
+
+/* Botão visível pra abrir a carta escondida — antes era um ponto quase
+   invisível no rodapé; agora é um botão de verdade, fácil de achar. */
+.btn-carta-discussao { display: block; margin: 34px auto 4px; background: rgba(183,110,121,0.14); border: 1px solid rgba(183,110,121,0.4); color: #f0d9dd; padding: 12px 22px; border-radius: 999px; font-size: 0.85rem; }
+
+/* CORREÇÃO: "align-items: center" com conteúdo mais alto que a tela
+   fazia o overlay abrir mostrando o meio/fim do papel, exigindo arrastar
+   pra cima devagar pra achar o começo. Com "flex-start" + padding mais
+   generoso (que se adapta em telas pequenas e grandes com clamp), o
+   papel sempre abre mostrando o topo, e ainda sobra respiro nas bordas
+   em qualquer aparelho. */
+.carta-discussao-overlay { position: fixed; inset: 0; z-index: 12500; background: rgba(10,6,8,0.94); display: flex; align-items: flex-start; justify-content: center; padding: clamp(28px, 8vh, 60px) clamp(18px, 6vw, 40px); overflow-y: auto; overscroll-behavior: contain; }
+.carta-discussao-papel { max-width: 380px; width: 100%; background: #faf0e1; border-radius: 4px; padding: clamp(26px, 6vw, 38px) clamp(20px, 5vw, 30px); box-shadow: 0 20px 50px rgba(0,0,0,0.5); margin: auto; }
+.carta-discussao-papel .letter-text { color: #2b2523; }
+
+.carta-discussao-dica { font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; font-size: 0.95rem; color: #4a3b38; text-align: center; margin: 0 0 16px; }
+.carta-discussao-senha-input { color: #2b2523 !important; border-color: rgba(43,37,35,0.25) !important; background: rgba(43,37,35,0.05) !important; letter-spacing: 2px !important; text-transform: none; }
+.carta-discussao-senha-input::placeholder { color: rgba(43,37,35,0.35); }
+.carta-discussao-pergunta-texto { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.6rem; text-align: center; color: #2b2523; margin: 6px 0 0; }
+.carta-discussao-mensagem-fofa { font-size: 0.9rem; text-align: center; color: #4a3b38; line-height: 1.6; margin: 16px 0 0; font-style: italic; }
+
+.mais-opcoes-papel { max-width: 460px; }
+.carta-discussao-papel .btn-outline-dark { color: #2b2523; border-color: rgba(43,37,35,0.35); }
+.carta-discussao-papel .btn-outline-dark:hover, .carta-discussao-papel .btn-outline-dark:active { background: rgba(43,37,35,0.08); color: #2b2523; }
+
+/* Dica visual discreta: um girassolzinho perto de qualquer elemento que
+   seja um easter egg clicável (5 toques). Bem discreto na primeira visita
+   de propósito (ela não deve reparar de cara), e um pouco mais visível
+   depois que ela já visitou a loja uma vez (classe
+   .easter-egg-dica-grande, aplicada via JS em store.js). */
+.easter-egg-gatilho { cursor: pointer; }
+.easter-egg-dica { font-size: 0.5rem; opacity: 0.35; margin-left: 3px; display: inline-block; transition: font-size 0.3s ease, opacity 0.3s ease; }
+.easter-egg-dica-canto { position: absolute; top: 6px; right: 8px; margin-left: 0; z-index: 2; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2)); }
+.easter-egg-dica-grande { font-size: 0.75rem; opacity: 0.6; }
+
+.lua-easter-egg-morse { font-family: 'Courier New', Courier, monospace; font-size: 1.1rem; letter-spacing: 2px; color: #2b2523; word-break: break-all; line-height: 1.8; margin: 10px 0; }
+
+/* Card de adjetivo — transição suave entre uma carta e outra, clicável
+   (além do botão "mais um", tocar direto no card também passa a carta) */
+.adjetivo-card { background: linear-gradient(160deg, rgba(183,110,121,0.14), rgba(255,255,255,0.05)); border: 1px solid rgba(183,110,121,0.35); border-radius: 16px; padding: 28px 20px; text-align: center; cursor: pointer; opacity: 0; transform: translateY(6px); transition: opacity 0.3s ease, transform 0.3s ease; min-height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.adjetivo-card-visivel { opacity: 1; transform: translateY(0); }
+.adjetivo-eyebrow { font-family: 'Jost', sans-serif; font-size: 0.65rem; letter-spacing: 3px; text-transform: uppercase; color: rgba(240,217,221,0.55); margin: 0 0 6px; }
+.adjetivo-palavra { font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; font-size: 1.7rem; color: var(--rosegold); margin: 0 0 8px; }
+.adjetivo-motivo { font-size: 0.85rem; color: #f0d9dd; line-height: 1.55; margin: 0; max-width: 320px; }
+
+/* Especial de 8 de agosto — visual um pouco mais festivo que o resto do
+   site (borda dourada, glow suave), pra se destacar como algo raro. */
+.aniversario-card { background: linear-gradient(160deg, rgba(255,196,120,0.16), rgba(183,110,121,0.1)); border: 1px solid rgba(255,196,120,0.4); border-radius: 16px; padding: 22px 20px; text-align: center; box-shadow: 0 0 30px rgba(255,196,120,0.12); }
+.aniversario-topo { font-family: 'Jost', sans-serif; font-size: 0.72rem; letter-spacing: 2px; text-transform: uppercase; color: #ffc478; margin: 0 0 10px; }
+.aniversario-texto { font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; font-size: 0.95rem; color: #fff0dd; line-height: 1.7; margin: 0; white-space: pre-wrap; }
+
+/* Vídeo dentro do bloco de aniversário (mesmo espírito visual do
+   momento-lento-container, mas com controles visíveis, já que aqui o
+   áudio do próprio vídeo importa). */
+.aniversario-video-wrap { margin-top: 18px; border-radius: 14px; overflow: hidden; background: #000; }
+.aniversario-video-wrap video { width: 100%; display: block; max-height: 420px; }
+
+/* Botão pequeno de tocar/pausar a música de aniversário — some sozinho
+   se não houver arquivo de música (ver js/romance.js). Existe porque
+   alguns navegadores bloqueiam autoplay com som. */
+.aniversario-musica-btn { margin-top: 16px; width: 42px; height: 42px; border-radius: 50%; border: 1px solid rgba(255,196,120,0.4); background: rgba(255,196,120,0.12); color: #ffc478; font-size: 1.1rem; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s ease, background 0.2s ease; }
+.aniversario-musica-btn:hover { background: rgba(255,196,120,0.22); transform: scale(1.06); }
+.aniversario-musica-btn.tocando { animation: aniversarioMusicaPulso 1.6s ease-in-out infinite; }
+@keyframes aniversarioMusicaPulso { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,196,120,0.35); } 50% { box-shadow: 0 0 0 8px rgba(255,196,120,0); } }
+
+/* Chuva de corações e balões subindo de baixo pra cima na tela, só no
+   dia do aniversário dela (ver iniciarChuvaDeAniversario em
+   js/romance.js). Container fixo, cobre a tela inteira, mas não
+   atrapalha nenhum clique por baixo. */
+.aniversario-chuva { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 9999; }
+.aniversario-chuva-item { position: absolute; bottom: -60px; font-size: 1.8rem; line-height: 1; opacity: 0; will-change: transform, opacity; animation-name: aniversarioSubir; animation-timing-function: ease-in; animation-fill-mode: forwards; }
+@keyframes aniversarioSubir {
+    0% { transform: translate(0, 0) rotate(0deg); opacity: 0; }
+    10% { opacity: 1; }
+    50% { transform: translate(var(--aniversario-desvio, 20px), -55vh) rotate(12deg); }
+    90% { opacity: 1; }
+    100% { transform: translate(calc(var(--aniversario-desvio, 20px) * -1), -115vh) rotate(-10deg); opacity: 0; }
+}
+
+/* ----------------------------------------------------------------------
+   "NOSSO CÉU" — timeline em forma de constelação. Fundo com estrelinhas
+   decorativas piscando (geradas via JS, ver renderizarTimeline) e uma
+   estrela clicável por marco, em zigue-zague descendo a tela.
+   ---------------------------------------------------------------------- */
+.ceu-subtitulo { text-align: center; font-size: 0.78rem; color: rgba(240,217,221,0.6); font-style: italic; margin-bottom: 16px; }
+.ceu-estrelado { position: relative; background: radial-gradient(ellipse at 50% 0%, rgba(60,30,45,0.4) 0%, rgba(15,8,12,0.6) 55%, rgba(10,5,8,0.75) 100%); border-radius: 18px; overflow: hidden; border: 1px solid rgba(183,110,121,0.25); }
+
+.ceu-fundo-estrelas { position: absolute; inset: 0; pointer-events: none; }
+.ceu-estrela-fundo { position: absolute; background: #fff; border-radius: 50%; opacity: 0.35; animation: ceuPiscar 3.5s ease-in-out infinite; }
+@keyframes ceuPiscar { 0%, 100% { opacity: 0.15; } 50% { opacity: 0.75; } }
+@media (prefers-reduced-motion: reduce) { .ceu-estrela-fundo { animation: none; opacity: 0.4; } }
+
+/* Nuvens de nebulosa e a lua — só pra dar mais profundidade e clima de
+   céu de verdade, sem atrapalhar a leitura nem o toque nas estrelas. */
+.ceu-nebulosa { position: absolute; border-radius: 50%; filter: blur(30px); pointer-events: none; opacity: 0.55; }
+.ceu-nebulosa-1 { top: -10%; left: -15%; width: 60%; height: 40%; background: radial-gradient(circle, rgba(183,110,121,0.35) 0%, rgba(183,110,121,0) 70%); }
+.ceu-nebulosa-2 { bottom: 5%; right: -18%; width: 55%; height: 45%; background: radial-gradient(circle, rgba(120,90,160,0.28) 0%, rgba(120,90,160,0) 70%); }
+.ceu-lua {
+    position: absolute; top: 22px; right: 28px; width: 38px; height: 38px; border-radius: 50%; padding: 0; border: none;
+    background: radial-gradient(circle at 35% 32%, #fff9ec 0%, #ffedc7 45%, #f2d9a3 75%, rgba(255,233,194,0.15) 100%);
+    box-shadow: 0 0 20px 6px rgba(255,233,194,0.3), 0 0 40px 14px rgba(255,233,194,0.12);
+    cursor: pointer; animation: ceuLuaRespirar 6s ease-in-out infinite;
+    z-index: 4; /* CORREÇÃO: a primeira estrela da constelação cai quase em cima da lua e, sem z-index, ela vinha depois no HTML — então ficava por cima e "roubava" o toque. Isso é o motivo real dos 5 toques não funcionarem. */
+}
+.ceu-lua::before { content: ''; position: absolute; inset: -14px; border-radius: 50%; } /* área de toque maior que o círculo visível, mais fácil de acertar no celular */
+.ceu-lua-cratera { position: absolute; border-radius: 50%; background: rgba(200,170,120,0.35); overflow: hidden; }
+.ceu-lua-cratera-1 { width: 9px; height: 9px; top: 20%; left: 25%; }
+.ceu-lua-cratera-2 { width: 6px; height: 6px; top: 55%; left: 55%; }
+.ceu-lua-cratera-3 { width: 5px; height: 5px; top: 32%; left: 62%; }
+@keyframes ceuLuaRespirar { 0%, 100% { box-shadow: 0 0 20px 6px rgba(255,233,194,0.3), 0 0 40px 14px rgba(255,233,194,0.12); } 50% { box-shadow: 0 0 26px 9px rgba(255,233,194,0.4), 0 0 48px 18px rgba(255,233,194,0.18); } }
+@media (prefers-reduced-motion: reduce) { .ceu-lua { animation: none; } }
+
+.ceu-estrelas-cadentes { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.ceu-estrela-cadente {
+    position: absolute; width: 2px; height: 2px; background: #fff; border-radius: 50%; opacity: 0;
+    box-shadow: 0 0 6px 2px rgba(255,255,255,0.6);
+    animation-name: ceuCadentePassar; animation-timing-function: ease-in; animation-iteration-count: infinite;
+    animation-duration: 3s; /* sobrescrito por JS (animationDuration inline) com um valor aleatório por estrela */
+}
+/* O rastro nasce exatamente no ponto da estrela (left:0, transform-origin
+   na ponta esquerda) e gira pra apontar pra trás da direção real do
+   movimento — nunca fixo pra um lado só, sempre coerente com --cadente-
+   rastro-rot calculado em JS a partir de pra onde a estrela realmente vai. */
+.ceu-estrela-cadente::before {
+    content: ''; position: absolute; left: 0; top: 50%; width: 62px; height: 1px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.85), rgba(255,255,255,0));
+    transform-origin: 0 50%;
+    transform: rotate(var(--cadente-rastro-rot, 180deg));
+}
+@keyframes ceuCadentePassar {
+    0% { opacity: 0; transform: translate(0, 0); }
+    4% { opacity: 1; }
+    22% { opacity: 0; transform: translate(var(--cadente-dx, -260px), var(--cadente-dy, 90px)); }
+    100% { opacity: 0; transform: translate(var(--cadente-dx, -260px), var(--cadente-dy, 90px)); }
+}
+@media (prefers-reduced-motion: reduce) { .ceu-estrela-cadente { animation: none; opacity: 0; } }
+
+/* Navezinha alienígena — easter egg raro, cruza bem devagar uma vez a
+   cada 5 minutos. Feita só com CSS: corpo elíptico, cúpula e luzinhas
+   piscando embaixo. */
+.ceu-nave-alienigena { position: absolute; width: 46px; height: 18px; animation: ceuNaveCruzar 11s linear forwards; }
+.ceu-nave-corpo { position: absolute; inset: 6px 0 0; border-radius: 50%; background: linear-gradient(180deg, #d8dde3 0%, #9aa3b0 55%, #6d7683 100%); box-shadow: 0 0 10px 2px rgba(180,200,255,0.35); }
+.ceu-nave-cupula { position: absolute; top: -7px; left: 50%; width: 20px; height: 14px; transform: translateX(-50%); border-radius: 50% 50% 0 0; background: linear-gradient(180deg, rgba(180,230,255,0.85), rgba(120,180,220,0.5)); }
+.ceu-nave-luz { position: absolute; bottom: 2px; width: 4px; height: 4px; border-radius: 50%; background: #ffe98a; box-shadow: 0 0 6px 2px rgba(255,233,138,0.7); animation: ceuNaveLuzPiscar 0.9s ease-in-out infinite; }
+.ceu-nave-luz-1 { left: 8px; animation-delay: 0s; }
+.ceu-nave-luz-2 { left: 21px; animation-delay: 0.3s; }
+.ceu-nave-luz-3 { left: 34px; animation-delay: 0.6s; }
+@keyframes ceuNaveCruzar {
+    0% { opacity: 0; transform: translate(0, 0); }
+    6% { opacity: 1; }
+    50% { transform: translate(calc(var(--nave-dx, 140%) / 2), -14px); }
+    94% { opacity: 1; }
+    100% { opacity: 0; transform: translate(var(--nave-dx, 140%), 6px); }
+}
+@keyframes ceuNaveLuzPiscar { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .ceu-nave-alienigena, .ceu-nave-luz { animation: none; display: none; } }
+
+.ceu-constelacao { position: relative; padding: 40px 0 60px; }
+.ceu-estrela { position: absolute; transform: translateX(-50%); background: none; border: none; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px; }
+.ceu-estrela-brilho { width: 14px; height: 14px; border-radius: 50%; background: radial-gradient(circle, #fff8e8 0%, rgba(255,220,160,0.6) 45%, rgba(255,220,160,0) 75%); box-shadow: 0 0 10px 3px rgba(255,220,160,0.35); animation: ceuEstrelaPulsar 2.4s ease-in-out infinite; }
+@keyframes ceuEstrelaPulsar { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.25); } }
+.ceu-estrela-label { font-size: 0.68rem; letter-spacing: 0.4px; color: rgba(255,240,220,0.8); white-space: nowrap; }
+.ceu-estrela-pedido .ceu-estrela-brilho { width: 20px; height: 20px; box-shadow: 0 0 18px 6px rgba(255,196,120,0.55); }
+.ceu-estrela-pedido .ceu-estrela-label { color: #ffc478; font-weight: 600; }
+
+.estrela-modal-papel { max-width: 380px; width: 100%; background: rgba(20,14,17,0.97); border: 1px solid rgba(183,110,121,0.4); border-radius: 12px; padding: 20px; text-align: center; margin: auto; }
+.estrela-modal-foto { width: 100%; max-height: 260px; object-fit: cover; border-radius: 8px; margin-bottom: 14px; cursor: pointer; }
+.estrela-modal-data { font-family: 'Jost', sans-serif; font-size: 0.72rem; letter-spacing: 2px; text-transform: uppercase; color: var(--rosegold); margin: 0 0 8px; }
+.estrela-modal-texto { font-size: 0.88rem; color: #f0d9dd; line-height: 1.6; margin: 0; }
+
+/* Câmera lenta: vídeo tocando bem devagar (playbackRate via JS), com uma
+   frase por vez surgindo suavemente por cima, tipo legenda de cinema. */
+.momento-lento-container { position: relative; border-radius: 14px; overflow: hidden; background: #000; }
+.momento-lento-container video { width: 100%; display: block; max-height: 480px; object-fit: cover; }
+.momento-lento-container::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0) 55%, rgba(0,0,0,0.75) 100%); pointer-events: none; }
+.momento-lento-frase { position: absolute; left: 0; right: 0; bottom: 18px; z-index: 1; text-align: center; padding: 0 20px; font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; font-size: 1rem; color: #fff; margin: 0; opacity: 0; transition: opacity 1.1s ease; }
+.momento-lento-frase.visivel { opacity: 1; }
+
+/* ---------------- Proteção por senha da área de memórias (item 8 do prompt) ---------------- */
+.senha-memorias-overlay { position: fixed; inset: 0; z-index: 12000; background: linear-gradient(180deg, #241419 0%, #3a2029 55%, #4a2c34 100%); display: flex; align-items: center; justify-content: center; padding: 24px; overscroll-behavior: contain; }
+.senha-memorias-box { max-width: 320px; width: 100%; text-align: center; color: white; animation: fadeUp 0.5s ease forwards; }
+.senha-memorias-titulo { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.6rem; font-weight: 600; margin: 12px 0 4px; }
+.senha-memorias-sub { font-size: 0.85rem; color: rgba(255,255,255,0.65); margin-bottom: 18px; }
+.senha-memorias-input { width: 100%; text-align: center; letter-spacing: 8px; font-size: 1.4rem; padding: 12px; border-radius: 12px; border: 1px solid rgba(183,110,121,0.5); background: rgba(255,255,255,0.08); color: white; }
+.senha-memorias-input:focus { outline: none; border-color: var(--rosegold); background: rgba(255,255,255,0.12); }
+.senha-memorias-input::placeholder { color: rgba(255,255,255,0.3); }
+.senha-shake { animation: senhaShake 0.4s ease; }
+@keyframes senhaShake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+
+/* ---------------- Contador vivo (relacionamento) ---------------- */
+.live-counter-wrap { margin-top: 18px; }
+.live-counter-label { font-size: 0.68rem; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.55); margin-bottom: 10px; }
+.live-counter-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; max-width: 420px; margin: 0 auto; }
+.lc-unit { background: rgba(255,255,255,0.06); border: 1px solid rgba(183,110,121,0.35); border-radius: 10px; padding: 8px 2px; display: flex; flex-direction: column; align-items: center; }
+.lc-num { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.3rem; font-weight: 600; color: #f0d9dd; font-variant-numeric: tabular-nums; }
+.lc-label { font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.5px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+@media (max-width: 360px) { .lc-num { font-size: 1.05rem; } }
+
+/* ---------------- Mini quiz ---------------- */
+.quiz-card { background: rgba(255,255,255,0.06); border: 1px solid rgba(183,110,121,0.35); border-radius: 16px; padding: 22px 18px; }
+.quiz-dots { display: flex; justify-content: center; gap: 6px; margin-bottom: 14px; }
+.quiz-dots span { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.25); transition: all 0.3s ease; }
+.quiz-dots span.done { background: var(--rosegold); }
+.quiz-question { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.15rem; text-align: center; margin-bottom: 16px; color: #fff; }
+.quiz-opcoes { display: flex; flex-direction: column; gap: 8px; }
+.quiz-opcao-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); color: #f0d9dd; border-radius: 10px; padding: 10px 14px; font-size: 0.88rem; text-align: left; transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease; }
+.quiz-opcao-btn:active { transform: scale(0.98); }
+.quiz-opcao-btn.selecionada.certa { background: rgba(126,231,135,0.18); border-color: #7ee787; color: #d9ffe0; }
+.quiz-opcao-btn.selecionada.errada { background: rgba(255,138,138,0.15); border-color: #ff8a8a; color: #ffd9d9; }
+.quiz-opcao-btn:disabled { opacity: 0.6; }
+.quiz-reacao { text-align: center; font-size: 0.85rem; color: #f0d9dd; margin-top: 14px; min-height: 20px; opacity: 0; transition: opacity 0.4s ease; }
+.quiz-reacao.visivel { opacity: 1; }
+
+/* ---------------- Mensagem para o futuro ---------------- */
+.futuro-overlay { position: fixed; inset: 0; z-index: 10450; background: rgba(20,20,20,0.65); display: flex; align-items: center; justify-content: center; padding: 20px; overscroll-behavior: contain; }
+.futuro-box { background: white; border-radius: 18px; padding: 26px 22px; max-width: 380px; width: 100%; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.35); max-height: 90vh; overflow-y: auto; }
+.futuro-title { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.3rem; font-weight: 600; text-align: center; margin-bottom: 6px; }
+.futuro-sub { font-size: 0.85rem; color: #5a5048; text-align: center; margin-bottom: 14px; }
+.futuro-textarea { width: 100%; border: 1px solid var(--rosegold); border-radius: 10px; padding: 10px 12px; font-family: 'Jost', sans-serif; font-size: 0.9rem; resize: vertical; min-height: 90px; color: var(--text-dark); }
+.futuro-textarea:focus { outline: none; border-color: var(--rosegold-dark); box-shadow: 0 0 0 3px rgba(183,110,121,0.15); }
+.futuro-timer { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--rosegold-dark); font-size: 0.95rem; }
+
+.mensagens-futuro-lista { max-width: 460px; margin: 20px auto 0; text-align: left; display: flex; flex-direction: column; gap: 12px; }
+.mensagem-futuro-item { background: rgba(255,255,255,0.06); border: 1px solid rgba(183,110,121,0.35); border-radius: 14px; padding: 14px 16px; }
+.mensagem-futuro-data { font-size: 0.66rem; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,0.5); margin-bottom: 8px; display: flex; align-items: center; }
+.mensagem-futuro-tipo-icon { color: var(--rosegold); margin-right: 6px; }
+.mensagem-futuro-texto { font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; font-size: 1.05rem; color: #f0d9dd; line-height: 1.6; margin: 0; white-space: pre-wrap; }
+.mensagem-futuro-audio, .mensagem-futuro-video-el { width: 100%; margin-top: 2px; }
+.mensagem-futuro-video-el { border-radius: 8px; border: 2px solid var(--rosegold); background: #000; }
+.mensagens-futuro-vazio { text-align: center; color: rgba(255,255,255,0.45); font-size: 0.85rem; margin-top: 14px; }
+
+/* ---------------- Cápsula do tempo ---------------- */
+.capsula-bloqueada { background: rgba(255,255,255,0.06); border: 1px solid rgba(183,110,121,0.35); border-radius: 16px; padding: 28px 20px; text-align: center; }
+.capsula-icone { width: 56px; height: 56px; border-radius: 50%; margin: 0 auto 14px; background: rgba(183,110,121,0.15); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: var(--rosegold); }
+.capsula-texto { font-size: 0.88rem; color: #f0d9dd; line-height: 1.6; margin-bottom: 14px; }
+.capsula-contagem { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.05rem; font-weight: 600; color: var(--rosegold); margin: 0; }
+
+/* ---------------- Playlist ---------------- */
+.playlist-card { background: rgba(255,255,255,0.06); border: 1px solid rgba(183,110,121,0.35); border-radius: 16px; padding: 20px 18px; max-width: 440px; margin: 0 auto; }
+.playlist-track-title { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.15rem; font-weight: 600; color: #fff; margin-bottom: 2px; }
+.playlist-track-artist { font-size: 0.75rem; color: rgba(255,255,255,0.55); margin-bottom: 8px; }
+.playlist-track-motivo { font-size: 0.82rem; font-style: italic; color: #f0d9dd; margin-bottom: 16px; line-height: 1.5; min-height: 20px; }
+.playlist-progress-outer { width: 100%; height: 5px; background: rgba(255,255,255,0.15); border-radius: 3px; overflow: hidden; cursor: pointer; margin-bottom: 6px; }
+.playlist-progress-inner { height: 100%; background: var(--rosegold); width: 0%; transition: width 0.15s linear; }
+.playlist-time { display: flex; justify-content: space-between; font-size: 0.65rem; color: rgba(255,255,255,0.45); font-variant-numeric: tabular-nums; margin-bottom: 14px; }
+.playlist-controls { display: flex; align-items: center; justify-content: center; gap: 22px; margin-bottom: 14px; }
+.playlist-btn-play { width: 52px; height: 52px; border-radius: 50%; background: var(--rosegold); border: none; color: #fff; font-size: 1.3rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.playlist-btn-play:active { background: #a05d67; }
+.playlist-btn-nav { background: none; border: none; color: rgba(255,255,255,0.65); font-size: 1.5rem; padding: 6px; }
+.playlist-btn-nav:active { color: #fff; }
+.playlist-tracklist { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+.playlist-track-item { display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.04); border: 1px solid transparent; border-radius: 8px; padding: 9px 12px; font-size: 0.8rem; color: #f0d9dd; cursor: pointer; text-align: left; }
+.playlist-track-item .pi-num { color: rgba(255,255,255,0.4); margin-right: 8px; font-variant-numeric: tabular-nums; }
+.playlist-track-item.ativa { border-color: var(--rosegold); background: rgba(183,110,121,0.18); }
+.playlist-track-item i { color: var(--rosegold); font-size: 0.9rem; flex-shrink: 0; margin-left: 8px; }
+
+/* ---------------- Lembranças (prints de conversas antigas) ---------------- */
+.lembrancas-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
+.lembranca-item-wrap { position: relative; }
+.lembranca-item-excluir { position: absolute; top: 5px; right: 5px; z-index: 2; width: 26px; height: 26px; border-radius: 50%; background: rgba(10,6,8,0.65); border: none; color: rgba(255,255,255,0.85); font-size: 0.75rem; display: flex; align-items: center; justify-content: center; }
+.lembranca-item-excluir:active { background: rgba(200,60,60,0.75); }
+.lembranca-item { border-radius: 10px; overflow: hidden; background: rgba(255,255,255,0.06); border: 1px solid rgba(183,110,121,0.35); aspect-ratio: 3 / 4; cursor: pointer; padding: 0; }
+.lembranca-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.lembranca-lightbox { position: fixed; inset: 0; z-index: 13000; background: rgba(0,0,0,0.92); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 24px; overscroll-behavior: contain; }
+.lembranca-lightbox img { max-width: 100%; max-height: 80vh; border-radius: 8px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+.lembranca-lightbox-legenda { color: rgba(255,255,255,0.75); font-family: 'Jost', sans-serif; font-size: 0.8rem; letter-spacing: 1px; text-align: center; margin: 0; }
+.lembranca-lightbox-close { position: absolute; top: 18px; right: 20px; background: none; border: none; color: #fff; font-size: 2rem; line-height: 1; z-index: 2; }
+.lightbox-nav-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.14); border: none; color: #fff; width: 44px; height: 44px; border-radius: 50%; font-size: 1.3rem; display: flex; align-items: center; justify-content: center; z-index: 2; }
+.lightbox-nav-btn:active { background: rgba(255,255,255,0.28); }
+
+/* Bloqueio de scroll genérico (reaproveitado pelo lightbox de lembranças e
+   por qualquer outro overlay de tela cheia do site principal) — mesma
+   técnica usada em galeria.html: trava overflow + "congela" o body na
+   posição atual via position:fixed, o jeito mais confiável de impedir
+   scroll (inclusive o bounce do iOS) atrás de um overlay. */
+html.aurora-scroll-lock, html.aurora-scroll-lock body { overflow: hidden !important; height: 100% !important; overscroll-behavior: none; }
+html.aurora-scroll-lock body { position: fixed; left: 0; right: 0; width: 100%; touch-action: none; }
+.lightbox-nav-prev { left: 12px; }
+.lightbox-nav-next { right: 12px; }
+
+/* ---------------- Elementos usados apenas para exportação ----------------
+   CORREÇÃO: antes cada `.exportavel-oculto` usava `position:fixed;
+   left:-9999px` pra sumir da tela sozinho. Um bloco de mais de 1000px de
+   largura (a constelação, por exemplo) só deslocado pra
+   longe ainda contava como conteúdo "no viewport" em alguns cenários
+   (rotação, teclado abrindo, o próprio html2canvas manipulando o elemento
+   pra gerar a imagem), podendo aparecer entrando/saindo pela lateral da
+   tela. Agora o esconderijo é feito pelo invólucro `.area-exportavel-oculta`
+   (ver abaixo), que recorta de verdade com `overflow:hidden` numa caixa de
+   0x0 — o elemento em si só precisa ficar `position: relative` (herdado das
+   classes específicas de cada card) pra ficar "ancorado" no canto desse
+   invólucro. */
+.area-exportavel-oculta { position: fixed; top: 0; left: 0; width: 0; height: 0; overflow: hidden; pointer-events: none; z-index: -1; }
+.exportavel-oculto { position: relative; }
+
+/* Constelação pra imprimir: tamanho fixo em pixels batendo com
+   IMPRIMIVEL_LARGURA_PX/ALTURA_PX (js/config.js), formato "foto revelada"
+   10x15cm a ~300dpi.
+   CORREÇÃO: a lista agora é um GRID com número de colunas e tamanho de
+   foto calculados dinamicamente em JS (calcularGradeParaCaber, em
+   js/export.js) — antes era uma coluna única com tamanho fixo, que cabia
+   certinho com a quantidade de itens de quando foi criado, mas
+   cortava/estourava a página assim que a lista crescesse (mais marcos na
+   timeline). Agora sempre cabe tudo, não importa quantos itens existam. */
+.constelacao-exportavel { position: relative; width: 1181px; height: 1772px; background: #FBF7F0; padding: 70px 56px; box-sizing: border-box; font-family: 'Cormorant Garamond', Georgia, serif; color: #2b2523; display: flex; flex-direction: column; overflow: hidden; }
+.constelacao-titulo { position: relative; z-index: 1; text-align: center; font-size: 52px; font-weight: 600; margin: 0 0 44px; }
+
+/* Constelação: fundo de galáxia (nebulosas + planeta + estrelinhas), tudo
+   em CSS puro, sempre no visual escuro/estrelado (a versão clara, que
+   ficava esquisita e sem graça, foi removida).
+   CORREÇÃO: o "planeta" antigo era só um círculo com gradiente meio sem
+   graça, e não lembrava nada de verdade. Agora tem faixas horizontais de
+   verdade (larguras e cores variadas, imitando as zonas claras e os
+   cinturões escuros de Júpiter) e a Grande Mancha Vermelha, com uma
+   sombra suave dando volume de esfera — tudo com gradiente e
+   border-radius, que o gerador de imagem (html2canvas) desenha direito
+   (diferente de clip-path/mask, que ele não capta bem, por isso não
+   foram usados aqui). */
+.constelacao-exportavel { background: #0f0810; color: #f0d9dd; }
+.constelacao-fundo-nebulosa { position: absolute; border-radius: 50%; filter: blur(70px); z-index: 0; }
+.constelacao-fundo-nebulosa-1 { top: -160px; left: -180px; width: 720px; height: 720px; background: radial-gradient(circle, rgba(183,110,121,0.45) 0%, rgba(183,110,121,0) 70%); }
+.constelacao-fundo-nebulosa-2 { bottom: -200px; right: -160px; width: 780px; height: 780px; background: radial-gradient(circle, rgba(95,70,150,0.4) 0%, rgba(95,70,150,0) 70%); }
+
+.constelacao-fundo-planeta {
+    position: absolute; z-index: 0; top: 110px; right: 80px; width: 150px; height: 150px; border-radius: 50%;
+    background:
+        /* faixas horizontais (zonas claras e cinturões escuros) */
+        repeating-linear-gradient(180deg,
+            #f0dcae 0px, #f0dcae 14px,
+            #d9a95f 14px, #d9a95f 24px,
+            #b97a3f 24px, #b97a3f 34px,
+            #e8c98a 34px, #e8c98a 46px,
+            #a8632f 46px, #a8632f 54px,
+            #f2e0b8 54px, #f2e0b8 68px,
+            #c1873f 68px, #c1873f 78px
+        );
+    box-shadow: 0 0 55px 14px rgba(210,160,90,0.3);
+    overflow: hidden;
+}
+/* sombra suave dando a sensação de esfera (lado escuro do planeta) */
+.constelacao-fundo-planeta::before { content: ''; position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle at 32% 30%, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0) 40%, rgba(0,0,0,0.35) 100%); }
+/* a Grande Mancha Vermelha */
+.constelacao-fundo-planeta::after { content: ''; position: absolute; top: 58%; left: 18%; width: 46px; height: 26px; border-radius: 50%; background: radial-gradient(circle, #c1552f 0%, #8f3a1f 100%); box-shadow: inset 0 0 6px rgba(0,0,0,0.3); }
+
+.constelacao-fundo-estrelas { position: absolute; inset: 0; z-index: 0; background-image: radial-gradient(2px 2px at 10% 15%, rgba(255,255,255,0.9), transparent), radial-gradient(1.5px 1.5px at 25% 40%, rgba(255,255,255,0.75), transparent), radial-gradient(2px 2px at 40% 12%, rgba(255,255,255,0.85), transparent), radial-gradient(1.5px 1.5px at 60% 30%, rgba(255,255,255,0.7), transparent), radial-gradient(2px 2px at 75% 55%, rgba(255,255,255,0.8), transparent), radial-gradient(1.5px 1.5px at 88% 20%, rgba(255,255,255,0.7), transparent), radial-gradient(2px 2px at 15% 75%, rgba(255,255,255,0.8), transparent), radial-gradient(1.5px 1.5px at 50% 85%, rgba(255,255,255,0.7), transparent), radial-gradient(2px 2px at 82% 80%, rgba(255,255,255,0.85), transparent), radial-gradient(1.5px 1.5px at 35% 65%, rgba(255,255,255,0.6), transparent); }
+/* estrelinhas decorativas maiores (caracteres de verdade, não CSS
+   recortado — desenham certinho na exportação) espalhadas pelo fundo */
+.constelacao-fundo-estrelas::before, .constelacao-fundo-estrelas::after { content: '✦ ✧ ✦'; position: absolute; color: rgba(255,255,255,0.5); font-size: 22px; letter-spacing: 40px; }
+.constelacao-fundo-estrelas::before { top: 8%; left: 6%; }
+.constelacao-fundo-estrelas::after { bottom: 10%; right: 10%; }
+
+/* CORREÇÃO: os itens eram fotos em círculo, sem nenhum sentido temático
+   pra uma "constelação" — agora cada marco vira uma foto emoldurada em
+   formato de cartão suave, com uma estrelinha de verdade (caractere ✦,
+   não recorte de imagem) marcando o canto, e uma linhazinha pontilhada
+   entre uma estrela e outra, reforçando o clima de céu estrelado. */
+.constelacao-lista { position: relative; z-index: 1; display: grid; gap: 34px; flex: 1; align-content: center; justify-items: center; }
+.constelacao-item { position: relative; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.constelacao-item img { object-fit: cover; border-radius: 16px; border: 3px solid #B76E79; box-shadow: 0 0 18px rgba(183,110,121,0.35); }
+.constelacao-item-estrela { position: absolute; top: -14px; right: 6%; font-size: 26px; color: #ffe9a8; text-shadow: 0 0 8px rgba(255,220,140,0.8); }
+.constelacao-item-data { font-family: 'Jost', sans-serif; letter-spacing: 1px; text-transform: uppercase; margin: 0; }
+.constelacao-item-pedido .constelacao-item-data { color: #ffc478; font-weight: 600; }
+.constelacao-item-pedido .constelacao-item-estrela { font-size: 34px; }
+
+/* Carta física com QR code — mesmo visual da carta on-screen (parchment,
+   Cormorant itálico), pensada pra sair bonita numa folha A4 impressa. */
+.carta-fisica-exportavel { width: 700px; background: #FBF7F0; padding: 50px 44px; font-family: 'Cormorant Garamond', Georgia, serif; color: #2b2523; }
+.carta-fisica-exportavel .kicker { text-align:center; font-family:'Jost',sans-serif; font-size:12px; letter-spacing:3px; text-transform:uppercase; color:#8f4d57; margin-bottom:18px; }
+.carta-fisica-exportavel .corpo { font-style:italic; font-size:19px; line-height:1.85; text-align:left; white-space:pre-wrap; margin:0; }
+.carta-fisica-exportavel .assinatura { font-family:'Alex Brush',cursive; font-size:32px; color:#8f4d57; margin-top:20px; }
+.carta-fisica-qr-wrap { text-align: center; margin-top: 34px; padding-top: 24px; border-top: 1px solid rgba(143,77,87,0.25); }
+.carta-fisica-qr-wrap #cartaFisicaQr { width: 110px; height: 110px; margin: 0 auto 8px; }
+.carta-fisica-qr-wrap #cartaFisicaQr svg { width: 100%; height: 100%; }
+.carta-fisica-qr-legenda { font-family: 'Jost', sans-serif; font-size: 12px; letter-spacing: 0.5px; color: #8f4d57; margin: 0; }
+
+.polaroid-exportavel { width: 340px; background: #ffffff; padding: 16px 16px 50px; box-shadow: none; }
+.polaroid-exportavel img, .polaroid-exportavel .imagem-placeholder-vazio { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; border-radius: 3px; }
+.polaroid-exportavel .legenda { font-family: 'Courier New', Courier, monospace; text-align: center; margin-top: 2px; font-weight: bold; color: #333; font-size: 1.1rem; }
+
+/* ---------------- Bloqueio de acesso via computador (Prioridade 1, item 9) ---------------- */
+#desktopBlockOverlay { min-height: 100vh; width: 100%; background: linear-gradient(160deg, #241419 0%, #3a2029 60%, #4a2c34 100%); display: flex; align-items: center; justify-content: center; padding: 40px 20px; }
+.desktop-block-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(183,110,121,0.4); border-radius: 20px; padding: 46px 40px; max-width: 440px; text-align: center; color: #fff; }
+.desktop-block-icon { font-size: 2.4rem; margin-bottom: 10px; display: block; }
+.desktop-block-eyebrow { font-size: 0.7rem; letter-spacing: 3px; text-transform: uppercase; color: var(--rosegold); font-weight: 600; margin-bottom: 10px; }
+.desktop-block-title { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.7rem; font-weight: 600; margin-bottom: 14px; }
+.desktop-block-texto { font-size: 0.92rem; color: rgba(255,255,255,0.75); line-height: 1.6; margin-bottom: 26px; }
+.desktop-block-qr { background: #fff; padding: 14px; border-radius: 12px; display: inline-block; margin-bottom: 16px; }
+.desktop-block-qr svg { width: 180px; height: 180px; display: block; }
+.desktop-block-hint { font-size: 0.78rem; color: rgba(255,255,255,0.5); }
+
+/* ---------------- Acessibilidade: respeita "prefers-reduced-motion" ---------------- */
+@media (prefers-reduced-motion: reduce) {
+    .glow-effect, .rotate-hint .phone-icon, .rec-dot, .cursor, .phone-icon-portrait { animation: none !important; }
+    .reveal-up { animation: none !important; opacity: 1 !important; }
+    .flashback-photo { transition: opacity 0.2s ease !important; filter: none !important; transform: none !important; }
+    .envelope, .envelope-flap, .letter-paper, .envelope-seal { transition: none !important; }
+    .vinheta-logo, .vinheta-particula { animation: none !important; }
+    .senha-shake { animation: none !important; }
+}
+
+/* ============================================================================
+   GIRASSÓIS DECORATIVOS (item 6 do prompt de correções)
+   Discretos, atrás do conteúdo (z-index baixo) e sem capturar toque.
+   ============================================================================ */
+.girassois-decoracao { position: absolute; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+.girassol { position: absolute; opacity: 0.38; filter: blur(0.2px) drop-shadow(0 4px 10px rgba(0,0,0,0.25)); animation: girassolBalanco 9s ease-in-out infinite; }
+.girassol-1 { width: 150px; height: 150px; top: -25px; left: -35px; animation-delay: 0s; }
+.girassol-2 { width: 120px; height: 120px; bottom: 50px; right: -30px; animation-delay: 2.4s; }
+.girassol-3 { width: 95px; height: 95px; bottom: -15px; left: 15px; opacity: 0.26; animation-delay: 4.8s; }
+@keyframes girassolBalanco { 0%, 100% { transform: rotate(-4deg) translateY(0); } 50% { transform: rotate(4deg) translateY(-6px); } }
+.romance-page > *:not(.girassois-decoracao) { position: relative; z-index: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+    .girassol { animation: none !important; }
+}
+
+/* ============================================================================
+   POLAROID — legenda de data + polaroid já salva (sincronizada entre aparelhos)
+   ============================================================================ */
+.polaroid-exportavel .legenda-data { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 0.85rem; color: #999; text-align: center; margin: 10px 0 0; }
+.polaroid-salva-wrap { max-width: 220px; margin: 18px auto 0; text-align: center; }
+.polaroid-salva-wrap img { width: 100%; border-radius: 4px; box-shadow: 0 6px 18px rgba(0,0,0,0.35); border: 8px solid #fff; border-bottom-width: 34px; }
+.polaroid-salva-legenda { font-size: 0.75rem; color: rgba(255,255,255,0.6); margin-top: 8px; }
+
+/* ============================================================================
+   MODAL DA CÂMERA — nova etapa antes de gerar a Polaroid (item 5 do prompt)
+   ============================================================================ */
+.polaroid-camera-modal { position: fixed; inset: 0; z-index: 3000; background: rgba(10,6,8,0.92); display: flex; align-items: center; justify-content: center; padding: 20px; overscroll-behavior: contain; }
+.polaroid-camera-card { position: relative; width: 100%; max-width: 380px; background: #1c1216; border-radius: 16px; padding: 22px 18px 26px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+.polaroid-camera-titulo { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.15rem; color: #f0d9dd; margin-bottom: 14px; }
+.polaroid-camera-close { position: absolute; top: 10px; right: 14px; background: none; border: none; color: rgba(255,255,255,0.6); font-size: 1.6rem; line-height: 1; cursor: pointer; }
+#polaroidCameraVideo, #polaroidCameraFotoCapturada { width: 100%; border-radius: 10px; background: #000; max-height: 60vh; object-fit: cover; }
+/* Espelha só a PRÉVIA ao vivo (conforto de enquadrar, tipo espelho) — a
+   foto capturada usa o frame verdadeiro, sem espelhar (ver capturarFotoPolaroid em js/export.js). */
+#polaroidCameraVideo { transform: scaleX(-1); }
+#futuroPreviewVideo { transform: scaleX(-1); } /* espelha só a prévia ao vivo — o arquivo gravado já sai espelhado corretamente, ver criarStreamEspelhado em js/utils.js */
+.polaroid-legenda-input { width: 100%; padding: 10px 14px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.06); color: #fff; font-size: 0.9rem; text-align: center; }
+.polaroid-legenda-input::placeholder { color: rgba(255,255,255,0.4); }
+
+/* ============================================================================
+   GALERIA DE LEMBRANÇAS — página própria (galeria.html), item 4 do prompt
+   ============================================================================
+   Álbum/scrapbook: fundo noturno igual ao de "Nossa História", masonry via
+   CSS columns, cada foto como uma Polaroid levemente torta (efeito "coladas
+   à mão"), zoom elegante no toque/clique e um girassol discreto no cabeçalho.
+   ============================================================================ */
+.galeria-body { background: linear-gradient(180deg, #1c1014 0%, #241419 30%, #2f1a20 100%); min-height: 100vh; min-height: 100dvh; color: #f0d9dd; }
+/* CORREÇÃO (bordas brancas na galeria): o <html> global fica com o fundo
+   claro do site (var(--offwhite), ver topo do arquivo) — só o <body> desta
+   página era escurecido. Isso aparecia como uma borda/tira branca durante o
+   "bounce" de rolagem em iPhone (quando o conteúdo escuro não cobre 100%
+   da tela por um instante). Escurecendo o <html> aqui também, o fundo por
+   trás nunca fica claro, não importa o que aconteça durante a rolagem. */
+html.galeria-html { background-color: #1c1014; }
+
+.galeria-header { text-align: center; padding: 56px 20px 28px; position: relative; }
+.galeria-header .voltar-link { position: absolute; top: 20px; left: 16px; color: rgba(255,255,255,0.55); font-size: 0.85rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+.galeria-header .voltar-link:hover { color: var(--rosegold); }
+.galeria-eyebrow { font-family: 'Jost', sans-serif; font-size: 0.68rem; letter-spacing: 4px; text-transform: uppercase; color: var(--rosegold); margin-bottom: 10px; }
+.galeria-titulo { font-family: 'Alex Brush', cursive; font-size: 3rem; color: #f8e9ec; margin: 0; line-height: 1; }
+.galeria-sub { font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; font-size: 1.05rem; color: rgba(240,217,221,0.65); max-width: 380px; margin: 12px auto 0; }
+.galeria-girassol { width: 34px; height: 34px; margin: 0 auto 6px; opacity: 0.85; }
+
+.galeria-wrap { max-width: 1100px; margin: 0 auto; padding: 0 16px 70px; }
+/* Botão separado "Ver vídeos" (galeria_101 em diante + YouTube) — fica de
+   fora do carregamento normal da galeria para que as fotos apareçam mais
+   rápido; abre a seção de vídeos só quando a pessoa aperta o botão. */
+.galeria-videos-toggle { margin: 0 0 24px; }
+.galeria-videos-toggle .galeria-carregando { margin: 14px auto 0; }
+.galeria-carregando { max-width: 320px; margin: 0 auto 24px; text-align: center; transition: opacity 0.4s ease; }
+.galeria-carregando.d-none { display: none; }
+.galeria-carregando-barra { width: 100%; height: 4px; border-radius: 999px; background: rgba(183,110,121,0.18); overflow: hidden; }
+.galeria-carregando-barra-preenchida { height: 100%; width: 0%; background: var(--rosegold); border-radius: 999px; transition: width 0.3s ease; }
+.galeria-carregando-texto { font-size: 0.75rem; color: rgba(240,217,221,0.6); margin: 8px 0 0; letter-spacing: 0.5px; }
+/* CORREÇÃO ("carregando de baixo pra cima"): antes a galeria usava
+   colunas CSS (column-count), que se AUTO-BALANCEIAM por altura. Como as
+   fotos entram com tamanhos variados e terminam de carregar fora de
+   ordem (a rede não baixa 1, 2, 3... em sequência), o navegador ficava
+   recalculando a altura ideal das colunas toda hora e redistribuindo os
+   itens entre elas — dando a impressão de que tudo "pulava" e preenchia
+   de baixo pra cima. Agora as colunas são divs de verdade montadas via
+   JS (js/galeria.js), e cada foto é colocada na coluna certa desde o
+   início, sem o navegador rebalancear nada depois — então nada mais
+   pula de lugar, e as fotos continuam exibidas na proporção original
+   (sem corte).
+*/
+.galeria-masonry { display: flex; gap: 16px; align-items: flex-start; }
+@media (min-width: 640px) { .galeria-masonry { gap: 20px; } }
+@media (min-width: 980px) { .galeria-masonry { gap: 24px; } }
+.galeria-coluna { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; }
+
+.galeria-item { break-inside: avoid; margin-bottom: 16px; background: #fdfcfa; padding: 10px 10px 30px; border-radius: 4px; box-shadow: 0 12px 28px rgba(0,0,0,0.45); opacity: 0; transform: translateY(18px) rotate(var(--tilt, 0deg)); transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.22,1,0.36,1); cursor: zoom-in; }
+.galeria-item.visivel { opacity: 1; transform: translateY(0) rotate(var(--tilt, 0deg)); }
+.galeria-item:hover { transform: translateY(-4px) rotate(0deg) scale(1.03); z-index: 2; }
+.galeria-item img { width: 100%; display: block; border-radius: 2px; background: #eee; }
+.galeria-item video { width: 100%; display: block; border-radius: 2px; background: #000; aspect-ratio: 3 / 4; object-fit: cover; }
+.galeria-item-video { position: relative; }
+.galeria-video-play {
+    position: absolute;
+    top: 10px; left: 10px; right: 10px; bottom: 30px;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+}
+.galeria-video-play i {
+    font-size: 2.2rem;
+    color: #fff;
+    background: rgba(0,0,0,0.45);
+    border-radius: 50%;
+    width: 56px; height: 56px;
+    display: flex; align-items: center; justify-content: center;
+    padding-left: 4px; /* centraliza visualmente o ícone de "play", que é levemente assimétrico */
+}
+.galeria-item .galeria-legenda { font-family: 'Courier New', Courier, monospace; font-size: 0.75rem; color: #444; text-align: center; margin-top: 8px; }
+.galeria-item:nth-child(3n) { --tilt: -2.2deg; }
+.galeria-item:nth-child(3n+1) { --tilt: 1.6deg; }
+.galeria-item:nth-child(3n+2) { --tilt: -1deg; }
+.galeria-item:nth-child(4n) { --tilt: 2.4deg; }
+
+.galeria-vazio { text-align: center; color: rgba(240,217,221,0.5); font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; font-size: 1.1rem; padding: 60px 20px; }
+
+.galeria-lightbox { position: fixed; inset: 0; z-index: 5000; background: rgba(10,6,8,0.94); display: none; align-items: center; justify-content: center; padding: 24px; overscroll-behavior: contain; }
+.galeria-lightbox.aberto { display: flex; animation: fadeUp 0.25s ease; }
+.galeria-lightbox img { max-width: 100%; max-height: 82vh; border-radius: 6px; box-shadow: 0 24px 60px rgba(0,0,0,0.6); background: #fff; padding: 10px 10px 26px; }
+.galeria-lightbox video { max-width: 100%; max-height: 82vh; border-radius: 6px; box-shadow: 0 24px 60px rgba(0,0,0,0.6); background: #000; }
+.galeria-youtube-wrap { position: relative; width: min(92vw, 640px); aspect-ratio: 16 / 9; border-radius: 6px; overflow: hidden; box-shadow: 0 24px 60px rgba(0,0,0,0.6); background: #000; }
+.galeria-youtube-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.galeria-video-play-youtube i { background: rgba(0,0,0,0.55); color: #FF0000; }
+.galeria-lightbox .galeria-legenda { font-family: 'Courier New', Courier, monospace; font-size: 0.8rem; color: #444; text-align: center; margin-top: -20px; }
+.galeria-lightbox-close { position: absolute; top: 18px; right: 20px; background: none; border: none; color: rgba(255,255,255,0.7); font-size: 2rem; line-height: 1; cursor: pointer; }
+.galeria-lightbox-download { position: absolute; top: 22px; right: 68px; color: rgba(255,255,255,0.75); font-size: 1.3rem; z-index: 5001; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; transition: color 0.2s ease; }
+.galeria-lightbox-download:hover { color: #fff; }
+
+/* Botões de navegação (anterior/próxima) do lightbox da galeria */
+.galeria-lightbox-nav { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.08); border: none; color: rgba(255,255,255,0.85); width: 44px; height: 44px; border-radius: 50%; font-size: 1.4rem; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s ease, color 0.2s ease; z-index: 5001; }
+.galeria-lightbox-nav:hover { background: rgba(255,255,255,0.18); color: #fff; }
+.galeria-lightbox-prev { left: 12px; }
+.galeria-lightbox-next { right: 12px; }
+@media (max-width: 560px) { .galeria-lightbox-prev { left: 6px; } .galeria-lightbox-next { right: 6px; } .galeria-lightbox-nav { width: 38px; height: 38px; font-size: 1.2rem; } }
+
+/* Reforço defensivo: caso o CSS do Bootstrap não carregue por algum motivo
+   (ex.: falha de rede no CDN), a galeria não pode depender só dele para
+   esconder/mostrar elementos do lightbox — daí essas classes utilitárias
+   mínimas ficarem redefinidas aqui também. */
+.d-none { display: none !important; }
+.m-0 { margin: 0 !important; }
+
+/* Bloqueia o scroll do conteúdo por trás enquanto o lightbox está aberto
+   (aplicado no <html> pelo JS ao abrir/fechar o lightbox). */
+html.galeria-scroll-lock, html.galeria-scroll-lock body { overflow: hidden !important; height: 100% !important; overscroll-behavior: none; }
+html.galeria-scroll-lock body { position: fixed; left: 0; right: 0; width: 100%; touch-action: none; }
+
+@media (prefers-reduced-motion: reduce) { .galeria-item, .galeria-lightbox { transition: none !important; animation: none !important; } }
+
+/* ============================================================================
+   AVISO DE SINCRONIZAÇÃO EM ANDAMENTO
+   Fica visível por cima de qualquer tela enquanto um envio para a nuvem
+   está em voo — dá um motivo concreto pra pessoa não travar a tela/fechar
+   o app logo depois de gravar (ver js/sync.js).
+   ============================================================================ */
+.aurora-sync-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 5000;
+    padding: 10px 16px;
+    padding-top: calc(10px + env(safe-area-inset-top, 0px));
+    background: #2a1620;
+    color: #f6d9c9;
+    font-size: 0.8rem;
+    text-align: center;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+}
+.aurora-sync-banner-erro { background: rgba(180, 60, 40, 0.95); color: #fff; }
+.aurora-aviso-fechar {
+    background: none;
+    border: none;
+    color: inherit;
+    font-size: 1.1rem;
+    line-height: 1;
+    margin-left: 8px;
+    padding: 0 4px;
+    vertical-align: middle;
+}
+
+/* ============================================================================
+   MODO VISUALIZAÇÃO DA LOJINHA ("rever sem afetar o banco")
+   ============================================================================ */
+.modo-visualizacao-barra {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 4500;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 16px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    background: #2a1620;
+    color: #f6d9c9;
+    font-size: 0.82rem;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.3);
+}
+
+/* Contador de easter eggs — pill discreto, semitransparente, legível
+   tanto no fundo claro da loja quanto no escuro de "Nossa história". */
+.contador-easter-eggs {
+    position: fixed;
+    bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+    right: 14px;
+    z-index: 3000;
+    background: rgba(20, 14, 17, 0.72);
+    color: #f6e8ea;
+    font-family: 'Jost', sans-serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.5px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.15);
+    backdrop-filter: blur(3px);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.25);
+    pointer-events: none; /* só informativo, não é clicável, não atrapalha toques por baixo */
+}
+body.modo-visualizacao-ativo .contador-easter-eggs { display: none; } /* não briga com a barra do modo visualização */
+
+/* CORREÇÃO: essa barra fixa no rodapé cobria o final da página (o botão
+   "Comprar Agora" e o rodapé da loja) — nada reservava espaço pra ela.
+   Enquanto o modo visualização está ativo, o final da loja ganha um
+   respiro extra do tamanho da barra. */
+body.modo-visualizacao-ativo #lojaScreen { padding-bottom: 92px; }
+
+/* ============================================================================
+   LEMBRETE DE BACKUP MANUAL
+   ============================================================================ */
+.lembrete-backup-card {
+    max-width: 420px;
+    margin: 20px auto 0;
+    padding: 14px 18px;
+    border-radius: 14px;
+    background: rgba(212, 175, 145, 0.12);
+    border: 1px solid rgba(212, 175, 145, 0.35);
+    color: #f0d9dd;
+    font-size: 0.85rem;
+    text-align: center;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+}
+
+/* ============================================================================
+   VINHETA EM "MODO RETORNO" (pós-pedido: "Para meu amor" em vez de "AURORA JOIAS")
+   ============================================================================ */
+.vinheta-modo-retorno .vinheta-logo {
+    font-size: 1.9rem;
+    letter-spacing: 2px;
+    text-align: center;
+    padding: 0 30px;
+    max-width: 320px;
+}
+.vinheta-modo-retorno .vinheta-sub { display: none; }
+
+/* ============================================================================
+   "O QUE EU SINTO POR VOCÊ" — texto fixo, editado direto no HTML (ver index.html)
+   ============================================================================ */
+.sentimentos-texto {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-style: italic;
+    font-size: 1.15rem;
+    line-height: 1.6;
+    color: #f6e4de;
+    white-space: pre-wrap;
+    text-align: left;
+    background: rgba(255,255,255,0.05);
+    border-left: 3px solid var(--rosegold);
+    padding: 16px 18px;
+    border-radius: 4px;
+}
+
+
+/* ============================================================================
+   AVISO DE VÍDEO GRANDE DEMAIS PRA NUVEM (com orientação de YouTube)
+   ============================================================================ */
+.video-grande-aviso {
+    margin-top: 10px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: rgba(255, 193, 7, 0.15);
+    border: 1px solid rgba(255, 193, 7, 0.4);
+    color: #ffe6a3;
+    font-size: 0.8rem;
+    line-height: 1.5;
+}
+
+/* ============================================================================
+   BOTÃO + RESUMO DO CHECKLIST — usados dentro de "Nossa História" (index.html),
+   como chamada para a página separada checklist.html.
+   ============================================================================ */
+.checklist-resumo-card {
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 16px 20px;
+    border-radius: 16px;
+    background: rgba(183,110,121,0.10);
+    border: 1px solid rgba(183,110,121,0.35);
+    text-align: center;
+}
+.checklist-resumo-texto {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 1rem;
+    color: #f6e4de;
+    margin: 0 0 10px;
+}
+.checklist-resumo-barra-fundo {
+    width: 100%;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.12);
+    overflow: hidden;
+    margin-bottom: 14px;
+}
+.checklist-resumo-barra-preenchida {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--rosegold-dark), var(--rosegold));
+    border-radius: 999px;
+    transition: width 0.5s ease;
+}
+
+/* ============================================================================
+   PÁGINA checklist.html — "Nosso Checklist"
+   Reaproveita o fundo/cabeçalho escuro de galeria.html (.galeria-body,
+   .galeria-header etc.) e acrescenta só o que é específico da lista.
+   ============================================================================ */
+html.checklist-html { background-color: #1c1014; }
+
+.checklist-wrap { max-width: 640px; margin: 0 auto; padding: 0 16px 70px; }
+
+.checklist-progresso-card {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(183,110,121,0.35);
+    border-radius: 18px;
+    padding: 18px 20px;
+    margin-bottom: 28px;
+}
+.checklist-progresso-topo { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.checklist-progresso-texto { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.15rem; color: #f8e9ec; }
+.checklist-progresso-percentual { font-family: 'Jost', sans-serif; font-size: 0.85rem; color: var(--rosegold); font-weight: 600; }
+.checklist-progresso-barra-fundo { width: 100%; height: 8px; border-radius: 999px; background: rgba(255,255,255,0.1); overflow: hidden; }
+.checklist-progresso-barra-preenchida { height: 100%; width: 0%; background: linear-gradient(90deg, var(--rosegold-dark), var(--rosegold)); border-radius: 999px; transition: width 0.5s ease; }
+.checklist-progresso-faltam { font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; font-size: 0.9rem; color: rgba(240,217,221,0.7); margin: 10px 0 0; text-align: center; }
+
+.checklist-carregando { text-align: center; color: rgba(240,217,221,0.6); padding: 30px 0; font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; }
+.checklist-carregando .spinner-border { margin-bottom: 8px; }
+.checklist-carregando.d-none { display: none; }
+
+.checklist-categorias { opacity: 0; transition: opacity 0.4s ease; }
+.checklist-categorias.checklist-categorias-visivel { opacity: 1; }
+
+.checklist-categoria { margin-bottom: 30px; }
+.checklist-categoria-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid rgba(183,110,121,0.25); }
+.checklist-categoria-titulo { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.2rem; color: #f8e9ec; margin: 0; }
+.checklist-categoria-emoji { margin-right: 8px; }
+.checklist-categoria-contador { font-family: 'Jost', sans-serif; font-size: 0.7rem; letter-spacing: 0.5px; color: rgba(240,217,221,0.55); white-space: nowrap; }
+
+.checklist-categoria-itens { display: flex; flex-direction: column; gap: 6px; }
+
+.checklist-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+.checklist-item:hover { background: rgba(255,255,255,0.04); }
+.checklist-item input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    pointer-events: none;
+}
+.checklist-item-check {
+    flex: 0 0 auto;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(240,217,221,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: transparent;
+    font-size: 0.9rem;
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+.checklist-item-texto {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 1.02rem;
+    color: rgba(240,217,221,0.9);
+    transition: color 0.2s ease, opacity 0.2s ease;
+}
+.checklist-item-feito .checklist-item-check { background: var(--rosegold); border-color: var(--rosegold); color: #fff; }
+.checklist-item-feito .checklist-item-texto { color: rgba(240,217,221,0.5); text-decoration: line-through; opacity: 0.8; }
+
+/* Item adicionado pelo casal direto pela tela (não faz parte da lista original) — borda tracejada discreta pra diferenciar, mais o botão de remover ao lado. */
+.checklist-item-linha { display: flex; align-items: center; gap: 2px; }
+.checklist-item-linha .checklist-item { flex: 1 1 auto; min-width: 0; }
+.checklist-item-personalizado { border: 1px dashed rgba(183,110,121,0.4); }
+.checklist-item-remover {
+    flex: 0 0 auto;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: rgba(240,217,221,0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+.checklist-item-remover:hover, .checklist-item-remover:active { color: #f0d9dd; background: rgba(255,255,255,0.06); }
+
+/* Botão "Adicionar item" + modal com categoria (select) e texto (textarea) — reaproveita .carta-discussao-overlay e .mapa-modal-caixa (mesmo padrão de modal já usado no mapa da relação, em index.html). */
+.checklist-adicionar-wrap { text-align: center; margin-top: 16px; }
+.checklist-modal-caixa { max-width: 420px; }
+.checklist-form-adicionar { display: flex; flex-direction: column; }
+.checklist-form-label { font-family: 'Jost', sans-serif; font-size: 0.75rem; letter-spacing: 0.4px; color: rgba(240,217,221,0.65); margin: 10px 0 6px; }
+.checklist-form-adicionar select, .checklist-form-adicionar textarea {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(183,110,121,0.35);
+    color: #f8e9ec;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 1rem;
+}
+.checklist-form-adicionar select:focus, .checklist-form-adicionar textarea:focus { outline: none; border-color: var(--rosegold); box-shadow: 0 0 0 2px rgba(183,110,121,0.25); }
+.checklist-form-adicionar textarea { resize: vertical; min-height: 60px; }
+.checklist-form-adicionar option { background: #1c1014; color: #f8e9ec; }
+.checklist-form-botoes { display: flex; gap: 10px; margin-top: 18px; }
+.checklist-form-btn { flex: 1 1 0; padding: 10px 14px; border-radius: 999px; font-family: 'Jost', sans-serif; font-size: 0.85rem; border: 1px solid rgba(183,110,121,0.4); background: transparent; color: #f0d9dd; }
+.checklist-form-btn-confirmar { background: var(--rosegold); border-color: var(--rosegold); color: #fff; }
+.checklist-form-btn-confirmar:hover, .checklist-form-btn-confirmar:active { background: #a05d67; }
+.checklist-form-btn-cancelar:hover, .checklist-form-btn-cancelar:active { background: rgba(255,255,255,0.06); }
+
+/* Item da lista "Locais adicionados por aqui" (painel de js/mapa-admin.js) — compartilhado entre o modal em index.html e o painel em diagnostico.html (ambos carregam este arquivo). */
+.mapa-admin-item { display: flex; gap: 10px; align-items: flex-start; background: rgba(255,255,255,0.05); border: 1px solid rgba(183,110,121,0.25); border-radius: 10px; padding: 10px 12px; }
+.mapa-admin-item i { font-size: 1.05rem; margin-top: 2px; flex-shrink: 0; color: var(--rosegold); }
+.mapa-admin-item strong { font-size: 0.85rem; display: block; margin-bottom: 2px; color: #f8e9ec; }
+.mapa-admin-item p { font-size: 0.75rem; color: rgba(240,217,221,0.6); margin: 0; line-height: 1.45; }
+.mapa-admin-item .btn { flex-shrink: 0; }
+
+/* Campos de texto do formulário "Adicionar local" (modal em index.html) — reaproveita .checklist-form-adicionar como estrutura (mesmo padrão do modal "Adicionar item" do checklist), só que com <input type="text"> em vez de select/textarea. */
+.checklist-form-adicionar input[type="text"] {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(183,110,121,0.35);
+    color: #f8e9ec;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 1rem;
+}
+.checklist-form-adicionar input[type="text"]:focus { outline: none; border-color: var(--rosegold); box-shadow: 0 0 0 2px rgba(183,110,121,0.25); }
+.checklist-form-adicionar input[type="text"]::placeholder { color: rgba(240,217,221,0.4); }
+.checklist-form-adicionar input[readonly] { opacity: 0.65; }
+
+@media (prefers-reduced-motion: reduce) {
+    .checklist-progresso-barra-preenchida, .checklist-resumo-barra-preenchida, .checklist-categorias, .checklist-item, .checklist-item-check { transition: none !important; }
+}

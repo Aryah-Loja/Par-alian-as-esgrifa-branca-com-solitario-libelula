@@ -37,46 +37,61 @@ let __galeriaItens = [];
 // reiniciar o carregamento ao restaurar a página de um congelamento.
 let __galeriaCarregamentoCompleto = false;
 
+// Colunas do masonry, guardadas em nível de módulo (não só dentro de
+// montarGaleria) porque a seção de vídeos (carregarVideosDaGaleria,
+// disparada pelo botão "Ver vídeos" — ver mais abaixo) precisa continuar
+// adicionando itens nas MESMAS colunas depois que a montagem inicial (só
+// fotos) já terminou.
+let __galeriaColunas = [];
+let __galeriaUltimoNumeroColunas = 0;
+
+// Evita escanear/montar a seção de vídeos mais de uma vez se a pessoa
+// apertar "Ver vídeos" de novo depois que a seção já carregou (ou
+// enquanto ainda está carregando).
+let __galeriaVideosCarregamentoIniciado = false;
+
+// As "colunas" são divs de verdade (ver CSS .galeria-coluna), não a
+// propriedade column-count do CSS — isso evita que o navegador fique
+// rebalanceando/pulando os itens de coluna conforme cada foto termina de
+// carregar com uma altura diferente da esperada (era a causa do efeito
+// "carregando de baixo pra cima"). A quantidade de colunas replica os
+// mesmos pontos de corte que existiam antes no CSS: 1 coluna no celular,
+// 2/3/4 conforme a tela cresce.
+function galeriaNumeroDeColunas() {
+    const largura = window.innerWidth;
+    if (largura >= 980) return 4;
+    if (largura >= 640) return 3;
+    if (largura >= 480) return 2;
+    return 1;
+}
+
+function galeriaMontarColunas(masonry, qtd) {
+    masonry.innerHTML = '';
+    const colunas = [];
+    for (let i = 0; i < qtd; i++) {
+        const col = document.createElement('div');
+        col.className = 'galeria-coluna';
+        masonry.appendChild(col);
+        colunas.push(col);
+    }
+    return colunas;
+}
+
 async function montarGaleria() {
     __galeriaCarregamentoCompleto = false;
     __galeriaItens = [];
     __galeriaFotosCarregadas = 0;
+    __galeriaVideosCarregamentoIniciado = false;
 
     const masonry = document.getElementById('galeriaMasonry');
     if (!masonry) return;
 
-    // As "colunas" agora são divs de verdade (ver CSS .galeria-coluna),
-    // não a propriedade column-count do CSS — isso evita que o navegador
-    // fique rebalanceando/pulando os itens de coluna conforme cada foto
-    // termina de carregar com uma altura diferente da esperada (era a
-    // causa do efeito "carregando de baixo pra cima"). A quantidade de
-    // colunas replica os mesmos pontos de corte que existiam antes no
-    // CSS: 1 coluna no celular, 2/3/4 conforme a tela cresce.
-    const numeroDeColunas = () => {
-        const largura = window.innerWidth;
-        if (largura >= 980) return 4;
-        if (largura >= 640) return 3;
-        if (largura >= 480) return 2;
-        return 1;
-    };
-
-    let colunas = [];
-    const montarColunas = (qtd) => {
-        masonry.innerHTML = '';
-        colunas = [];
-        for (let i = 0; i < qtd; i++) {
-            const col = document.createElement('div');
-            col.className = 'galeria-coluna';
-            masonry.appendChild(col);
-            colunas.push(col);
-        }
-    };
-    montarColunas(numeroDeColunas());
+    __galeriaColunas = galeriaMontarColunas(masonry, galeriaNumeroDeColunas());
 
     // Se a tela girar/redimensionar a ponto de mudar a quantidade de
     // colunas, reconstrói as colunas e redistribui os itens já montados
     // (sem refazer nenhuma busca no servidor) — mantém a mesma ordem.
-    let __ultimoNumeroColunas = colunas.length;
+    __galeriaUltimoNumeroColunas = __galeriaColunas.length;
     // CORREÇÃO (performance mobile — item 1 da revisão): sem debounce, o
     // navegador dispara "resize" repetidas vezes durante um redimensionamento
     // contínuo ou rotação de tela, recalculando/reordenando o DOM a cada
@@ -85,13 +100,13 @@ async function montarGaleria() {
     window.addEventListener('resize', () => {
         clearTimeout(__timeoutResizeGaleria);
         __timeoutResizeGaleria = setTimeout(() => {
-            const novoNumero = numeroDeColunas();
-            if (novoNumero === __ultimoNumeroColunas) return;
-            __ultimoNumeroColunas = novoNumero;
+            const novoNumero = galeriaNumeroDeColunas();
+            if (novoNumero === __galeriaUltimoNumeroColunas) return;
+            __galeriaUltimoNumeroColunas = novoNumero;
             const itensAtuais = Array.from(masonry.querySelectorAll('.galeria-item'))
                 .sort((a, b) => Number(a.dataset.ordem) - Number(b.dataset.ordem));
-            montarColunas(novoNumero);
-            itensAtuais.forEach((item, indice) => colunas[indice % colunas.length].appendChild(item));
+            __galeriaColunas = galeriaMontarColunas(masonry, novoNumero);
+            itensAtuais.forEach((item, indice) => __galeriaColunas[indice % __galeriaColunas.length].appendChild(item));
         }, 150);
     });
 
@@ -129,47 +144,141 @@ async function montarGaleria() {
     const contarCarregado = () => { totalCarregados++; atualizarProgresso(); };
     const aoEncontrarItem = (item) => {
         totalEncontrados++;
-        // Cada foto/vídeo entra sempre na MESMA coluna a partir do seu
-        // índice (round-robin) — nunca muda de coluna depois de
-        // colocada, diferente do balanceamento automático do CSS
-        // column-count, que reordenava tudo conforme as alturas reais
-        // iam ficando conhecidas.
-        const colunaAlvo = colunas[__galeriaItens.length % colunas.length];
+        // Cada foto entra sempre na MESMA coluna a partir do seu índice
+        // (round-robin) — nunca muda de coluna depois de colocada,
+        // diferente do balanceamento automático do CSS column-count, que
+        // reordenava tudo conforme as alturas reais iam ficando
+        // conhecidas.
+        const colunaAlvo = __galeriaColunas[__galeriaItens.length % __galeriaColunas.length];
         adicionarItemNaGrade(item.numero, item.caminho, item.tipo, colunaAlvo, contarCarregado);
         atualizarProgresso();
     };
 
-    // REFORMULAÇÃO (30/07/2026 — ver comentário grande em js/utils.js):
-    // se já existe um cache COMPLETO de uma visita anterior neste mesmo
-    // aparelho, usa ele direto — pula a varredura por completo, a grade
-    // já entra montada com tudo, sem esperar nenhuma requisição de rede.
-    // Só faz a varredura de verdade quando não há cache ainda (ex.:
-    // primeira vez que a Galeria abre neste aparelho).
-    const itensEmCache = galeriaLerCache(true);
-    if (itensEmCache && itensEmCache.length) {
-        itensEmCache
-            .slice()
-            .sort((a, b) => a.numero - b.numero)
-            .forEach(aoEncontrarItem);
+    // REFORMULAÇÃO (botão "Ver vídeos", 30/07/2026 — ver comentário grande
+    // em js/utils.js): a abertura da página monta só as FOTOS agora —
+    // vídeo é sempre um arquivo mais pesado que foto, então deixar de
+    // montar (e começar a baixar) os vídeos de cara torna a Galeria mais
+    // leve pra abrir, mesmo quando já existe cache. Os vídeos (locais e do
+    // YouTube) só entram na grade quando a pessoa aperta "Ver vídeos" (ver
+    // carregarVideosDaGaleria, mais abaixo).
+    //
+    // Um cache parcial (só fotos, de uma visita anterior a esta página ou
+    // a "Nossos momentos") já é suficiente aqui — ver galeriaLerCache em
+    // js/utils.js — então nem precisa exigir o cache completo (que também
+    // cobriria vídeos) só para mostrar as fotos.
+    const itensEmCache = galeriaLerCache(false);
+    const fotosEmCache = itensEmCache
+        ? itensEmCache.filter(item => item.tipo === 'foto').sort((a, b) => a.numero - b.numero)
+        : null;
+    if (fotosEmCache && fotosEmCache.length) {
+        fotosEmCache.forEach(aoEncontrarItem);
         varreduraTerminou = true;
         if (barraWrap) barraWrap.classList.add('d-none');
     } else {
-        await galeriaEscanearCompleta(null, aoEncontrarItem);
+        await galeriaEscanearFotos(null, aoEncontrarItem);
         varreduraTerminou = true;
         if (totalEncontrados === 0 && barraWrap) barraWrap.classList.add('d-none');
         atualizarProgresso();
     }
 
-    montarItensYoutube(colunas);
-
     __galeriaCarregamentoCompleto = true;
 
     setTimeout(verificarSeGaleriaFicouVazia, 1200);
 
-    // Atualiza o cache em segundo plano (throttlado, ver GALERIA_REVALIDACAO_INTERVALO_MS
-    // em js/utils.js) — se Gabriel tiver adicionado fotos/vídeos novos, eles
-    // aparecem na PRÓXIMA abertura da Galeria, sem travar esta.
+    // Atualiza o cache de FOTOS em segundo plano (throttlado, ver
+    // GALERIA_REVALIDACAO_INTERVALO_MS em js/utils.js) — se Gabriel tiver
+    // adicionado fotos novas, elas aparecem na PRÓXIMA abertura da
+    // Galeria, sem travar esta. Vídeos nunca revalidam sozinhos aqui, só
+    // quando a pessoa aperta "Ver vídeos" de propósito.
     galeriaRevalidarEmSegundoPlano();
+}
+
+/**
+ * Varre/monta a seção de vídeos (locais, a partir de GALERIA_INICIO_VIDEOS,
+ * e do YouTube — GALERIA_YOUTUBE em js/config.js) na grade da Galeria.
+ * Chamada só pelo clique no botão "Ver vídeos" (#btnGaleriaVerVideos, ver
+ * galeria.html), nunca sozinha na abertura da página.
+ */
+async function carregarVideosDaGaleria() {
+    if (__galeriaVideosCarregamentoIniciado) return;
+    __galeriaVideosCarregamentoIniciado = true;
+
+    const wrap = document.getElementById('galeriaVideosToggleWrap');
+    const btn = document.getElementById('btnGaleriaVerVideos');
+    const barraWrap = document.getElementById('galeriaCarregandoVideos');
+    const barraLinha = document.getElementById('galeriaCarregandoVideosBarraWrap');
+    const barra = document.getElementById('galeriaCarregandoVideosBarra');
+    const texto = document.getElementById('galeriaCarregandoVideosTexto');
+    const atualizarBarra = (fracao, mensagem) => {
+        if (barra) barra.style.width = `${Math.max(0, Math.min(100, fracao * 100))}%`;
+        if (texto && mensagem) texto.textContent = mensagem;
+    };
+
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Carregando vídeos...';
+    }
+    if (barraLinha) barraLinha.classList.remove('d-none');
+    if (barraWrap) barraWrap.classList.remove('d-none');
+    atualizarBarra(0, 'Procurando vídeos...');
+
+    let totalEncontrados = 0;
+    let totalCarregados = 0;
+    const atualizarProgresso = () => {
+        if (totalEncontrados === 0) { atualizarBarra(0, 'Procurando vídeos...'); return; }
+        atualizarBarra(totalCarregados / totalEncontrados, `Carregando vídeos: ${totalCarregados}/${totalEncontrados}`);
+    };
+    const contarCarregado = () => { totalCarregados++; atualizarProgresso(); };
+    const aoEncontrarItem = (item) => {
+        totalEncontrados++;
+        const colunaAlvo = __galeriaColunas[__galeriaItens.length % __galeriaColunas.length];
+        adicionarItemNaGrade(item.numero, item.caminho, item.tipo, colunaAlvo, contarCarregado);
+        atualizarProgresso();
+    };
+
+    try {
+        // Mesmo raciocínio do cache de fotos em montarGaleria(): só serve
+        // aqui um cache que já prova ter cobrido vídeos também (exigirCompleto
+        // = true), senão varre de verdade (ou usa o manifesto, dentro de
+        // galeriaEscanearVideos).
+        const itensEmCache = galeriaLerCache(true);
+        const videosEmCache = itensEmCache
+            ? itensEmCache.filter(item => item.tipo === 'video').sort((a, b) => a.numero - b.numero)
+            : null;
+        if (videosEmCache) {
+            videosEmCache.forEach(aoEncontrarItem);
+        } else {
+            await galeriaEscanearVideos(null, aoEncontrarItem);
+        }
+    } catch (e) {
+        // Sem problema: os vídeos locais simplesmente não aparecem dessa
+        // vez, e os do YouTube (logo abaixo) continuam funcionando normal,
+        // já que não dependem de nenhuma varredura no servidor.
+    }
+
+    montarItensYoutube(__galeriaColunas);
+
+    if (barraWrap) barraWrap.classList.add('d-none');
+
+    const totalItensDeVideo = __galeriaItens.filter(item => item.tipo === 'video' || item.tipo === 'youtube').length;
+    if (totalItensDeVideo === 0) {
+        // Ainda não tem nenhum vídeo na pasta/config: mostra um recado no
+        // lugar do botão e permite tentar de novo mais tarde (ex.: depois
+        // que Gabriel subir o primeiro vídeo).
+        if (barraLinha) barraLinha.classList.add('d-none');
+        if (barraWrap) barraWrap.classList.remove('d-none');
+        if (texto) texto.textContent = 'Nenhum vídeo por aqui ainda.';
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-camera-reels me-1"></i>Ver vídeos';
+        }
+        __galeriaVideosCarregamentoIniciado = false;
+    } else if (wrap) {
+        // Vídeos já estão na grade: some com o botão, não precisa mais dele.
+        wrap.classList.add('d-none');
+    }
+
+    setTimeout(verificarSeGaleriaFicouVazia, 300);
 }
 
 function adicionarItemNaGrade(numero, src, tipo, masonry, aoCarregar) {
@@ -460,6 +569,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     montarGaleria();
+
+    const btnVerVideos = document.getElementById('btnGaleriaVerVideos');
+    if (btnVerVideos) btnVerVideos.addEventListener('click', carregarVideosDaGaleria);
 
     document.getElementById('galeriaLightboxClose').addEventListener('click', fecharLightbox);
     document.getElementById('galeriaLightbox').addEventListener('click', (evt) => {

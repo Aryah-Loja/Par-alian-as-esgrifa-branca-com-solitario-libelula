@@ -525,7 +525,7 @@ function galeriaLimparCache() {
 const GALERIA_REVALIDACAO_INTERVALO_MS = 3 * 60 * 60 * 1000; // 3 horas
 
 /**
- * Roda `galeriaEscanearCompleta` em segundo plano (sem bloquear nada na
+ * Roda `galeriaEscanearFotos` em segundo plano (sem bloquear nada na
  * tela) só se o cache não existir ainda ou já estiver "velho" o
  * suficiente (ver GALERIA_REVALIDACAO_INTERVALO_MS) — assim uma pessoa
  * que abre o site várias vezes seguidas não dispara uma varredura nova a
@@ -533,11 +533,18 @@ const GALERIA_REVALIDACAO_INTERVALO_MS = 3 * 60 * 60 * 1000; // 3 horas
  * Chamada tanto por "Nossos momentos" (index.html) quanto pela página da
  * Galeria, sempre DEPOIS de já ter mostrado algo na tela (cache ou
  * varredura própria) — nunca é o que decide o que aparece agora.
+ *
+ * REFORMULAÇÃO (botão "Ver vídeos", 30/07/2026): antes revalidava fotos E
+ * vídeos juntos (`galeriaEscanearCompleta`). Agora revalida só fotos —
+ * a faixa de vídeos nunca roda sozinha em segundo plano, só quando a
+ * pessoa aperta "Ver vídeos" de propósito (ver galeriaEscanearVideos
+ * acima), justamente para não pesar a abertura normal da página com
+ * arquivos maiores que ninguém pediu pra ver ainda.
  */
 function galeriaRevalidarEmSegundoPlano() {
     const dados = galeriaLerCacheBruto();
     if (dados && (Date.now() - (dados.salvoEm || 0)) < GALERIA_REVALIDACAO_INTERVALO_MS) return;
-    galeriaEscanearCompleta(null, null).catch(() => { /* sem problema, tenta de novo na próxima abertura */ });
+    galeriaEscanearFotos(null, null).catch(() => { /* sem problema, tenta de novo na próxima abertura */ });
 }
 
 /** Confere (via HEAD, sem baixar o arquivo inteiro) se um caminho existe no servidor. */
@@ -726,6 +733,83 @@ async function galeriaEscanearCompleta(aoProgredir, aoEncontrarItem) {
     galeriaSalvarCacheSeMelhor(itensEncontrados, true);
 
     return itensEncontrados;
+}
+
+/* ----------------------------------------------------------------------
+   BOTÃO "VER VÍDEOS" NA GALERIA (novo, 30/07/2026)
+   ----------------------------------------------------------------------
+   PROBLEMA: mesmo com o manifesto e o cache (ver blocos acima), galeria.html
+   sempre varria E MONTAVA na grade fotos e vídeos juntos (galeriaEscanearCompleta),
+   mesmo quando a pessoa só queria ver as fotos. Vídeo é sempre um arquivo bem
+   mais pesado que foto, então montar todos de cara deixava a abertura da
+   página mais pesada do que precisava, mesmo em aparelhos rápidos.
+
+   SOLUÇÃO: galeria.html (js/galeria.js) agora usa só galeriaEscanearFotos()
+   na abertura da página — a faixa de vídeos (GALERIA_INICIO_VIDEOS em
+   diante) nunca é varrida nem montada na grade sozinha, nem em segundo
+   plano. Só quando a pessoa aperta o botão "Ver vídeos" é que
+   galeriaEscanearVideos() roda de verdade. galeriaEscanearCompleta() (acima)
+   continua existindo por causa do fallback em "Nossos momentos"
+   (js/romance.js), que precisa da varredura inteira só como último recurso
+   se nada mais achar nenhuma foto.
+   ---------------------------------------------------------------------- */
+
+/** Varre (ou usa manifesto/cache) só a faixa de FOTOS da galeria. */
+async function galeriaEscanearFotos(aoProgredir, aoEncontrarItem) {
+    const doManifesto = await galeriaCarregarManifesto();
+    if (doManifesto) {
+        const fotos = doManifesto.filter(item => item.tipo === 'foto').sort((a, b) => a.numero - b.numero);
+        if (aoEncontrarItem) fotos.forEach(aoEncontrarItem);
+        // Guarda o manifesto INTEIRO (fotos + vídeos) como cache completo —
+        // já veio tudo numa única resposta, sem custo extra nenhum, e deixa
+        // o botão "Ver vídeos" instantâneo depois (ver galeriaEscanearVideos).
+        galeriaSalvarCacheSeMelhor(doManifesto, true);
+        return fotos;
+    }
+
+    const fotosEncontradas = [];
+    const aoEncontrar = (numero, resultado) => {
+        fotosEncontradas.push({ numero, ...resultado });
+        if (aoEncontrarItem) aoEncontrarItem({ numero, ...resultado });
+    };
+    await galeriaVarrerFaixa(1, GALERIA_INICIO_VIDEOS - 1, aoEncontrar, aoProgredir, 'foto', Infinity);
+    galeriaSalvarCacheSeMelhor(fotosEncontradas, false); // parcial (só fotos) — não sobrescreve um cache completo já salvo
+    return fotosEncontradas;
+}
+
+/**
+ * Varre (ou usa manifesto/cache) só a faixa de VÍDEOS locais (a partir de
+ * GALERIA_INICIO_VIDEOS) da galeria. Chamada só quando a pessoa aperta o
+ * botão "Ver vídeos" em galeria.html (js/galeria.js) — nunca sozinha na
+ * abertura da página, nem em segundo plano.
+ */
+async function galeriaEscanearVideos(aoProgredir, aoEncontrarItem) {
+    const doManifesto = await galeriaCarregarManifesto();
+    if (doManifesto) {
+        const videos = doManifesto.filter(item => item.tipo === 'video').sort((a, b) => a.numero - b.numero);
+        if (aoEncontrarItem) videos.forEach(aoEncontrarItem);
+        galeriaSalvarCacheSeMelhor(doManifesto, true);
+        return videos;
+    }
+
+    const videosEncontrados = [];
+    const aoEncontrar = (numero, resultado) => {
+        videosEncontrados.push({ numero, ...resultado });
+        if (aoEncontrarItem) aoEncontrarItem({ numero, ...resultado });
+    };
+    await galeriaVarrerFaixa(GALERIA_INICIO_VIDEOS, GALERIA_MAX_NUMERO, aoEncontrar, aoProgredir, 'video');
+
+    // Combina com as fotos já conhecidas (se houver) para virar um cache
+    // COMPLETO (fotos + vídeos) — assim, numa próxima visita a este mesmo
+    // aparelho, apertar "Ver vídeos" de novo já usa o cache, sem varrer a
+    // rede outra vez.
+    const cacheAtual = galeriaLerCacheBruto();
+    const fotosConhecidas = (cacheAtual && Array.isArray(cacheAtual.itens))
+        ? cacheAtual.itens.filter(item => item.tipo === 'foto')
+        : [];
+    galeriaSalvarCacheSeMelhor([...fotosConhecidas, ...videosEncontrados], true);
+
+    return videosEncontrados;
 }
 
 /**

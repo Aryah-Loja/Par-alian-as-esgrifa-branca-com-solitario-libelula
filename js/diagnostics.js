@@ -295,6 +295,11 @@ async function executarVerEstadoReset() {
 // descoberta da galeria (ver bloco de cache em js/utils.js) — força a
 // Galeria e "Nossos momentos" a varrerem a pasta de verdade de novo na
 // próxima abertura deste aparelho, em vez de confiar no que já sabiam.
+// Limpa fotos E vídeos juntos (é um cache só); na prática isso só muda o
+// que a próxima varredura de FOTOS encontra na hora — a de vídeos só
+// roda mesmo quando alguém aperta "Ver vídeos" em galeria.html, cache
+// limpo ou não (ver galeriaEscanearFotos/galeriaEscanearVideos em
+// js/utils.js).
 function executarLimparCacheGaleria() {
     galeriaLimparCache();
     const status = document.getElementById('diagLimparCacheStatus');
