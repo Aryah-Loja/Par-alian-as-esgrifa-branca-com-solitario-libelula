@@ -56,6 +56,18 @@ let __galeriaModoAtual = 'fotos'; // 'fotos' | 'videos'
 // está visível, sem varrer o servidor de novo.
 let __galeriaVideosCarregamentoIniciado = false;
 
+/* CORREÇÃO (barra de "Procurando fotos..." aparecendo por cima da seção de
+ * vídeos): a barra #galeriaCarregando só é escondida quando as fotos
+ * terminam de carregar DE VERDADE no navegador (ver montarGaleria), mas o
+ * botão "Ver vídeos" fica clicável antes disso. Se a pessoa troca pra
+ * vídeos enquanto as fotos ainda estão carregando (comum em rede lenta),
+ * mostrarSecaoVideos() escondia só a grade de fotos, esquecendo dessa
+ * barra — ela ficava visível, sobreposta à seção de vídeos. Esta flag
+ * guarda se as fotos ainda estão em carregamento, pra mostrarSecaoVideos()
+ * poder escondê-la também, e mostrarSecaoFotos() só trazê-la de volta se
+ * ainda fizer sentido (fotos realmente ainda carregando). */
+let __galeriaFotosAindaCarregando = false;
+
 // As "colunas" são divs de verdade (ver CSS .galeria-coluna), não a
 // propriedade column-count do CSS — isso evita que o navegador fique
 // rebalanceando/pulando os itens de coluna conforme cada foto termina de
@@ -171,6 +183,7 @@ async function montarGaleria() {
     let totalEncontrados = 0;
     let totalCarregados = 0;
     let varreduraTerminou = false;
+    __galeriaFotosAindaCarregando = true;
     const atualizarProgresso = () => {
         if (totalEncontrados === 0) {
             atualizarBarra(0, varreduraTerminou ? '' : 'Procurando fotos...');
@@ -179,6 +192,7 @@ async function montarGaleria() {
         const fracao = totalCarregados / totalEncontrados;
         atualizarBarra(fracao, `Carregando fotos: ${totalCarregados}/${totalEncontrados}`);
         if (varreduraTerminou && totalCarregados >= totalEncontrados && barraWrap) {
+            __galeriaFotosAindaCarregando = false;
             setTimeout(() => barraWrap.classList.add('d-none'), 400);
         }
     };
@@ -230,7 +244,10 @@ async function montarGaleria() {
     } else {
         await galeriaEscanearFotos(null, aoEncontrarItem);
         varreduraTerminou = true;
-        if (totalEncontrados === 0 && barraWrap) barraWrap.classList.add('d-none');
+        if (totalEncontrados === 0 && barraWrap) {
+            __galeriaFotosAindaCarregando = false;
+            barraWrap.classList.add('d-none');
+        }
         atualizarProgresso();
     }
 
@@ -274,6 +291,13 @@ function mostrarSecaoFotos() {
     if (secaoVideos) secaoVideos.classList.add('d-none');
     const btn = document.getElementById('btnGaleriaVerVideos');
     if (btn) btn.innerHTML = '<i class="bi bi-camera-reels me-1"></i>Ver vídeos';
+    // CORREÇÃO (barra de "Procurando fotos..." sobreposta à seção de
+    // vídeos): só reexibe a barra de carregamento das fotos se elas ainda
+    // estiverem mesmo carregando (ver __galeriaFotosAindaCarregando, mais
+    // acima) — senão ela ficaria escondida por padrão a cada volta pra
+    // fotos, mesmo quando o carregamento já tinha terminado há tempos.
+    const barraFotos = document.getElementById('galeriaCarregando');
+    if (barraFotos) barraFotos.classList.toggle('d-none', !__galeriaFotosAindaCarregando);
     verificarSeGaleriaFicouVazia();
 }
 
@@ -288,6 +312,16 @@ function mostrarSecaoVideos() {
     if (secaoVideos) secaoVideos.classList.remove('d-none');
     const btn = document.getElementById('btnGaleriaVerVideos');
     if (btn) btn.innerHTML = '<i class="bi bi-images me-1"></i>Ver fotos';
+    // CORREÇÃO (barra de "Procurando fotos..." sobreposta à seção de
+    // vídeos): a barra de carregamento das FOTOS (#galeriaCarregando) vive
+    // fora de #galeriaSecaoVideos no HTML, então trocar de seção não a
+    // escondia sozinha — se a pessoa apertasse "Ver vídeos" enquanto as
+    // fotos ainda estavam carregando, a barra/contagem de fotos
+    // ("Carregando fotos: X/Y") continuava visível por cima da seção de
+    // vídeos. Esconde ela explicitamente sempre que a seção de vídeos é
+    // mostrada; mostrarSecaoFotos() acima decide se ela volta a aparecer.
+    const barraFotos = document.getElementById('galeriaCarregando');
+    if (barraFotos) barraFotos.classList.add('d-none');
 }
 
 /**
