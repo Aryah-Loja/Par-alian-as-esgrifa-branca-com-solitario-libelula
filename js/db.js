@@ -32,6 +32,20 @@
 
 const db = new Dexie('AuroraDB');
 
+// Robustez para múltiplas abas/páginas abertas ao mesmo tempo no mesmo
+// aparelho (ex.: index.html e checklist.html em abas diferentes). Sem
+// isso, se uma futura versão do schema precisar rodar um upgrade, uma
+// aba com conexão antiga aberta pode travar a outra indefinidamente.
+db.on('blocked', () => {
+    console.warn('AuroraDB: upgrade bloqueado por outra aba/página aberta com uma versão mais antiga do banco. Feche as outras abas do site e recarregue esta página.');
+});
+db.on('versionchange', () => {
+    // Outra aba abriu uma versão mais nova do banco de dados; fecha esta
+    // conexão para não deixar a outra aba travada esperando.
+    db.close();
+    console.warn('AuroraDB: uma versão mais nova do banco foi aberta em outra aba. Esta conexão foi fechada — recarregue a página se algo parar de responder.');
+});
+
 // v1 = estrutura antiga (mantida apenas para permitir migração automática
 // de quem já tinha aberto o site antes desta atualização).
 db.version(1).stores({ arquivos: 'id' });
@@ -72,6 +86,11 @@ db.version(2).stores({
                 }
             }
         }
+        // Migração concluída com sucesso: limpa a tabela antiga para não
+        // deixar vídeo/áudio/fotos duplicados (uma cópia em 'arquivos',
+        // outra em 'media') ocupando espaço de armazenamento pra sempre.
+        // Só chega aqui se o loop acima terminou sem lançar exceção.
+        await tx.table('arquivos').clear();
     } catch (e) {
         console.error('Migração da estrutura antiga falhou (não é crítico, o site continua funcionando):', e);
     }
@@ -154,14 +173,41 @@ async function excluirMedia(id) {
 // 1,2s agendado — o resto (respostas de quiz, regras do contrato) continua
 // agrupado, para não martelar a rede a cada pequena mudança.
 async function salvarConfiguracao(chave, valor, imediato = false, afetaSincronizacao = true) {
-    try { localStorage.setItem(chave, typeof valor === 'string' ? valor : JSON.stringify(valor)); } catch (e) { console.error('localStorage indisponível para', chave, e); }
-    try { await db.configuracoes.put({ chave, valor }); } catch (e) { console.error('Falha ao salvar configuração no IndexedDB:', chave, e); }
+    // CORREÇÃO: antes, o localStorage recebia o valor já serializado
+    // (JSON.stringify quando não era string), mas o IndexedDB recebia o
+    // valor CRU. Se o localStorage fosse limpo pelo navegador (comum no
+    // Safari após dias de inatividade) e a leitura caísse no fallback do
+    // IndexedDB, obterConfiguracao() devolvia um tipo diferente do
+    // esperado (array/objeto/booleano em vez de string) — quem fizesse
+    // JSON.parse() nesse retorno recebia uma exceção e perdia o dado
+    // silenciosamente (ex.: contador de easter eggs resetando). Agora os
+    // dois armazenamentos recebem sempre a MESMA string serializada, então
+    // obterConfiguracao() tem o mesmo retorno (string ou null) não importa
+    // qual dos dois respondeu.
+    const valorSerializado = typeof valor === 'string' ? valor : JSON.stringify(valor);
+
+    let sucessoLocal = false;
+    try {
+        localStorage.setItem(chave, valorSerializado);
+        sucessoLocal = true;
+    } catch (e) { console.error('localStorage indisponível para', chave, e); }
+
+    let sucessoIndexedDB = false;
+    try {
+        await db.configuracoes.put({ chave, valor: valorSerializado });
+        sucessoIndexedDB = true;
+    } catch (e) { console.error('Falha ao salvar configuração no IndexedDB:', chave, e); }
+
     // 'aurora_atualizado_em' é escrita diretamente por marcarAtualizacaoLocal/sincronizarNaAbertura;
     // evita chamar a si mesma em loop. `afetaSincronizacao = false` é para
     // configs puramente locais/cosméticas (ex.: quais easter eggs já foram
     // encontrados, se já visitou a loja antes) que NÃO devem contar como
     // "dado novo" para fins de sincronização/reset entre aparelhos.
     if (chave !== 'aurora_atualizado_em' && afetaSincronizacao) await marcarAtualizacaoLocal(imediato);
+
+    // Retorna se pelo menos um dos dois armazenamentos confirmou a escrita
+    // (antes esta função não informava nada ao chamador em caso de falha).
+    return sucessoLocal || sucessoIndexedDB;
 }
 
 /**
@@ -186,7 +232,13 @@ async function obterConfiguracao(chave) {
     } catch (e) { /* segue para o IndexedDB */ }
     try {
         const registro = await db.configuracoes.get(chave);
-        return registro ? registro.valor : null;
+        if (!registro) return null;
+        // Blindagem: registros gravados ANTES da correção acima podem ter
+        // guardado o valor cru (array/objeto/booleano) em vez da string
+        // serializada. Normaliza aqui também, para que o contrato de
+        // retorno desta função seja sempre "string ou null" — mesmo para
+        // dados que já estavam salvos de forma inconsistente.
+        return typeof registro.valor === 'string' ? registro.valor : JSON.stringify(registro.valor);
     } catch (e) {
         console.error('Falha ao ler configuração:', chave, e);
         return null;
