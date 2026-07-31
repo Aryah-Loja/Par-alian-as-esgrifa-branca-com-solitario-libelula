@@ -278,18 +278,18 @@ const PASTA_GALERIA = 'assets/img/galeria';
 const GALERIA_INICIO_VIDEOS = 101;
 
 const GALERIA_LEGENDAS = {
-    1: 'Você é encantadora.',
-    2: 'Seu sorriso é viciante.',
+    1: 'Você me cativa.',
+    2: 'Sua companhia me deixa feliz.',
     3: 'Você ilumina qualquer lugar.',
     4: 'Você é meu sossego.',
     5: 'Você é espontânea.',
-    6: 'Você tem olhos sinceros.',
+    6: 'Você tem um coração sincero.',
     7: 'Você faz o simples ser inesquecível.',
     8: 'Você é extraordinária.',
-    9: 'Você tem um coração bonito.',
+    9: 'Seu sorriso é viciante.',
     10: 'Você é delicada sem ser frágil.',
     11: 'Você é o meu lugar favorito.',
-    12: 'Você é impossível de esquecer.',
+    12: 'Você é forte.',
     13: 'Você é rara.',
     14: 'Você tem uma calma bonita.',
     15: 'Você deixa tudo mais leve.',
@@ -326,6 +326,7 @@ const GALERIA_LEGENDAS = {
     46: 'Você é minha pessoa favorita.',
     47: 'Você é o melhor dos meus dias.',
     48: 'Você sempre será a minha resposta.'
+    49: 'teste.'
 };
 
 /* Vídeos do YouTube (não precisam de arquivo — ver explicação acima).
