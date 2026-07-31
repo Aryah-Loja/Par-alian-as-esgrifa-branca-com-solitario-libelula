@@ -625,6 +625,107 @@ function iniciarTrocaDeVideo() {
 }
 
 /**
+ * Confere todas as mídias FIXAS do site (PLACEHOLDERS, em js/config.js) —
+ * loja falsa, timeline, "seus bichos", mapa, flashback, "nossos
+ * momentos", playlist — numa passada só. Diferente de "Testar galeria"
+ * (acima), que só cobre assets/img/galeria/. Também informa, à parte, os
+ * arquivos opcionais que o site já sabe lidar com a ausência (câmera
+ * lenta, especial de aniversário, vídeo secreto) — esses não contam como
+ * "faltando" de verdade, só como aviso informativo.
+ */
+async function executarVerificarMidiasSite() {
+    const btn = document.getElementById('btnVerificarMidiasSite');
+    const painel = document.getElementById('diagMidiasSiteResultado');
+    btn.disabled = true;
+    const textoOriginal = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Verificando...';
+    painel.classList.remove('d-none');
+    painel.innerHTML = '<p class="text-white-50 mb-0">Conferindo cada arquivo esperado pelo site...</p>';
+
+    const chaves = Object.keys(PLACEHOLDERS);
+    const faltando = [];
+
+    for (const chave of chaves) {
+        const item = PLACEHOLDERS[chave];
+        let caminho;
+        if (item.tipo === 'audio') caminho = `assets/audio/${item.arquivo}`;
+        else if (item.arquivo) caminho = `assets/img/${item.arquivo}`;
+        else caminho = `assets/img/${item.arquivoBase}.jpg`;
+
+        const existe = await arquivoExisteNoServidor(caminho);
+        if (!existe) faltando.push({ caminho, descricao: item.descricao });
+    }
+
+    // Opcionais: usam as mesmas funções de resolução que o site real usa,
+    // então o resultado aqui é exatamente o que "Nossa História" veria.
+    const opcionais = [
+        { rotulo: 'Câmera lenta (momento)', existe: !!(await resolverVideoPorBase(MOMENTO_LENTO_ARQUIVO_BASE)) },
+        { rotulo: 'Vídeo do especial de aniversário', existe: !!(await resolverVideoPorBase(ANIVERSARIO_VIDEO_ARQUIVO_BASE)) },
+        { rotulo: 'Música do especial de aniversário', existe: !!(await resolverAudioPorBase(ANIVERSARIO_MUSICA_ARQUIVO_BASE)) },
+        { rotulo: 'Vídeo secreto (secret/video.html)', existe: await arquivoExisteNoServidor('secret/assets/video-secreto.mp4') }
+    ];
+
+    const total = chaves.length;
+    const prontos = total - faltando.length;
+    const linhasOpcionais = opcionais.map(o => `<div class="linha ${o.existe ? 'ok' : ''}"><span>${o.rotulo}</span><span>${o.existe ? '✓ presente' : 'ainda não adicionado (opcional)'}</span></div>`).join('');
+
+    if (faltando.length === 0) {
+        painel.innerHTML = `
+            <div class="veredito ok">Todos os ${total} arquivos obrigatórios estão presentes.</div>
+            <h6 class="mt-3">Opcionais</h6>
+            ${linhasOpcionais}
+        `;
+    } else {
+        const linhasFaltando = faltando.map(f => `<div class="linha erro"><span>${f.caminho}</span><span>${f.descricao}</span></div>`).join('');
+        painel.innerHTML = `
+            <h6>Faltando (${faltando.length} de ${total})</h6>
+            ${linhasFaltando}
+            <div class="veredito alerta">${prontos} de ${total} já estão prontos. O site não quebra sem os que faltam (mostra um quadro "adicione esta foto" no lugar), mas vale conferir antes do dia.</div>
+            <h6 class="mt-3">Opcionais</h6>
+            ${linhasOpcionais}
+        `;
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = textoOriginal;
+}
+
+/**
+ * Dispara um envio real do backup para a nuvem agora, sob demanda —
+ * reaproveita publicarComIndicadorVisivel() (js/sync.js), a mesma função
+ * usada pelo envio automático depois de salvar uma mídia. Útil pra
+ * confirmar, na hora, que tudo que está neste aparelho já chegou na
+ * nuvem, sem precisar esperar nenhum agrupamento automático nem depender
+ * de mexer em alguma outra tela do site pra disparar o envio.
+ */
+async function executarForcarSincronizacao() {
+    const btn = document.getElementById('btnForcarSincronizacao');
+    const status = document.getElementById('diagForcarSyncStatus');
+
+    if (!syncEstaConfigurado()) {
+        status.textContent = 'Sincronização não configurada em js/sync.js (SUPABASE_URL/SUPABASE_ANON_KEY vazios) — nada pra enviar.';
+        status.className = 'save-status err';
+        return;
+    }
+
+    btn.disabled = true;
+    status.textContent = 'Enviando tudo pra nuvem agora — não feche esta página ainda...';
+    status.className = 'save-status';
+
+    try {
+        await publicarComIndicadorVisivel();
+        status.textContent = `Backup enviado com sucesso às ${new Date().toLocaleTimeString('pt-BR')}.`;
+        status.className = 'save-status ok';
+    } catch (e) {
+        console.error('Falha ao forçar sincronização:', e);
+        status.textContent = `Falha ao enviar: ${e.message}`;
+        status.className = 'save-status err';
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+/**
  * ============================================================================
  * GERENCIADOR DE ARQUIVOS (mídias salvas) — ferramenta de manutenção
  * ============================================================================
@@ -781,6 +882,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btnVerEstadoReset').addEventListener('click', executarVerEstadoReset);
     document.getElementById('btnTestarGaleria').addEventListener('click', executarTesteGaleria);
     document.getElementById('btnLimparCacheGaleria').addEventListener('click', executarLimparCacheGaleria);
+    document.getElementById('btnVerificarMidiasSite').addEventListener('click', executarVerificarMidiasSite);
+    document.getElementById('btnForcarSincronizacao').addEventListener('click', executarForcarSincronizacao);
     document.getElementById('btnResetar').addEventListener('click', executarReset);
     document.getElementById('btnResetarContrato').addEventListener('click', executarResetContrato);
     document.getElementById('btnTestarCapsula').addEventListener('click', executarTesteCapsula);
