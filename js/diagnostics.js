@@ -624,6 +624,156 @@ function iniciarTrocaDeVideo() {
     });
 }
 
+/**
+ * ============================================================================
+ * GERENCIADOR DE ARQUIVOS (mídias salvas) — ferramenta de manutenção
+ * ============================================================================
+ * Lista todo item guardado na tabela `media` do IndexedDB (vídeo do
+ * pedido, assinatura, polaroids, lembranças, mensagens pro futuro em
+ * texto/áudio/vídeo) com tipo, tamanho e data — pra você conseguir ver o
+ * que está ocupando espaço e resolver um arquivo com problema sem precisar
+ * resetar o site inteiro. Duas ações por item:
+ *   - Excluir: remove o registro (excluirMedia, já existente em js/db.js).
+ *   - Substituir: troca só o arquivo (blob/mimeType) mantendo o mesmo id,
+ *     tipo e demais campos — então o item continua aparecendo no lugar
+ *     certo do site depois de sincronizar, só com o conteúdo novo.
+ * Itens sem blob (ex.: a assinatura, que é texto/SVG) só mostram Excluir.
+ * ============================================================================
+ */
+
+function formatarBytesDiag(bytes) {
+    if (!bytes && bytes !== 0) return '?';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+// Rótulo amigável por tipo — só pra ficar legível na lista, não é usado em nenhuma lógica.
+const GERENCIADOR_MIDIAS_ROTULOS = {
+    video_pedido: 'Vídeo do pedido',
+    assinatura: 'Assinatura',
+    lembranca: 'Lembrança',
+    mensagem_futuro: 'Mensagem para o futuro',
+    polaroid: 'Polaroid',
+    diagnostico: 'Arquivo de teste (diagnóstico)'
+};
+
+let __gerenciadorMidiasIdSelecionado = null;
+
+async function gerenciadorMidiasCarregarLista() {
+    const container = document.getElementById('gerenciadorMidiasLista');
+    const resumo = document.getElementById('gerenciadorMidiasResumo');
+    if (!container) return;
+
+    container.innerHTML = '<p class="small text-white-50 text-center mb-0">Carregando...</p>';
+
+    let itens = [];
+    try {
+        itens = await db.media.toArray();
+    } catch (e) {
+        console.error('Falha ao listar mídias salvas:', e);
+        container.innerHTML = '<p class="small text-white-50 text-center mb-0">Não foi possível ler o armazenamento local.</p>';
+        return;
+    }
+
+    itens.sort((a, b) => (b.criadoEm || 0) - (a.criadoEm || 0));
+
+    const tamanhoTotal = itens.reduce((soma, item) => soma + (item.blob ? item.blob.size : 0), 0);
+    if (resumo) {
+        resumo.textContent = itens.length
+            ? `${itens.length} item(ns) salvo(s) · ${formatarBytesDiag(tamanhoTotal)} no total`
+            : 'Nenhum arquivo salvo neste aparelho ainda.';
+    }
+
+    if (!itens.length) {
+        container.innerHTML = '<p class="small text-white-50 text-center mb-0">Nenhum arquivo salvo neste aparelho ainda.</p>';
+        return;
+    }
+
+    container.innerHTML = '';
+    itens.forEach(item => {
+        const rotulo = GERENCIADOR_MIDIAS_ROTULOS[item.tipo] || item.tipo || 'Item';
+        const subtipo = item.subtipo ? ` (${item.subtipo})` : '';
+        const tamanho = item.blob ? formatarBytesDiag(item.blob.size) : (item.texto ? `${item.texto.length} caractere(s) de texto` : 'sem arquivo');
+        const data = item.criadoEm ? formatarDataHoraDiag(item.criadoEm) : '?';
+
+        const linha = document.createElement('div');
+        linha.className = 'mapa-admin-item';
+        linha.innerHTML = `
+            <i class="bi ${item.blob ? 'bi-file-earmark-play' : 'bi-file-earmark-text'}"></i>
+            <div class="flex-grow-1">
+                <strong>${rotulo}${subtipo}</strong>
+                <p class="mb-1">${tamanho} · ${data}</p>
+                <p class="mb-0" style="opacity:0.6;">id: <code>${item.id}</code>${item.mimeType ? ' · ' + item.mimeType : ''}</p>
+            </div>
+            <div class="d-flex flex-column gap-1">
+                ${item.blob ? `<button type="button" class="btn btn-outline-light btn-sm rounded-pill" data-substituir="${item.id}"><i class="bi bi-upload"></i></button>` : ''}
+                <button type="button" class="btn btn-outline-danger btn-sm rounded-pill" data-excluir="${item.id}"><i class="bi bi-trash"></i></button>
+            </div>`;
+        container.appendChild(linha);
+    });
+
+    container.querySelectorAll('[data-substituir]').forEach(btn => {
+        btn.addEventListener('click', () => gerenciadorMidiasAbrirSubstituir(btn.dataset.substituir));
+    });
+    container.querySelectorAll('[data-excluir]').forEach(btn => {
+        btn.addEventListener('click', () => gerenciadorMidiasExcluir(btn.dataset.excluir));
+    });
+}
+
+async function gerenciadorMidiasExcluir(id) {
+    if (!confirm('Excluir este arquivo? Ele some do site (neste aparelho e no outro, na próxima sincronização) e não tem como desfazer.')) return;
+    const ok = await excluirMedia(id);
+    if (!ok) alert('Não consegui excluir esse arquivo. Tente de novo.');
+    await gerenciadorMidiasCarregarLista();
+}
+
+function gerenciadorMidiasAbrirSubstituir(id) {
+    __gerenciadorMidiasIdSelecionado = id;
+    const input = document.getElementById('gerenciadorMidiasInputSubstituir');
+    if (!input) return;
+    input.value = '';
+    input.accept = ''; // qualquer tipo — o item pode ser vídeo, áudio ou imagem, dependendo de qual foi escolhido
+    input.click();
+}
+
+async function gerenciadorMidiasSubstituirArquivo(arquivo) {
+    const id = __gerenciadorMidiasIdSelecionado;
+    if (!id || !arquivo) return;
+
+    if (!confirm('Isso substitui o arquivo salvo aqui por este novo (mantendo o mesmo lugar no site). Confirma?')) return;
+
+    const original = await obterMedia(id);
+    if (!original) { alert('Não achei o item original — atualize a lista e tente de novo.'); return; }
+
+    const ok = await salvarMedia({
+        ...original,
+        blob: arquivo,
+        mimeType: arquivo.type || original.mimeType,
+        criadoEm: Date.now()
+    });
+
+    if (!ok) alert('Não consegui salvar o arquivo novo. Tente de novo.');
+    __gerenciadorMidiasIdSelecionado = null;
+    await gerenciadorMidiasCarregarLista();
+}
+
+function iniciarGerenciadorDeMidias() {
+    const botaoAtualizar = document.getElementById('btnGerenciadorMidiasAtualizar');
+    const input = document.getElementById('gerenciadorMidiasInputSubstituir');
+    if (!botaoAtualizar) return;
+
+    botaoAtualizar.addEventListener('click', gerenciadorMidiasCarregarLista);
+    if (input) {
+        input.addEventListener('change', () => {
+            const arquivo = input.files && input.files[0];
+            if (arquivo) gerenciadorMidiasSubstituirArquivo(arquivo);
+        });
+    }
+
+    gerenciadorMidiasCarregarLista();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btnRodarDiagnostico').addEventListener('click', executarDiagnosticoCompleto);
     document.getElementById('btnTestarNuvem').addEventListener('click', executarTesteNuvem);
@@ -635,5 +785,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btnResetarContrato').addEventListener('click', executarResetContrato);
     document.getElementById('btnTestarCapsula').addEventListener('click', executarTesteCapsula);
     iniciarTrocaDeVideo();
+    iniciarGerenciadorDeMidias();
     executarDiagnosticoCompleto();
 });
