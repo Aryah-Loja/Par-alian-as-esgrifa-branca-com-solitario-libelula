@@ -10,6 +10,26 @@ Basta abrir `index.html` num navegador de celular. Para publicar no
 GitHub Pages: suba a pasta inteira para um repositório, ative o Pages
 apontando para a branch/pasta raiz, e o link do Pages já funciona.
 
+### Sobre a velocidade de carregamento no celular
+
+A Galeria e "Nossa História" descobrem sozinhas quais fotos/vídeos existem
+em `assets/img/galeria/` — você só precisa soltar o arquivo lá, sem editar
+nenhuma configuração (ver seção da Galeria abaixo). Por padrão, essa
+descoberta é feita "perguntando" ao servidor arquivo por arquivo, o que é
+rápido no wi-fi de um computador mas pode ficar bem lento no 4G/5G de um
+celular.
+
+Para evitar isso, o repositório já vem com um workflow do GitHub Actions
+(`.github/workflows/gerar-manifesto-galeria.yml`) que gera automaticamente
+`assets/img/galeria/manifesto.json` toda vez que você sobe fotos/vídeos
+novos — esse arquivo lista tudo que existe, então o site faz UMA única
+requisição em vez de dezenas/centenas delas, e a Galeria/"Nossa História"
+ficam prontas quase na hora, mesmo em rede ruim. Não precisa fazer nada
+manualmente: basta que o repositório esteja no GitHub com o Actions
+habilitado (vem habilitado por padrão). Se quiser gerar o arquivo na mão
+(ex.: pra testar localmente antes de subir), rode `node
+scripts/gerar-manifesto-galeria.js`.
+
 ## Estrutura de pastas
 
 ```

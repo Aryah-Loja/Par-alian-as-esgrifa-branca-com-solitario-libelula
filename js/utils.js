@@ -386,6 +386,75 @@ window.addEventListener('pageshow', () => {
 const GALERIA_MAX_NUMERO = 500;       // teto de segurança, nunca deve ser alcançado na prática
 const GALERIA_LACUNA_PARA_PARAR = 6;  // depois de 6 números seguidos sem nada, para de procurar
 
+/* ----------------------------------------------------------------------
+   MANIFESTO DA GALERIA (correção de velocidade no celular)
+   ----------------------------------------------------------------------
+   PROBLEMA: sem o manifesto, a ÚNICA forma de descobrir quais fotos/vídeos
+   existem é perguntar ao servidor, um por um, via HEAD request
+   (galeriaDescobrirItem/galeriaVarrerFaixa abaixo). Cada requisição HEAD é
+   rápida no wi-fi/cabo de um computador (poucos ms de ida-e-volta), mas no
+   4G/5G do celular cada uma pode levar centenas de ms — e como o navegador
+   limita quantas conexões abre ao mesmo tempo para o mesmo servidor
+   (normalmente 6), os "lotes de 24 em paralelo" do código abaixo na
+   prática viram várias filas de 6, multiplicando ainda mais o tempo total.
+   É por isso que a Galeria (e "Nossa História", que espera a mesma busca
+   terminar antes de aparecer — ver iniciarGaleriaMomentos() em
+   js/romance.js) carregava rápido no computador e devagar no celular.
+
+   SOLUÇÃO: em vez de "perguntar" arquivo por arquivo, o site agora tenta
+   primeiro buscar um único arquivo pequeno — assets/img/galeria/manifesto.json
+   — que já lista tudo que existe. Isso troca dezenas/centenas de idas-e-
+   voltas ao servidor por UMA só, e a Galeria/"Nossa História" ficam prontas
+   quase instantaneamente, mesmo em rede ruim. Esse arquivo é gerado
+   automaticamente (ver scripts/gerar-manifesto-galeria.js e o workflow do
+   GitHub Actions em .github/workflows/gerar-manifesto-galeria.yml) toda
+   vez que fotos/vídeos novos são enviados para o repositório — ninguém
+   precisa editar nada manualmente.
+
+   Se o manifesto ainda não existir (ex.: projeto ainda não configurado com
+   o GitHub Actions, ou alguém apagou o arquivo), o site cai automaticamente
+   de volta no método antigo de varredura por HEAD request — nada quebra,
+   só volta a ficar mais lento até o manifesto existir.
+   ---------------------------------------------------------------------- */
+let __galeriaManifestoPromise = null;
+
+/**
+ * Busca e valida assets/img/galeria/manifesto.json. Devolve a lista de
+ * itens ({numero, caminho, tipo}) já pronta, ou `null` se o arquivo não
+ * existir/estiver inválido (nesse caso quem chamou deve usar a varredura
+ * por HEAD como antes). O resultado é guardado em memória (não repete a
+ * busca várias vezes na mesma visita à página).
+ */
+function galeriaCarregarManifesto() {
+    if (__galeriaManifestoPromise) return __galeriaManifestoPromise;
+
+    __galeriaManifestoPromise = (async () => {
+        try {
+            // GET normal (com cache do navegador/CDN) — bem mais barato que
+            // as centenas de HEAD "no-store" da varredura manual, e ainda
+            // se beneficia de cache HTTP entre visitas.
+            const resposta = await fetch(`${PASTA_GALERIA}/manifesto.json`);
+            if (!resposta.ok) return null;
+            const dados = await resposta.json();
+            if (!dados || !Array.isArray(dados.itens)) return null;
+
+            const itens = dados.itens
+                .filter(item => item && Number.isFinite(item.numero) && (item.tipo === 'foto' || item.tipo === 'video') && item.ext)
+                .map(item => ({
+                    numero: item.numero,
+                    tipo: item.tipo,
+                    caminho: `${PASTA_GALERIA}/galeria_${item.numero}.${item.ext}`
+                }));
+
+            return itens.length ? itens : null;
+        } catch (e) {
+            return null; // sem manifesto (404), JSON inválido, ou rede falhou — segue com a varredura antiga
+        }
+    })();
+
+    return __galeriaManifestoPromise;
+}
+
 /* ---------------- Cache local da descoberta (localStorage) ---------------- */
 // Guarda { itens: [{numero, caminho, tipo}], completo: boolean, salvoEm }.
 // `completo` distingue um cache que já varreu a Galeria INTEIRA (fotos +
@@ -617,6 +686,18 @@ async function galeriaVarrerFaixa(inicio, teto, aoEncontrar, aoProgredir, tipoAl
  * vale a pena desistir cedo pra não varrer até GALERIA_MAX_NUMERO à toa).
  */
 async function galeriaEscanearCompleta(aoProgredir, aoEncontrarItem) {
+    // CORREÇÃO (celular demorando muito): se existir um manifesto pronto
+    // (ver bloco "MANIFESTO DA GALERIA" acima), usa ele direto — uma única
+    // requisição em vez de dezenas/centenas de HEAD request. Só cai na
+    // varredura manual abaixo se o manifesto não existir ou vier vazio.
+    const doManifesto = await galeriaCarregarManifesto();
+    if (doManifesto) {
+        const itensOrdenados = doManifesto.slice().sort((a, b) => a.numero - b.numero);
+        if (aoEncontrarItem) itensOrdenados.forEach(aoEncontrarItem);
+        galeriaSalvarCacheSeMelhor(itensOrdenados, true);
+        return itensOrdenados;
+    }
+
     const itensEncontrados = [];
     const aoEncontrar = (numero, resultado) => {
         itensEncontrados.push({ numero, ...resultado });
@@ -654,6 +735,21 @@ async function galeriaEscanearCompleta(aoProgredir, aoEncontrarItem) {
 const GALERIA_DESTAQUE_TETO_MAX = 150; // trava de segurança: mesmo que GALERIA_INICIO_VIDEOS seja configurado bem alto no futuro, essa varredura continua leve
 
 async function descobrirFotosParaDestaque() {
+    // CORREÇÃO (a página "Nossa História" ficava presa na tela de
+    // "preparando nossa história..." por muito tempo no celular): antes
+    // desta função rodar sempre a varredura por HEAD abaixo, mesmo sem
+    // cache — e como ela é uma das tarefas que goToRomancePage() espera
+    // terminar antes de esconder o overlay de carregamento (ver
+    // js/romance.js), essa varredura lenta em rede móvel travava a
+    // entrada inteira em "Nossa História", não só a Galeria. Usar o
+    // manifesto (quando existir) resolve os dois casos de uma vez.
+    const doManifesto = await galeriaCarregarManifesto();
+    if (doManifesto) {
+        return doManifesto
+            .filter(item => item.tipo === 'foto')
+            .map(item => ({ numero: item.numero, caminho: item.caminho }));
+    }
+
     const tetoFotos = Math.min(GALERIA_INICIO_VIDEOS - 1, GALERIA_DESTAQUE_TETO_MAX);
     if (tetoFotos < 1) return [];
 
