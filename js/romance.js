@@ -393,6 +393,21 @@ async function iniciarGaleriaMomentos() {
         escolhidas = preenchidas;
     }
 
+    // CORREÇÃO (30/07/2026 — "às vezes fica sem imagem"): antes, se uma
+    // foto escolhida falhasse ao carregar de verdade (ex.: o cache local
+    // deste aparelho ainda apontava pra um caminho que foi renomeado ou
+    // removido da galeria depois que o cache foi salvo — cache só
+    // revalida a cada GALERIA_REVALIDACAO_INTERVALO_MS, em segundo
+    // plano), o `img.onerror` só liberava a Promise sem colocar nada no
+    // lugar: o cartão ficava com o ícone de imagem quebrada. Diferente da
+    // Galeria (que pode simplesmente remover um item quebrado da grade),
+    // aqui os 4 cartões são fixos e sempre precisam mostrar algo — então
+    // a lógica é própria: reserva outras fotos candidatas e, se uma
+    // escolhida falhar, tenta a próxima reserva automaticamente antes de
+    // desistir de vez.
+    const jaEscolhidos = new Set(escolhidas);
+    const reservas = fotos.map(f => f.caminho).filter((caminho) => !jaEscolhidos.has(caminho));
+
     // CORREÇÃO (pedido: a página só deve aparecer com as 4 fotos já
     // carregadas): até aqui só confirmamos que os ARQUIVOS existem (via
     // HEAD) e escolhemos quais mostrar — isso não é o mesmo que a foto já
@@ -418,11 +433,33 @@ async function iniciarGaleriaMomentos() {
             promessasDeCarregamento.push(new Promise((resolve) => {
                 let jaResolveu = false;
                 const finalizar = () => { if (jaResolveu) return; jaResolveu = true; resolve(); };
-                img.onload = finalizar;
-                img.onerror = finalizar; // não trava a experiência por causa de uma foto quebrada
-                img.alt = 'Foto do casal';
-                img.src = escolhidas[i];
-                if (img.complete) finalizar(); // já estava no cache do navegador — não precisa esperar evento nenhum
+
+                const tentarCarregar = (caminho) => {
+                    img.onload = finalizar;
+                    img.onerror = () => {
+                        // Essa foto específica não carregou de verdade —
+                        // tenta a próxima da reserva antes de desistir.
+                        const proxima = reservas.shift();
+                        if (proxima) {
+                            escolhidas[i] = proxima;
+                            cartao.onclick = () => abrirLightboxGaleria(escolhidas, i);
+                            tentarCarregar(proxima);
+                            return;
+                        }
+                        // Sem mais reservas: cai no mesmo placeholder usado
+                        // quando não há foto nenhuma, em vez de deixar o
+                        // ícone de imagem quebrada visível.
+                        aplicarImagemPlaceholder(img, null, 'Foto do casal');
+                        cartao.style.cursor = '';
+                        cartao.onclick = null;
+                        finalizar();
+                    };
+                    img.alt = 'Foto do casal';
+                    img.src = caminho;
+                    if (img.complete && img.naturalWidth > 0) finalizar(); // já estava no cache do navegador — não precisa esperar evento nenhum
+                };
+
+                tentarCarregar(escolhidas[i]);
                 setTimeout(finalizar, LIMITE_ESPERA_FOTO_MS); // trava de segurança
             }));
         } else {

@@ -77,14 +77,22 @@ async function montarGaleria() {
     // colunas, reconstrói as colunas e redistribui os itens já montados
     // (sem refazer nenhuma busca no servidor) — mantém a mesma ordem.
     let __ultimoNumeroColunas = colunas.length;
+    // CORREÇÃO (performance mobile — item 1 da revisão): sem debounce, o
+    // navegador dispara "resize" repetidas vezes durante um redimensionamento
+    // contínuo ou rotação de tela, recalculando/reordenando o DOM a cada
+    // disparo. Agrupa numa única execução 150ms depois do último evento.
+    let __timeoutResizeGaleria = null;
     window.addEventListener('resize', () => {
-        const novoNumero = numeroDeColunas();
-        if (novoNumero === __ultimoNumeroColunas) return;
-        __ultimoNumeroColunas = novoNumero;
-        const itensAtuais = Array.from(masonry.querySelectorAll('.galeria-item'))
-            .sort((a, b) => Number(a.dataset.ordem) - Number(b.dataset.ordem));
-        montarColunas(novoNumero);
-        itensAtuais.forEach((item, indice) => colunas[indice % colunas.length].appendChild(item));
+        clearTimeout(__timeoutResizeGaleria);
+        __timeoutResizeGaleria = setTimeout(() => {
+            const novoNumero = numeroDeColunas();
+            if (novoNumero === __ultimoNumeroColunas) return;
+            __ultimoNumeroColunas = novoNumero;
+            const itensAtuais = Array.from(masonry.querySelectorAll('.galeria-item'))
+                .sort((a, b) => Number(a.dataset.ordem) - Number(b.dataset.ordem));
+            montarColunas(novoNumero);
+            itensAtuais.forEach((item, indice) => colunas[indice % colunas.length].appendChild(item));
+        }, 150);
     });
 
     const barraWrap = document.getElementById('galeriaCarregando');
@@ -175,8 +183,7 @@ function adicionarItemNaGrade(numero, src, tipo, masonry, aoCarregar) {
         video.muted = true;
         video.loop = true;
         video.playsInline = true;
-        video.preload = 'metadata';
-        video.src = `${src}#t=0.5`; // pede o frame de 0.5s como "capa" (evita quadro preto do início em alguns vídeos)
+        video.preload = 'none'; // CORREÇÃO (performance mobile): não baixa nada ainda — só quando o item entrar perto da tela (ver lazyCarregarVideo abaixo)
 
         // Proteção: alguns vídeos gravados direto do celular (metadata no
         // fim do arquivo, codecs variados) não disparam onloadedmetadata de
@@ -186,6 +193,7 @@ function adicionarItemNaGrade(numero, src, tipo, masonry, aoCarregar) {
         // que o item aparece de qualquer forma depois de um tempo, mesmo
         // sem o evento, e cancela o timeout se o evento realmente disparar.
         let jaRevelado = false;
+        let timeoutRevelacao = null;
         const revelarUmaVez = () => {
             if (jaRevelado) return;
             jaRevelado = true;
@@ -194,11 +202,23 @@ function adicionarItemNaGrade(numero, src, tipo, masonry, aoCarregar) {
             observarRevelacao(item);
             if (aoCarregar) aoCarregar();
         };
-        const timeoutRevelacao = setTimeout(revelarUmaVez, 2500);
 
         video.onloadedmetadata = revelarUmaVez;
         video.onloadeddata = revelarUmaVez; // fallback extra — dispara em mais casos que onloadedmetadata
         video.onerror = () => { clearTimeout(timeoutRevelacao); item.remove(); verificarSeGaleriaFicouVazia(); if (aoCarregar) aoCarregar(); };
+
+        // CORREÇÃO (performance mobile — item 1 da revisão): antes o vídeo
+        // baixava os metadados (uma requisição de rede) assim que era
+        // descoberto, mesmo estando fora da tela — em um álbum que só
+        // cresce, isso soma requisições desnecessárias em toda abertura da
+        // Galeria. Agora só define `src`/`preload` quando o item entra
+        // perto da área visível (mesmo mecanismo do IntersectionObserver
+        // usado pra revelar o item, com margem maior pra antecipar).
+        lazyCarregarVideo(item, () => {
+            video.preload = 'metadata';
+            video.src = `${src}#t=0.5`; // pede o frame de 0.5s como "capa" (evita quadro preto do início em alguns vídeos)
+            timeoutRevelacao = setTimeout(revelarUmaVez, 2500);
+        });
 
         const iconePlay = document.createElement('div');
         iconePlay.className = 'galeria-video-play';
@@ -209,6 +229,14 @@ function adicionarItemNaGrade(numero, src, tipo, masonry, aoCarregar) {
     } else {
         const img = document.createElement('img');
         img.alt = legenda || `Lembrança ${numero}`;
+        // CORREÇÃO (performance mobile — item 1 da revisão): `loading="lazy"`
+        // faz o próprio navegador adiar o download até o item chegar perto
+        // da tela, em vez de baixar TODAS as fotos do álbum de uma vez só
+        // — importante porque o álbum foi feito pra crescer com o tempo.
+        // `decoding="async"` evita travar a thread principal decodificando
+        // a imagem (mais sensível em aparelhos de entrada).
+        img.loading = 'lazy';
+        img.decoding = 'async';
         img.src = src;
         img.onload = () => { __galeriaFotosCarregadas++; observarRevelacao(item); if (aoCarregar) aoCarregar(); };
         img.onerror = () => { item.remove(); verificarSeGaleriaFicouVazia(); if (aoCarregar) aoCarregar(); };
@@ -275,6 +303,27 @@ function verificarSeGaleriaFicouVazia() {
     const masonry = document.getElementById('galeriaMasonry');
     const vazio = document.getElementById('galeriaVazio');
     if (masonry && masonry.querySelectorAll('.galeria-item').length === 0) vazio.classList.remove('d-none');
+}
+
+// Observer separado do de revelação (observarRevelacao): este dispara mais
+// cedo (rootMargin maior) porque o vídeo ainda precisa baixar os metadados
+// depois de "entrar" — se usasse a mesma margem apertada da revelação, a
+// pessoa veria o item em branco por um instante extra ao rolar rápido.
+let __galeriaObserverVideo = null;
+function lazyCarregarVideo(item, aoEntrar) {
+    if (!('IntersectionObserver' in window)) { aoEntrar(); return; }
+    if (!__galeriaObserverVideo) {
+        __galeriaObserverVideo = new IntersectionObserver((entradas) => {
+            entradas.forEach(entrada => {
+                if (entrada.isIntersecting) {
+                    __galeriaObserverVideo.unobserve(entrada.target);
+                    entrada.target.__aoEntrar();
+                }
+            });
+        }, { rootMargin: '600px 0px' });
+    }
+    item.__aoEntrar = aoEntrar;
+    __galeriaObserverVideo.observe(item);
 }
 
 let __galeriaObserver = null;
