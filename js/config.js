@@ -325,7 +325,7 @@ const GALERIA_LEGENDAS = {
     45: 'Você é meu capítulo favorito.',
     46: 'Você é minha pessoa favorita.',
     47: 'Você é o melhor dos meus dias.',
-    48: 'Você sempre será a minha resposta.'
+    48: 'Você sempre será a minha resposta.',
     49: 'teste.'
 };
 
