@@ -136,6 +136,17 @@ async function executarDiagnosticoCompleto() {
     // sincronização real com a nuvem — ver agendarEnvioNuvem em js/sync.js.
     window.__auroraSuprimirSyncDiagnostico = true;
 
+    // CORREÇÃO (resumo travado em "Executando verificações..."): `todosOk`
+    // precisa ser lida DEPOIS do bloco try/finally abaixo (na atualização
+    // final do resumo), mas antes estava declarada com `let` DENTRO do
+    // try — em JS, let/const só existem dentro do bloco onde nasceram, e
+    // ler fora dali lança "todosOk is not defined". Esse erro acontecia
+    // bem no fim da função (depois de todos os testes já terem rodado e
+    // aparecido na lista), então o resumo no topo nunca era atualizado —
+    // ficava preso no texto inicial pra sempre. Declarando aqui fora, ela
+    // existe nos dois lugares.
+    let todosOk = true;
+
     try {
         const testes = [
             ['IndexedDB disponível neste navegador', testeIndexedDbDisponivel],
@@ -149,7 +160,6 @@ async function executarDiagnosticoCompleto() {
             ['Configuração de sincronização na nuvem', testeConfiguracaoNuvem]
         ];
 
-        let todosOk = true;
         for (const [nome, fn] of testes) {
             const item = document.createElement('li');
             item.className = 'diag-item diag-rodando';
