@@ -796,12 +796,12 @@ Do seu amor, Gabriel`;
  * antes da data. A trava por hora do servidor (ver obterHoraConfiavel em
  * js/sync.js) cobre o golpe mais comum, que é só adiantar a data do
  * celular. */
-const CAPSULA_YOUTUBE_ID = '';
+const CAPSULA_YOUTUBE_ID = 'SaE2B-xA3qM';
 
 /* Link do YouTube com o vídeo mostrando todo o processo até o pedido
  * (o "making of"). Cole a URL completa aqui quando publicar o vídeo — o
  * botão só aparece na página se este campo não estiver vazio. */
-const VIDEO_PROCESSO_YOUTUBE_URL = '';
+const VIDEO_PROCESSO_YOUTUBE_URL = 'https://www.youtube.com/watch?v=SaE2B-xA3qM';
 
 /* ----------------------------------------------------------------------
    EASTER EGG — brincadeira do sobrenome
@@ -929,8 +929,8 @@ const MOMENTO_LENTO_FRASES = [
    cápsula do tempo — ver js/sync.js), essa seção aparece na página de
    memórias, acima de tudo o mais, com uma mensagem só desse dia.
    ---------------------------------------------------------------------- */
-const ANIVERSARIO_DIA = 8;
-const ANIVERSARIO_MES = 8; // agosto
+const ANIVERSARIO_DIA = 31;
+const ANIVERSARIO_MES = 7; // agosto
 function textoAniversario() {
     return `Hoje é diferente de todos os outros dias: hoje é o seu dia.
 
