@@ -524,7 +524,7 @@ function iniciarCartaFinal() {
         // disso. Ela já vai direto pro modo luz de vela, com o nome já
         // trocado e o botão "Continuar" dentro do próprio modo vela.
         setTimeout(() => {
-            abrirModoVela('Um verso pro nosso universo', montarHtmlVersiculo(), TEXTOS.assinaturaCartaFinal, {
+            abrirModoVela('Para o meu Amor', montarHtmlVersiculo(), TEXTOS.assinaturaCartaFinal, {
                 aoContinuar: async () => {
                     document.getElementById('modoVelaOverlay').classList.add('d-none');
                     desbloquearScrollFundoLembranca();
