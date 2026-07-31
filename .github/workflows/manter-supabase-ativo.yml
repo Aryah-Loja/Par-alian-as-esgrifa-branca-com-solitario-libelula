@@ -1,0 +1,31 @@
+name: Manter projeto Supabase ativo
+
+# O plano gratuito do Supabase pausa projetos depois de um tempo sem
+# nenhuma atividade real na API. Este workflow roda sozinho a cada 5 dias
+# e faz uma chamada leve e real (lista os arquivos do bucket de backup),
+# só pra contar como atividade e evitar a pausa automática.
+on:
+  schedule:
+    # Roda às 09:00 (horário de Brasília, UTC-3 -> 12:00 UTC) a cada 5 dias.
+    # Cron não tem "a cada N dias" direto, então isso roda TODO dia às
+    # 12:00 UTC — o Supabase só precisa de UMA chamada dentro da janela
+    # de inatividade dele (bem maior que 5 dias), então rodar todo dia é
+    # mais simples de manter e ainda mais seguro que rodar só 1x/semana.
+    - cron: "0 12 * * *"
+  workflow_dispatch:
+
+jobs:
+  ping-supabase:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Chamar a API do Supabase (lista o bucket de backup)
+        env:
+          SUPABASE_URL: "https://mdiohswwximmsggmrzue.supabase.co"
+          SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kaW9oc3d3eGltbXNnZ21yenVlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxNTYzNjgsImV4cCI6MjA5ODczMjM2OH0.maRn6Wax6uIEyVo8ETXxOGQ5Mi61B6rafl7CCC1fGcs"
+        run: |
+          curl -s -o /dev/null -w "Status HTTP: %{http_code}\n" \
+            -X POST "$SUPABASE_URL/storage/v1/object/list/aurora-backups" \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{"limit": 1}'
