@@ -1,0 +1,42 @@
+name: Gerar manifesto da galeria
+
+# Roda automaticamente sempre que algo muda dentro de assets/img/galeria/
+# (adicionar, remover ou trocar foto/vídeo), e também permite rodar manual
+# pela aba "Actions" do GitHub caso precise forçar uma atualização.
+on:
+  push:
+    paths:
+      - "assets/img/galeria/**"
+  workflow_dispatch:
+
+# Permissão necessária pra o workflow poder commitar o manifesto.json
+# de volta no repositório.
+permissions:
+  contents: write
+
+jobs:
+  gerar-manifesto:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar o código do repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Gerar assets/img/galeria/manifesto.json
+        run: node scripts/gerar-manifesto-galeria.js
+
+      - name: Commitar o manifesto.json, só se ele mudou
+        run: |
+          if git diff --quiet -- assets/img/galeria/manifesto.json; then
+            echo "Nada mudou no manifesto — nenhum commit necessário."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add assets/img/galeria/manifesto.json
+            git commit -m "Atualiza manifesto.json da galeria [skip ci]"
+            git push
+          fi
