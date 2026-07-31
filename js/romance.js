@@ -332,19 +332,36 @@ async function iniciarGaleriaMomentos() {
     if (!galeria) return;
     const cartoes = Array.from(galeria.querySelectorAll('.table-photo'));
 
+    // REFORMULAÇÃO (30/07/2026 — ver comentário grande em js/utils.js):
+    // "Nossos momentos" roda em TODA abertura do site depois que o pedido
+    // já aconteceu (ver js/main.js), então era a principal responsável
+    // pelo site "demorando mais que o normal" ao abrir — varria a rede do
+    // zero toda vez. Agora usa o cache local primeiro (de uma varredura
+    // anterior, completa ou parcial, tanto faz — aqui só interessam
+    // fotos) e só varre a rede de verdade se não existir cache nenhum
+    // ainda neste aparelho.
     let fotos = [];
-    try {
-        fotos = await descobrirFotosParaDestaque();
-    } catch (e) {
-        fotos = [];
+    const cacheExistente = galeriaLerCache(); // aceita parcial ou completo
+    if (cacheExistente) {
+        fotos = cacheExistente
+            .filter(item => item.tipo === 'foto')
+            .map(item => ({ numero: item.numero, caminho: item.caminho }));
     }
 
-    // CORREÇÃO ("é inaceitável espaço vazio"): a varredura acima já cobre
-    // a faixa inteira de fotos, mas se por qualquer motivo ela não achar
-    // NENHUMA foto (ex.: instabilidade de rede grande demais mesmo com os
-    // retries), refaz a busca com a varredura COMPLETA e exaustiva da
-    // Galeria (fotos e vídeos, filtrando só fotos) antes de aceitar que
-    // realmente não há fotos.
+    if (fotos.length === 0) {
+        try {
+            fotos = await descobrirFotosParaDestaque();
+        } catch (e) {
+            fotos = [];
+        }
+    }
+
+    // CORREÇÃO ("é inaceitável espaço vazio"): as buscas acima já cobrem
+    // a faixa inteira de fotos, mas se por qualquer motivo ainda assim
+    // não achar NENHUMA foto (ex.: instabilidade de rede grande demais
+    // mesmo com os retries), refaz a busca com a varredura COMPLETA e
+    // exaustiva da Galeria (fotos e vídeos, filtrando só fotos) antes de
+    // aceitar que realmente não há fotos.
     if (fotos.length === 0) {
         try {
             const todosOsItens = await galeriaEscanearCompleta(null, null);
@@ -353,6 +370,11 @@ async function iniciarGaleriaMomentos() {
             // mantém o que a varredura já tinha achado (nada, nesse caso)
         }
     }
+
+    // Atualiza o cache em segundo plano (throttlado — ver
+    // GALERIA_REVALIDACAO_INTERVALO_MS em js/utils.js), sem travar a tela:
+    // fotos/vídeos novos aparecem na próxima abertura, não nesta.
+    galeriaRevalidarEmSegundoPlano();
 
     // Escolhe as fotos ESPALHADAS pela numeração (ver escolherFotosEspalhadas
     // em js/utils.js) — evita pegar várias fotos seguidas na numeração, que

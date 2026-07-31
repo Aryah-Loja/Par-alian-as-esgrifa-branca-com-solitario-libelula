@@ -291,6 +291,19 @@ async function executarVerEstadoReset() {
 // aqui mesmo, a duplicata virou um conflito de nome (as duas declarações
 // coexistindo quebravam a página). Removida a cópia local.
 
+// REFORMULAÇÃO (30/07/2026): limpa o cache local (localStorage) da
+// descoberta da galeria (ver bloco de cache em js/utils.js) — força a
+// Galeria e "Nossos momentos" a varrerem a pasta de verdade de novo na
+// próxima abertura deste aparelho, em vez de confiar no que já sabiam.
+function executarLimparCacheGaleria() {
+    galeriaLimparCache();
+    const status = document.getElementById('diagLimparCacheStatus');
+    if (status) {
+        status.textContent = 'Cache limpo — a próxima abertura da Galeria (ou de "Nossa História") vai varrer a pasta de novo.';
+        status.classList.add('ok');
+    }
+}
+
 async function executarTesteGaleria() {
     const btn = document.getElementById('btnTestarGaleria');
     const painel = document.getElementById('diagGaleriaResultado');
@@ -612,6 +625,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btnTestarMediaReal').addEventListener('click', executarTesteMediaReal);
     document.getElementById('btnVerEstadoReset').addEventListener('click', executarVerEstadoReset);
     document.getElementById('btnTestarGaleria').addEventListener('click', executarTesteGaleria);
+    document.getElementById('btnLimparCacheGaleria').addEventListener('click', executarLimparCacheGaleria);
     document.getElementById('btnResetar').addEventListener('click', executarReset);
     document.getElementById('btnResetarContrato').addEventListener('click', executarResetContrato);
     document.getElementById('btnTestarCapsula').addEventListener('click', executarTesteCapsula);

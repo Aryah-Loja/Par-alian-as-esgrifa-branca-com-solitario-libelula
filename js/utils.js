@@ -353,9 +353,110 @@ window.addEventListener('pageshow', () => {
     forcarRecalculoDeLayout();
 });
 
-/* ---------------- Descoberta de itens da galeria (compartilhado entre galeria.html e "Nossos momentos" em index.html) ---------------- */
+/* ----------------------------------------------------------------------
+   Descoberta de itens da galeria (compartilhado entre galeria.html e
+   "Nossos momentos" em index.html)
+   ----------------------------------------------------------------------
+   REFORMULAÇÃO (30/07/2026) — motivo: tanto a página da Galeria quanto o
+   quadro "Nossos momentos" descobriam quais fotos/vídeos existem "no
+   chute": iam testando galeria_1, galeria_2, galeria_3... um por um (em
+   lotes) via requisições HEAD, do ZERO, toda vez que a página abria. Pior
+   ainda: depois que o pedido de namoro já aconteceu, TODA abertura do
+   site cai direto em "Nossa História" (ver js/main.js), que inclui
+   "Nossos momentos" — ou seja, essa varredura rodava a cada vez que ela
+   abria o link, não só na primeira vez. Isso é a causa principal tanto da
+   Galeria demorando quanto do site "demorando mais que o normal" ao
+   abrir.
+   Duas mudanças resolvem isso, mantendo intacto o espírito de "só jogar
+   os arquivos numerados na pasta, sem editar nada" (ver comentário grande
+   em js/config.js):
+   1) CACHE LOCAL (`localStorage`, por aparelho): o resultado de uma
+      varredura completa fica guardado. Da SEGUNDA abertura em diante (no
+      mesmo aparelho/navegador), tanto a Galeria quanto "Nossos momentos"
+      usam esse cache e aparecem na hora, sem esperar nenhuma requisição
+      de rede — a varredura de verdade roda só em segundo plano, sem
+      travar a tela, só pra pegar fotos/vídeos novos que Gabriel tenha
+      adicionado depois.
+   2) MAIS PARALELISMO na varredura em si (quando ela precisa mesmo
+      acontecer, como na primeiríssima abertura de um aparelho): antes
+      cada lote de 8 números esperava terminar pra só então começar o
+      próximo; agora o lote é maior (24), fazendo bem menos idas-e-voltas
+      até o servidor no total.
+   ---------------------------------------------------------------------- */
 const GALERIA_MAX_NUMERO = 500;       // teto de segurança, nunca deve ser alcançado na prática
 const GALERIA_LACUNA_PARA_PARAR = 6;  // depois de 6 números seguidos sem nada, para de procurar
+
+/* ---------------- Cache local da descoberta (localStorage) ---------------- */
+// Guarda { itens: [{numero, caminho, tipo}], completo: boolean, salvoEm }.
+// `completo` distingue um cache que já varreu a Galeria INTEIRA (fotos +
+// vídeos, gerado por galeriaEscanearCompleta — o único confiável para
+// montar a página da Galeria) de um cache PARCIAL (só a faixa de fotos,
+// gerado por descobrirFotosParaDestaque — suficiente para "Nossos
+// momentos", que só precisa de fotos). Nunca deixamos um cache parcial
+// sobrescrever um completo já salvo, pra Galeria nunca perder itens que
+// já sabia que existiam.
+const GALERIA_CACHE_CHAVE = 'aurora_galeria_cache_v1';
+
+function galeriaLerCacheBruto() {
+    try {
+        const bruto = localStorage.getItem(GALERIA_CACHE_CHAVE);
+        if (!bruto) return null;
+        const dados = JSON.parse(bruto);
+        if (!dados || !Array.isArray(dados.itens)) return null;
+        return dados;
+    } catch (e) {
+        return null; // localStorage bloqueado (modo privado, cota cheia, etc.) — segue sem cache, sem quebrar nada
+    }
+}
+
+/**
+ * Lê o cache pronto para uso. `exigirCompleto = true` (usado pela página
+ * da Galeria) só devolve algo se o cache cobrir fotos E vídeos por
+ * inteiro; `false` (usado por "Nossos momentos") aceita qualquer cache
+ * existente, já que ali só interessam as fotos.
+ */
+function galeriaLerCache(exigirCompleto = false) {
+    const dados = galeriaLerCacheBruto();
+    if (!dados) return null;
+    if (exigirCompleto && !dados.completo) return null;
+    return dados.itens;
+}
+
+function galeriaSalvarCacheSeMelhor(itens, completo) {
+    try {
+        const atual = galeriaLerCacheBruto();
+        if (atual && atual.completo && !completo) return; // não piora um cache completo com um parcial
+        localStorage.setItem(GALERIA_CACHE_CHAVE, JSON.stringify({ itens, completo, salvoEm: Date.now() }));
+    } catch (e) {
+        // sem espaço/permissão de localStorage — sem cache dessa vez, mas nada quebra
+    }
+}
+
+/** Usado por diagnostico.html ("Limpar cache da Galeria"), e por quem quiser forçar uma varredura de verdade na próxima abertura. */
+function galeriaLimparCache() {
+    try { localStorage.removeItem(GALERIA_CACHE_CHAVE); } catch (e) { /* nada a fazer */ }
+}
+
+// De quanto em quanto tempo, no máximo, vale a pena refazer a varredura de
+// verdade em segundo plano (só pra pegar fotos/vídeos novos que Gabriel
+// tenha adicionado) — sem isso, o cache nunca atualizaria sozinho.
+const GALERIA_REVALIDACAO_INTERVALO_MS = 3 * 60 * 60 * 1000; // 3 horas
+
+/**
+ * Roda `galeriaEscanearCompleta` em segundo plano (sem bloquear nada na
+ * tela) só se o cache não existir ainda ou já estiver "velho" o
+ * suficiente (ver GALERIA_REVALIDACAO_INTERVALO_MS) — assim uma pessoa
+ * que abre o site várias vezes seguidas não dispara uma varredura nova a
+ * cada abertura, mas o cache também não fica desatualizado pra sempre.
+ * Chamada tanto por "Nossos momentos" (index.html) quanto pela página da
+ * Galeria, sempre DEPOIS de já ter mostrado algo na tela (cache ou
+ * varredura própria) — nunca é o que decide o que aparece agora.
+ */
+function galeriaRevalidarEmSegundoPlano() {
+    const dados = galeriaLerCacheBruto();
+    if (dados && (Date.now() - (dados.salvoEm || 0)) < GALERIA_REVALIDACAO_INTERVALO_MS) return;
+    galeriaEscanearCompleta(null, null).catch(() => { /* sem problema, tenta de novo na próxima abertura */ });
+}
 
 /** Confere (via HEAD, sem baixar o arquivo inteiro) se um caminho existe no servidor. */
 async function galeriaArquivoExiste(caminho) {
@@ -457,7 +558,12 @@ async function galeriaDescobrirItem(numero, tipoAlvo) {
  * fotos) serem cortadas da galeria.
  */
 async function galeriaVarrerFaixa(inicio, teto, aoEncontrar, aoProgredir, tipoAlvo, lacunaTolerancia = GALERIA_LACUNA_PARA_PARAR) {
-    const TAMANHO_LOTE = 8;
+    // Lote aumentado de 8 para 24 (REFORMULAÇÃO 30/07/2026): como essa
+    // varredura de verdade só roda mesmo na primeira abertura de cada
+    // aparelho (depois disso entra o cache, ver bloco acima), vale testar
+    // mais números em paralelo por vez — bem menos idas-e-voltas até o
+    // servidor até cobrir a faixa inteira.
+    const TAMANHO_LOTE = 24;
     let proximoNumero = inicio;
     let lacunaAtual = 0;
 
@@ -520,6 +626,11 @@ async function galeriaEscanearCompleta(aoProgredir, aoEncontrarItem) {
     await galeriaVarrerFaixa(1, GALERIA_INICIO_VIDEOS - 1, aoEncontrar, aoProgredir, 'foto', Infinity);
     await galeriaVarrerFaixa(GALERIA_INICIO_VIDEOS, GALERIA_MAX_NUMERO, aoEncontrar, aoProgredir, 'video');
 
+    // Varredura completa (fotos + vídeos, faixa inteira): o resultado mais
+    // confiável que existe, então sempre pode virar o cache — ver bloco de
+    // cache no topo deste arquivo.
+    galeriaSalvarCacheSeMelhor(itensEncontrados, true);
+
     return itensEncontrados;
 }
 
@@ -556,6 +667,11 @@ async function descobrirFotosParaDestaque() {
     // (bem leve), então varrer até o fim garante achar todas as fotos
     // reais em vez de cortar cedo demais.
     await galeriaVarrerFaixa(1, tetoFotos, aoEncontrar, null, 'foto', Infinity);
+
+    // Cache PARCIAL (só fotos) — só é salvo se ainda não existir um cache
+    // completo melhor (ver galeriaSalvarCacheSeMelhor). Guarda `tipo: 'foto'`
+    // em cada item pra ficar no mesmo formato usado pelo cache completo.
+    galeriaSalvarCacheSeMelhor(fotosEncontradas.map(f => ({ numero: f.numero, caminho: f.caminho, tipo: 'foto' })), false);
 
     return fotosEncontradas;
 }

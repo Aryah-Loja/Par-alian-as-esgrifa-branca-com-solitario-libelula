@@ -131,17 +131,37 @@ async function montarGaleria() {
         atualizarProgresso();
     };
 
-    await galeriaEscanearCompleta(null, aoEncontrarItem);
-    varreduraTerminou = true;
-
-    if (totalEncontrados === 0 && barraWrap) barraWrap.classList.add('d-none');
-    atualizarProgresso();
+    // REFORMULAÇÃO (30/07/2026 — ver comentário grande em js/utils.js):
+    // se já existe um cache COMPLETO de uma visita anterior neste mesmo
+    // aparelho, usa ele direto — pula a varredura por completo, a grade
+    // já entra montada com tudo, sem esperar nenhuma requisição de rede.
+    // Só faz a varredura de verdade quando não há cache ainda (ex.:
+    // primeira vez que a Galeria abre neste aparelho).
+    const itensEmCache = galeriaLerCache(true);
+    if (itensEmCache && itensEmCache.length) {
+        itensEmCache
+            .slice()
+            .sort((a, b) => a.numero - b.numero)
+            .forEach(aoEncontrarItem);
+        varreduraTerminou = true;
+        if (barraWrap) barraWrap.classList.add('d-none');
+    } else {
+        await galeriaEscanearCompleta(null, aoEncontrarItem);
+        varreduraTerminou = true;
+        if (totalEncontrados === 0 && barraWrap) barraWrap.classList.add('d-none');
+        atualizarProgresso();
+    }
 
     montarItensYoutube(colunas);
 
     __galeriaCarregamentoCompleto = true;
 
     setTimeout(verificarSeGaleriaFicouVazia, 1200);
+
+    // Atualiza o cache em segundo plano (throttlado, ver GALERIA_REVALIDACAO_INTERVALO_MS
+    // em js/utils.js) — se Gabriel tiver adicionado fotos/vídeos novos, eles
+    // aparecem na PRÓXIMA abertura da Galeria, sem travar esta.
+    galeriaRevalidarEmSegundoPlano();
 }
 
 function adicionarItemNaGrade(numero, src, tipo, masonry, aoCarregar) {
