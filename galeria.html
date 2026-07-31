@@ -138,6 +138,13 @@
     </header>
 
     <main class="galeria-wrap">
+        <div class="text-center galeria-videos-toggle" id="galeriaVideosToggleWrap">
+            <button type="button" id="btnGaleriaVerVideos" class="btn btn-outline-light btn-sm rounded-pill"><i class="bi bi-camera-reels me-1"></i>Ver vídeos</button>
+            <div id="galeriaCarregandoVideos" class="galeria-carregando d-none">
+                <div class="galeria-carregando-barra" id="galeriaCarregandoVideosBarraWrap"><div class="galeria-carregando-barra-preenchida" id="galeriaCarregandoVideosBarra"></div></div>
+                <p class="galeria-carregando-texto" id="galeriaCarregandoVideosTexto">Procurando vídeos...</p>
+            </div>
+        </div>
         <div id="galeriaCarregando" class="galeria-carregando">
             <div class="galeria-carregando-barra"><div class="galeria-carregando-barra-preenchida" id="galeriaCarregandoBarra"></div></div>
             <p class="galeria-carregando-texto" id="galeriaCarregandoTexto">Procurando fotos...</p>

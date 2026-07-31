@@ -810,6 +810,69 @@ faixas separadas por `GALERIA_INICIO_VIDEOS`), `GALERIA_LEGENDAS`,
 Sintaxe de `js/utils.js`, `js/galeria.js`, `js/romance.js` e
 `js/diagnostics.js` validada com `node --check` depois da mudança.
 
+## Botão separado "Ver vídeos" na Galeria (novo, 30/07/2026)
+
+**Problema relatado:** mesmo depois da reformulação da descoberta (seção
+acima), abrir `galeria.html` sempre montava fotos E vídeos juntos na
+grade (`galeriaEscanearCompleta`), e vídeo é sempre um arquivo bem mais
+pesado que foto. Isso deixava a abertura da Galeria mais pesada do que
+precisava, mesmo quando a pessoa só queria ver as fotos.
+
+**Solução:** a abertura da Galeria agora monta só as fotos. Os vídeos
+(locais, a partir de `GALERIA_INICIO_VIDEOS` = 101, e os do YouTube,
+`GALERIA_YOUTUBE`) só entram na grade quando a pessoa aperta o botão
+"Ver vídeos", que aparece separado, no topo de `galeria.html`, com sua
+própria barrinha de carregamento.
+
+```
+js/utils.js  → galeriaEscanearFotos(aoProgredir, aoEncontrarItem)   — só
+                a faixa 1..GALERIA_INICIO_VIDEOS-1 (usa manifesto/cache
+                quando existir)
+             → galeriaEscanearVideos(aoProgredir, aoEncontrarItem)  — só
+                a faixa GALERIA_INICIO_VIDEOS..GALERIA_MAX_NUMERO,
+                chamada só pelo clique no botão
+             → galeriaEscanearCompleta() continua existindo, sem
+                mudança, só para o fallback de "Nossos momentos"
+                (romance.js) quando nada mais acha nenhuma foto
+             → galeriaRevalidarEmSegundoPlano() agora revalida só
+                fotos (galeriaEscanearFotos) — a faixa de vídeos nunca
+                roda sozinha em segundo plano
+js/galeria.js → montarGaleria() varre/monta só fotos na abertura
+             → carregarVideosDaGaleria() (nova) varre/monta vídeos
+                locais + YouTube, chamada pelo clique em
+                #btnGaleriaVerVideos; some com o botão se achar algo,
+                mostra "Nenhum vídeo por aqui ainda." e deixa tentar de
+                novo depois se não achar nada
+             → colunas do masonry viraram variável de módulo
+                (`__galeriaColunas`) em vez de local a montarGaleria(),
+                porque a seção de vídeos precisa continuar adicionando
+                itens nas mesmas colunas depois que a montagem inicial
+                já terminou
+galeria.html → #galeriaVideosToggleWrap / #btnGaleriaVerVideos (botão)
+                e #galeriaCarregandoVideos (barra própria, reaproveita
+                as mesmas classes CSS da barra de fotos)
+css/style.css → `.galeria-videos-toggle` (só espaçamento, sem CSS novo
+                de barra/botão — reaproveita `.galeria-carregando*` e
+                as classes utilitárias do Bootstrap já usadas em botões
+                parecidos do site, ex. "Ver todos os lugares")
+```
+
+O cache local (`aurora_galeria_cache_v1`, mesma chave/formato de antes)
+não mudou de estrutura: continua guardando `{itens, completo, salvoEm}`.
+O que mudou é só QUANDO cada parte é lida/gravada: fotos gravam um cache
+parcial (`completo: false`) se não houver manifesto; ao apertar "Ver
+vídeos", o resultado se combina com as fotos já conhecidas e vira um
+cache completo (`completo: true`), deixando um segundo clique (ou uma
+próxima visita) instantâneo. `diagnostico.html` ("Limpar cache da
+Galeria") continua limpando fotos e vídeos juntos, é a mesma chave.
+
+**Não muda:** o formato dos arquivos, `GALERIA_LEGENDAS`,
+`GALERIA_YOUTUBE`, o lightbox (navegação entre itens continua funcionando
+igual, só que vídeos entram no `__galeriaItens` depois das fotos agora),
+o masonry por colunas, "Nossos momentos" (continua só com fotos, como
+já era). Sintaxe de `js/utils.js`, `js/galeria.js` e `js/diagnostics.js`
+validada com `node --check` depois da mudança.
+
 ## Pendências / sugestões em aberto
 
 - Sincronização de reset entre aparelhos foi reportada como
