@@ -106,10 +106,8 @@ const PLACEHOLDERS = {
     imagem_timeline_hoje: { arquivoBase: 'timeline-hoje', tipo: 'imagem', descricao: 'Timeline — foto de hoje, marcando o dia do pedido' },
 
     // ---- Nossos momentos (mesa de fotos) ----
-    imagem_momento_1: { arquivo: 'momento-1.jpg', tipo: 'imagem', descricao: 'Foto solta na "mesa de fotos"' },
-    imagem_momento_2: { arquivo: 'momento-2.jpg', tipo: 'imagem', descricao: 'Foto solta na "mesa de fotos"' },
-    imagem_momento_3: { arquivo: 'momento-3.jpg', tipo: 'imagem', descricao: 'Foto solta na "mesa de fotos"' },
-    imagem_momento_4: { arquivo: 'momento-4.jpg', tipo: 'imagem', descricao: 'Foto solta na "mesa de fotos"' },
+    // "imagem_momento_1..4" foram removidos daqui: "Nossos momentos" não usa
+    // arquivo próprio, ele sorteia fotos direto da Galeria (ver README.md).
 
     // ---- Seus bichos (clique no nome de cada um abre a foto) ----
     // "arquivoBase" (sem extensão) em vez de "arquivo": o arquivo deve
@@ -861,12 +859,12 @@ Do seu amor, Gabriel`;
  * antes da data. A trava por hora do servidor (ver obterHoraConfiavel em
  * js/sync.js) cobre o golpe mais comum, que é só adiantar a data do
  * celular. */
-const CAPSULA_YOUTUBE_ID = '';
+const CAPSULA_YOUTUBE_ID = 'SaE2B-xA3qM';
 
 /* Link do YouTube com o vídeo mostrando todo o processo até o pedido
  * (o "making of"). Cole a URL completa aqui quando publicar o vídeo — o
  * botão só aparece na página se este campo não estiver vazio. */
-const VIDEO_PROCESSO_YOUTUBE_URL = 'https://youtu.be/7Sx_eEfSKew';
+const VIDEO_PROCESSO_YOUTUBE_URL = 'https://www.youtube.com/watch?v=SaE2B-xA3qM';
 
 /* Deixe `true` se o vídeo acima foi gravado/exportado na VERTICAL
  * (retrato — o formato comum de Reels/Stories/vídeo direto do celular
@@ -1728,7 +1726,11 @@ const CHECKLIST_ENCONTROS = [
    ---------------------------------------------------------------------- */
 const MENSAGEM_SECRETA_LUA = 'O sol ama tanto a lua que morre todas as noites para deixá-la respirar - K4QWZ';
 
-const SENHA_AREA_MEMORIAS = '1406';
+// Hash SHA-256 da senha (não o texto puro) — ver verificarSenhaHash() em
+// js/utils.js. Não é segurança de verdade (site estático não tem como ter
+// isso, ver nota completa mais abaixo em SENHA_RESET_SITE_HASH), só evita que
+// a senha apareça em texto legível pra quem abrir este arquivo por curiosidade.
+const SENHA_AREA_MEMORIAS_HASH = '1326c6c44cc5e89cc510c9d2a17dd02c9105a377df60cf64d953c1eb4b06b00d';
 
 /* ----------------------------------------------------------------------
    SENHA DA CARTA "SE UM DIA A GENTE DISCUTIR, LEIA ISSO"
@@ -1737,23 +1739,27 @@ const SENHA_AREA_MEMORIAS = '1406';
    senha, com uma dica que é só um lembrete carinhoso, não a resposta
    escancarada (ver iniciarCartaDiscussao() em js/romance.js).
    ---------------------------------------------------------------------- */
-const SENHA_CARTA_DISCUSSAO = 'teamo';
+const SENHA_CARTA_DISCUSSAO_HASH = 'dc71e742d453ba0320f5797cf44f181b8e946cb48a59baa090c740c6f72b338b';
 const DICA_SENHA_CARTA_DISCUSSAO = 'A dica são duas palavras que a gente nunca pode esquecer de dizer um pro outro.';
 
 /* ----------------------------------------------------------------------
    SENHA DO BOTÃO "RESETAR SITE"
    ----------------------------------------------------------------------
    Some qualquer indicação visual dessa senha na tela (o campo é do tipo
-   "password", mascarado) — só quem souber o número consegue resetar o
-   site. Nota honesta: como este é um site 100% estático (sem servidor
-   próprio), qualquer pessoa que abrir o código-fonte da página encontra
-   esta constante — não existe "segredo perfeito" possível nesse tipo de
-   projeto (o mesmo já vale para a chave do Supabase, ver js/sync.js).
-   Na prática isso não é um problema aqui: ninguém além de quem já tem
-   este arquivo vai inspecionar o código, e o objetivo real da senha é
-   evitar um toque acidental no botão, não resistir a um ataque.
+   "password", mascarado). Guardada como hash SHA-256 (não o número em
+   texto puro) — ver verificarSenhaHash() em js/utils.js. Nota honesta:
+   como este é um site 100% estático (sem servidor próprio), isso não é
+   segurança de verdade contra alguém que realmente saiba o que está
+   fazendo (dá pra rodar a senha digitada pelo mesmo hash e comparar, ou
+   até testar força bruta com números de 8 dígitos) — só evita que a
+   senha apareça em texto legível de bandeja pra quem abrir o
+   código-fonte por curiosidade (o mesmo já vale para a chave do
+   Supabase, ver js/sync.js). Na prática isso não é um problema aqui:
+   ninguém além de quem já tem este arquivo vai inspecionar o código, e o
+   objetivo real da senha é evitar um toque acidental no botão, não
+   resistir a um ataque.
    ---------------------------------------------------------------------- */
-const SENHA_RESET_SITE = '13046700';
+const SENHA_RESET_SITE_HASH = '0d6f8587a3f511e9082c6781a072e2f65978918fa0c606a0de3633730a51b13d';
 
 /* ----------------------------------------------------------------------
    TEXTOS-CHAVE (fáceis de localizar e editar)

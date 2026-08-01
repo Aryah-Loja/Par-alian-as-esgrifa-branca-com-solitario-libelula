@@ -328,7 +328,7 @@ async function executarTesteGaleria() {
     btn.innerHTML = textoOriginal;
 }
 
-// Senha do reset (proteção contra toque acidental — ver SENHA_RESET_SITE em js/config.js).
+// Senha do reset (proteção contra toque acidental — ver SENHA_RESET_SITE_HASH em js/config.js).
 function solicitarSenhaReset(opcoes = {}) {
     return new Promise((resolve) => {
         const overlay = document.getElementById('senhaResetOverlay');
@@ -358,9 +358,9 @@ function solicitarSenhaReset(opcoes = {}) {
             resolve(resultado);
         }
 
-        function tentarConfirmar() {
+        async function tentarConfirmar() {
             const senhaDigitada = (input.value || '').trim();
-            if (senhaDigitada === SENHA_RESET_SITE) {
+            if (await verificarSenhaHash(senhaDigitada, SENHA_RESET_SITE_HASH)) {
                 fechar(true);
             } else {
                 erro.classList.remove('d-none');
@@ -677,7 +677,7 @@ const GERENCIADOR_MIDIAS_ROTULOS = {
     assinatura: 'Assinatura',
     lembranca: 'Lembrança',
     mensagem_futuro: 'Mensagem para o futuro',
-    polaroid: 'Polaroid',
+    polaroid_gerada: 'Polaroid',
     diagnostico: 'Arquivo de teste (diagnóstico)'
 };
 

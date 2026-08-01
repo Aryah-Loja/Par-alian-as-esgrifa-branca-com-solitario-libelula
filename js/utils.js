@@ -852,6 +852,32 @@ function gerarIdUnico(prefixo) {
     return `${prefixo}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
+/* ----------------------------------------------------------------------
+   VERIFICAÇÃO DE SENHA POR HASH (SENHA_AREA_MEMORIAS_HASH,
+   SENHA_CARTA_DISCUSSAO_HASH, SENHA_RESET_SITE_HASH — todas em
+   js/config.js)
+   ----------------------------------------------------------------------
+   Calcula o SHA-256 do que a pessoa digitou (via Web Crypto API, nativa
+   do navegador, disponível em qualquer conexão HTTPS — o caso do GitHub
+   Pages) e compara com o hash salvo, em vez de comparar a senha em texto
+   puro. Isso NÃO é segurança de verdade (ver nota em SENHA_RESET_SITE_HASH,
+   js/config.js) — só evita que a senha apareça legível de bandeja pra
+   quem abrir o código-fonte por curiosidade.
+   ---------------------------------------------------------------------- */
+async function verificarSenhaHash(digitada, hashEsperado) {
+    try {
+        const bytes = new TextEncoder().encode(digitada || '');
+        const buffer = await crypto.subtle.digest('SHA-256', bytes);
+        const hashDigitada = Array.from(new Uint8Array(buffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+        return hashDigitada === hashEsperado;
+    } catch (e) {
+        // Navegador muito antigo sem Web Crypto (raríssimo em HTTPS) —
+        // recusa em vez de travar, mais seguro do que deixar passar.
+        console.error('Falha ao verificar senha (Web Crypto indisponível):', e);
+        return false;
+    }
+}
+
 /* ---------------- Conversão DataURL -> Blob (usada ao restaurar backups antigos, ver js/export.js) ---------------- */
 function dataURLParaBlob(dataUrl) {
     const partes = dataUrl.split(',');

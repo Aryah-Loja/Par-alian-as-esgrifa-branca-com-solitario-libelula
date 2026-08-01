@@ -1,0 +1,9 @@
+# Bloqueia todo robô de busca (Google, Bing, etc.) de indexar qualquer
+# página deste site. Isso é reforçado pela tag <meta name="robots"
+# content="noindex, nofollow"> em cada página individualmente — este
+# arquivo é uma camada extra, lida antes mesmo de abrir qualquer página.
+# Não impede alguém que já tem o link direto de acessar (isso não existe
+# pra nenhum site sem senha de acesso geral), só evita que o site apareça
+# em resultados de busca pra quem não tem o link.
+User-agent: *
+Disallow: /

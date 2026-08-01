@@ -1017,9 +1017,9 @@ function solicitarSenhaMemorias() {
         bloquearScrollFundoLembranca();
         setTimeout(() => input.focus(), 300);
 
-        function tentarDesbloquear() {
+        async function tentarDesbloquear() {
             const senhaDigitada = (input.value || '').trim();
-            if (senhaDigitada === SENHA_AREA_MEMORIAS) {
+            if (await verificarSenhaHash(senhaDigitada, SENHA_AREA_MEMORIAS_HASH)) {
                 try { sessionStorage.setItem('aurora_memorias_desbloqueadas', '1'); } catch (e) { /* ignora */ }
                 overlay.classList.add('d-none');
                 desbloquearScrollFundoLembranca();
@@ -1247,9 +1247,9 @@ function iniciarCartaDiscussao() {
         setTimeout(() => senhaInput.focus(), 300);
     }
 
-    function tentarSenha() {
+    async function tentarSenha() {
         const digitada = (senhaInput.value || '').trim().toLowerCase().replace(/\s+/g, '');
-        if (digitada === SENHA_CARTA_DISCUSSAO) {
+        if (await verificarSenhaHash(digitada, SENHA_CARTA_DISCUSSAO_HASH)) {
             overlay.classList.add('d-none');
             desbloquearScrollFundoLembranca();
             // Já abre direto no modo "luz de vela" (pedido explícito).
