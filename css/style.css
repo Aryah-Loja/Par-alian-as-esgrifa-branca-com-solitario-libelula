@@ -14,9 +14,7 @@
 }
 
 /* ---------------- Base / reset ----------------
-   CORREÇÃO (Prioridade 1, item 4): elimina completamente o scroll/overflow
-   horizontal em qualquer navegador. box-sizing garante que paddings não
-   estourem a largura de nenhum elemento. */
+   box-sizing garante que paddings não estourem a largura de nenhum elemento. */
 *, *::before, *::after { box-sizing: border-box; }
 
 button, a, .easter-egg-gatilho, .ceu-lua, .ceu-estrela, [role="button"] { touch-action: manipulation; }
@@ -26,12 +24,8 @@ html {
     height: 100%;
     overflow-x: hidden;
     width: 100%;
-    /* CORREÇÃO: o iOS moderno ignora "user-scalable=no" do viewport (a Apple
-       decidiu isso por acessibilidade), então toques rápidos repetidos
-       (como os easter eggs de 5 toques) ainda disparavam o zoom nativo do
-       Safari, mesmo com o bloqueio em JS. touch-action:manipulation é a
-       forma correta, nativa do navegador, de desligar esse gesto de zoom
-       por toque duplo/repetido, sem atrapalhar rolagem nem toque único. */
+    /* iOS ignora "user-scalable=no"; touch-action:manipulation desliga o
+       zoom por toque duplo/repetido nativamente, sem atrapalhar a rolagem. */
     touch-action: manipulation;
 }
 
@@ -263,21 +257,9 @@ img { max-width: 100%; }
 .letter-paper-rodape { flex: 0 0 auto; text-align: center; padding-top: 10px; margin-top: 6px; border-top: 1px solid rgba(43,37,35,0.12); }
 .btn-modo-vela { margin-top: 10px; background: none; border: 1px solid rgba(43,37,35,0.3); color: rgba(43,37,35,0.75); font-size: 0.75rem; padding: 6px 14px; border-radius: 999px; display: inline-flex; align-items: center; gap: 6px; }
 .btn-modo-vela:active { background: rgba(43,37,35,0.08); }
-/* CORREÇÃO (carta saindo da tela / "puxar pra cima recarrega a página"): as
-   versões anteriores tentavam posicionar a carta calculando um deslocamento
-   a partir de onde o envelope está NA PÁGINA — mas isso depende de quanto a
-   pessoa já rolou a tela até ali, e uma carta longa de verdade (vários
-   parágrafos) podia ficar parcialmente ACIMA da área que dá pra rolar até,
-   não só fora da tela visível. Quando a pessoa tentava "puxar pra cima" pra
-   alcançar aquele trecho, na real ela já estava no topo da rolagem — e esse
-   gesto vira "puxar pra atualizar" no Safari/Chrome do iPhone, recarregando
-   a página sem querer.
-   Agora, quando aberta, a carta gruda direto no CENTRO DA TELA (position:
-   fixed), não mais relativa ao envelope — sempre alcançável. Só o TEXTO
-   (".letter-paper-scroll") rola por dentro; o cartão inteiro (com a
-   moldura rosé e o botão "Continuar" no rodapé) tem altura definida pelo
-   conteúdo, então a moldura sempre chega até o fim de verdade, e o botão
-   "Continuar" sempre aparece deitado embaixo do texto, nunca por cima. */
+/* Quando aberta, a carta gruda no centro da tela (position:fixed), não mais
+   relativa ao envelope — sempre alcançável, mesmo se a página estiver
+   rolada. Só o texto (.letter-paper-scroll) rola por dentro. */
 .envelope.aberto .letter-paper {
     position: fixed;
     top: 50%; left: 50%; bottom: auto;
@@ -286,14 +268,9 @@ img { max-width: 100%; }
     transform: translate(-50%, -50%) scale(1);
     opacity: 1; z-index: 9000;
 }
-/* CORREÇÃO (carta da cápsula do tempo ficando "flutuando" na tela mesmo
-   depois de fechar o modo vela): a carta final (#envelope) nunca fecha
-   sozinha antes de "Continuar" ser clicado, então virar um cartão fixo é
-   seguro pra ela. Já a cápsula do tempo (#capsulaEnvelope) pode ser aberta
-   e fechada várias vezes, e o modo vela é a ÚNICA forma como o texto dela
-   deve aparecer — por isso essa regra mais específica cancela o cartão
-   fixo só pra ela, mesmo com a classe "aberto" (usada apenas para a
-   animação do envelope abrindo/fechando). */
+/* A cápsula do tempo pode abrir/fechar várias vezes e usa só o modo vela
+   para mostrar o texto — esta regra mais específica cancela o cartão fixo
+   acima só para ela, mesmo com a classe "aberto" (usada só na animação). */
 #capsulaEnvelope.aberto .letter-paper {
     position: absolute;
     top: auto; left: 50%; bottom: 4%;
@@ -504,12 +481,8 @@ img { max-width: 100%; }
    invisível no rodapé; agora é um botão de verdade, fácil de achar. */
 .btn-carta-discussao { display: block; margin: 34px auto 4px; background: rgba(183,110,121,0.14); border: 1px solid rgba(183,110,121,0.4); color: #f0d9dd; padding: 12px 22px; border-radius: 999px; font-size: 0.85rem; }
 
-/* CORREÇÃO: "align-items: center" com conteúdo mais alto que a tela
-   fazia o overlay abrir mostrando o meio/fim do papel, exigindo arrastar
-   pra cima devagar pra achar o começo. Com "flex-start" + padding mais
-   generoso (que se adapta em telas pequenas e grandes com clamp), o
-   papel sempre abre mostrando o topo, e ainda sobra respiro nas bordas
-   em qualquer aparelho. */
+/* "flex-start" + padding responsivo (clamp): o overlay sempre abre
+   mostrando o topo do papel, com respiro nas bordas em qualquer aparelho. */
 .carta-discussao-overlay { position: fixed; inset: 0; z-index: 12500; background: rgba(10,6,8,0.94); display: flex; align-items: flex-start; justify-content: center; padding: clamp(28px, 8vh, 60px) clamp(18px, 6vw, 40px); overflow-y: auto; overscroll-behavior: contain; }
 .carta-discussao-papel { max-width: 380px; width: 100%; background: #faf0e1; border-radius: 4px; padding: clamp(26px, 6vw, 38px) clamp(20px, 5vw, 30px); box-shadow: 0 20px 50px rgba(0,0,0,0.5); margin: auto; }
 .carta-discussao-papel .letter-text { color: #2b2523; }
@@ -601,7 +574,7 @@ img { max-width: 100%; }
     background: radial-gradient(circle at 35% 32%, #fff9ec 0%, #ffedc7 45%, #f2d9a3 75%, rgba(255,233,194,0.15) 100%);
     box-shadow: 0 0 20px 6px rgba(255,233,194,0.3), 0 0 40px 14px rgba(255,233,194,0.12);
     cursor: pointer; animation: ceuLuaRespirar 6s ease-in-out infinite;
-    z-index: 4; /* CORREÇÃO: a primeira estrela da constelação cai quase em cima da lua e, sem z-index, ela vinha depois no HTML — então ficava por cima e "roubava" o toque. Isso é o motivo real dos 5 toques não funcionarem. */
+    z-index: 4; /* fica acima da lua (sem isso a estrela mais próxima "rouba" o toque dela) */
 }
 .ceu-lua::before { content: ''; position: absolute; inset: -14px; border-radius: 50%; } /* área de toque maior que o círculo visível, mais fácil de acertar no celular */
 .ceu-lua-cratera { position: absolute; border-radius: 50%; background: rgba(200,170,120,0.35); overflow: hidden; }
@@ -780,43 +753,28 @@ html.aurora-scroll-lock body { position: fixed; left: 0; right: 0; width: 100%; 
 .lightbox-nav-next { right: 12px; }
 
 /* ---------------- Elementos usados apenas para exportação ----------------
-   CORREÇÃO: antes cada `.exportavel-oculto` usava `position:fixed;
-   left:-9999px` pra sumir da tela sozinho. Um bloco de mais de 1000px de
-   largura (a constelação, por exemplo) só deslocado pra
-   longe ainda contava como conteúdo "no viewport" em alguns cenários
-   (rotação, teclado abrindo, o próprio html2canvas manipulando o elemento
-   pra gerar a imagem), podendo aparecer entrando/saindo pela lateral da
-   tela. Agora o esconderijo é feito pelo invólucro `.area-exportavel-oculta`
-   (ver abaixo), que recorta de verdade com `overflow:hidden` numa caixa de
-   0x0 — o elemento em si só precisa ficar `position: relative` (herdado das
-   classes específicas de cada card) pra ficar "ancorado" no canto desse
-   invólucro. */
+   O esconderijo é feito pelo invólucro `.area-exportavel-oculta` (abaixo),
+   que recorta com `overflow:hidden` numa caixa de 0x0 — o elemento em si
+   só precisa `position: relative` para ficar "ancorado" no canto. */
 .area-exportavel-oculta { position: fixed; top: 0; left: 0; width: 0; height: 0; overflow: hidden; pointer-events: none; z-index: -1; }
 .exportavel-oculto { position: relative; }
 
 /* Constelação pra imprimir: tamanho fixo em pixels batendo com
    IMPRIMIVEL_LARGURA_PX/ALTURA_PX (js/config.js), formato "foto revelada"
    10x15cm a ~300dpi.
-   CORREÇÃO: a lista agora é um GRID com número de colunas e tamanho de
-   foto calculados dinamicamente em JS (calcularGradeParaCaber, em
-   js/export.js) — antes era uma coluna única com tamanho fixo, que cabia
-   certinho com a quantidade de itens de quando foi criado, mas
-   cortava/estourava a página assim que a lista crescesse (mais marcos na
-   timeline). Agora sempre cabe tudo, não importa quantos itens existam. */
+   Grid com número de colunas e tamanho de foto calculados dinamicamente
+   em JS (calcularGradeParaCaber, em js/export.js), sempre cabendo tudo,
+   não importa quantos itens existam. */
 .constelacao-exportavel { position: relative; width: 1181px; height: 1772px; background: #FBF7F0; padding: 70px 56px; box-sizing: border-box; font-family: 'Cormorant Garamond', Georgia, serif; color: #2b2523; display: flex; flex-direction: column; overflow: hidden; }
 .constelacao-titulo { position: relative; z-index: 1; text-align: center; font-size: 52px; font-weight: 600; margin: 0 0 44px; }
 
 /* Constelação: fundo de galáxia (nebulosas + planeta + estrelinhas), tudo
-   em CSS puro, sempre no visual escuro/estrelado (a versão clara, que
-   ficava esquisita e sem graça, foi removida).
-   CORREÇÃO: o "planeta" antigo era só um círculo com gradiente meio sem
-   graça, e não lembrava nada de verdade. Agora tem faixas horizontais de
-   verdade (larguras e cores variadas, imitando as zonas claras e os
-   cinturões escuros de Júpiter) e a Grande Mancha Vermelha, com uma
-   sombra suave dando volume de esfera — tudo com gradiente e
-   border-radius, que o gerador de imagem (html2canvas) desenha direito
-   (diferente de clip-path/mask, que ele não capta bem, por isso não
-   foram usados aqui). */
+   em CSS puro, sempre no visual escuro/estrelado.
+   O "planeta" tem faixas horizontais (larguras e cores variadas, imitando
+   as zonas claras e os cinturões escuros de Júpiter) e a Grande Mancha
+   Vermelha, com sombra suave dando volume de esfera — tudo com gradiente
+   e border-radius, que o gerador de imagem (html2canvas) desenha direito
+   (diferente de clip-path/mask, que ele não capta bem). */
 .constelacao-exportavel { background: #0f0810; color: #f0d9dd; }
 .constelacao-fundo-nebulosa { position: absolute; border-radius: 50%; filter: blur(70px); z-index: 0; }
 .constelacao-fundo-nebulosa-1 { top: -160px; left: -180px; width: 720px; height: 720px; background: radial-gradient(circle, rgba(183,110,121,0.45) 0%, rgba(183,110,121,0) 70%); }
@@ -850,10 +808,8 @@ html.aurora-scroll-lock body { position: fixed; left: 0; right: 0; width: 100%; 
 .constelacao-fundo-estrelas::before { top: 8%; left: 6%; }
 .constelacao-fundo-estrelas::after { bottom: 10%; right: 10%; }
 
-/* CORREÇÃO: os itens eram fotos em círculo, sem nenhum sentido temático
-   pra uma "constelação" — agora cada marco vira uma foto emoldurada em
-   formato de cartão suave, com uma estrelinha de verdade (caractere ✦,
-   não recorte de imagem) marcando o canto, e uma linhazinha pontilhada
+/* Cada marco vira uma foto emoldurada em formato de cartão suave, com uma
+   estrelinha (caractere ✦) marcando o canto, e uma linhazinha pontilhada
    entre uma estrela e outra, reforçando o clima de céu estrelado. */
 .constelacao-lista { position: relative; z-index: 1; display: grid; gap: 34px; flex: 1; align-content: center; justify-items: center; }
 .constelacao-item { position: relative; display: flex; flex-direction: column; align-items: center; gap: 10px; }
@@ -900,7 +856,7 @@ html.aurora-scroll-lock body { position: fixed; left: 0; right: 0; width: 100%; 
 }
 
 /* ============================================================================
-   GIRASSÓIS DECORATIVOS (item 6 do prompt de correções)
+   GIRASSÓIS DECORATIVOS
    Discretos, atrás do conteúdo (z-index baixo) e sem capturar toque.
    ============================================================================ */
 .girassois-decoracao { position: absolute; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
@@ -946,12 +902,8 @@ html.aurora-scroll-lock body { position: fixed; left: 0; right: 0; width: 100%; 
    à mão"), zoom elegante no toque/clique e um girassol discreto no cabeçalho.
    ============================================================================ */
 .galeria-body { background: linear-gradient(180deg, #1c1014 0%, #241419 30%, #2f1a20 100%); min-height: 100vh; min-height: 100dvh; color: #f0d9dd; }
-/* CORREÇÃO (bordas brancas na galeria): o <html> global fica com o fundo
-   claro do site (var(--offwhite), ver topo do arquivo) — só o <body> desta
-   página era escurecido. Isso aparecia como uma borda/tira branca durante o
-   "bounce" de rolagem em iPhone (quando o conteúdo escuro não cobre 100%
-   da tela por um instante). Escurecendo o <html> aqui também, o fundo por
-   trás nunca fica claro, não importa o que aconteça durante a rolagem. */
+/* Escurece também o <html> global (não só o <body>), evitando uma borda
+   clara aparecer durante o "bounce" de rolagem no iPhone. */
 html.galeria-html { background-color: #1c1014; }
 
 .galeria-header { text-align: center; padding: 56px 20px 28px; position: relative; }
@@ -973,18 +925,10 @@ html.galeria-html { background-color: #1c1014; }
 .galeria-carregando-barra { width: 100%; height: 4px; border-radius: 999px; background: rgba(183,110,121,0.18); overflow: hidden; }
 .galeria-carregando-barra-preenchida { height: 100%; width: 0%; background: var(--rosegold); border-radius: 999px; transition: width 0.3s ease; }
 .galeria-carregando-texto { font-size: 0.75rem; color: rgba(240,217,221,0.6); margin: 8px 0 0; letter-spacing: 0.5px; }
-/* CORREÇÃO ("carregando de baixo pra cima"): antes a galeria usava
-   colunas CSS (column-count), que se AUTO-BALANCEIAM por altura. Como as
-   fotos entram com tamanhos variados e terminam de carregar fora de
-   ordem (a rede não baixa 1, 2, 3... em sequência), o navegador ficava
-   recalculando a altura ideal das colunas toda hora e redistribuindo os
-   itens entre elas — dando a impressão de que tudo "pulava" e preenchia
-   de baixo pra cima. Agora as colunas são divs de verdade montadas via
-   JS (js/galeria.js), e cada foto é colocada na coluna certa desde o
-   início, sem o navegador rebalancear nada depois — então nada mais
-   pula de lugar, e as fotos continuam exibidas na proporção original
-   (sem corte).
-*/
+/* Colunas reais montadas via JS (js/galeria.js), com cada foto colocada na
+   coluna certa desde o início — diferente de column-count (que
+   rebalanceia por altura conforme cada foto carrega fora de ordem, dando
+   a impressão de "pular" e carregar de baixo pra cima). */
 .galeria-masonry { display: flex; gap: 16px; align-items: flex-start; }
 @media (min-width: 640px) { .galeria-masonry { gap: 20px; } }
 @media (min-width: 980px) { .galeria-masonry { gap: 24px; } }
@@ -1025,6 +969,13 @@ html.galeria-html { background-color: #1c1014; }
 .galeria-lightbox video { max-width: 100%; max-height: 82vh; border-radius: 6px; box-shadow: 0 24px 60px rgba(0,0,0,0.6); background: #000; }
 .galeria-youtube-wrap { position: relative; width: min(92vw, 640px); aspect-ratio: 16 / 9; border-radius: 6px; overflow: hidden; box-shadow: 0 24px 60px rgba(0,0,0,0.6); background: #000; }
 .galeria-youtube-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+/* Variante para vídeo gravado na VERTICAL (retrato) — ver
+ * VIDEO_PROCESSO_VERTICAL em js/config.js. Sem isso, um vídeo vertical
+ * dentro da caixa 16:9 acima fica pequeno, com barras pretas grandes nos
+ * lados (o player do YouTube preserva a proporção original, não estica
+ * nem corta) — esta variante troca a caixa para 9:16, então o vídeo
+ * vertical ocupa o espaço de verdade. */
+.galeria-youtube-wrap.vertical { width: min(80vw, 380px); aspect-ratio: 9 / 16; }
 .galeria-video-play-youtube i { background: rgba(0,0,0,0.55); color: #FF0000; }
 .galeria-lightbox .galeria-legenda { font-family: 'Courier New', Courier, monospace; font-size: 0.8rem; color: #444; text-align: center; margin-top: -20px; }
 .galeria-lightbox-close { position: absolute; top: 18px; right: 20px; background: none; border: none; color: rgba(255,255,255,0.7); font-size: 2rem; line-height: 1; cursor: pointer; }
@@ -1128,10 +1079,9 @@ html.galeria-scroll-lock body { position: fixed; left: 0; right: 0; width: 100%;
 }
 body.modo-visualizacao-ativo .contador-easter-eggs { display: none; } /* não briga com a barra do modo visualização */
 
-/* CORREÇÃO: essa barra fixa no rodapé cobria o final da página (o botão
-   "Comprar Agora" e o rodapé da loja) — nada reservava espaço pra ela.
-   Enquanto o modo visualização está ativo, o final da loja ganha um
-   respiro extra do tamanho da barra. */
+/* Enquanto o modo visualização está ativo, o final da loja ganha um
+   respiro extra do tamanho da barra fixa do rodapé, para ela não cobrir
+   o botão "Comprar Agora". */
 body.modo-visualizacao-ativo #lojaScreen { padding-bottom: 92px; }
 
 /* ============================================================================

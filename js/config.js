@@ -394,6 +394,16 @@ const GALERIA_EXTENSOES_VIDEO = ['mp4'];
  * mais abaixo). Hoje usada pela música especial de aniversário. */
 const AUDIO_EXTENSOES_ACEITAS = ['mp3', 'ogg', 'wav', 'm4a'];
 
+/* Extensões de vídeo aceitas para arquivos estáticos "por nome" (câmera
+ * lenta e vídeo do especial de aniversário, ver resolverVideoPorBase mais
+ * abaixo) — diferente de GALERIA_EXTENSOES_VIDEO (que precisa ficar fixo
+ * em .mp4 minúsculo só para bater com o manifesto gerado por
+ * scripts/gerar-manifesto-galeria.js). Aqui não existe manifesto para
+ * manter sincronizado, então não há motivo pra restringir: testa cada
+ * extensão comum de export de celular (incluindo MAIÚSCULO, comum no
+ * iPhone) antes de desistir. */
+const VIDEO_EXTENSOES_ACEITAS = ['mp4', 'mov', 'webm'];
+
 /* ----------------------------------------------------------------------
    NOSSA HISTÓRIA — LINHA DO TEMPO
    ---------------------------------------------------------------------- */
@@ -480,14 +490,8 @@ const PERGUNTAS_SUSPENSE = [
 ];
 
 /* ----------------------------------------------------------------------
-   QUIZ DO CASAL
-   ----------------------------------------------------------------------
-   CORREÇÃO: a versão antiga se chamava "o quanto você me conhece?" mas
-   as perguntas eram só sobre ELA (flor favorita dela, bichos dela...) —
-   não fazia sentido pedir pra ela "provar" que conhece a própria vida.
-   Agora é um quiz do casal de verdade: fatos e histórias dos dois juntos.
-   Edite as opções e o índice de "certa" (começando em 0) se quiser
-   ajustar algo.
+   QUIZ DO CASAL — fatos e histórias dos dois juntos. Edite as opções e o
+   índice de "certa" (começando em 0) se quiser ajustar algo.
    ---------------------------------------------------------------------- */
 const QUIZ_PERGUNTAS = [
     {
@@ -570,15 +574,10 @@ const QUIZ_PERGUNTAS = [
 ];
 
 /* ----------------------------------------------------------------------
-   PLAYLIST DO CASAL
-   ----------------------------------------------------------------------
-   CORREÇÃO: "Um Dia Te Levo Comigo" (audio_nossa_musica / nossa-musica.mp3)
-   NÃO entra nessa lista numerada — ela é a trilha exclusiva que toca ao
-   abrir a carta final (ver abrirEnvelope() em js/suspense.js), papel
-   diferente da playlist. Colocá-la como "faixa 1" aqui empurrava o
-   arquivo que você realmente batizou de playlist_1 pra posição 2, dando
-   a impressão de que a faixa 1 estava tocando a música errada. Agora a
-   playlist tem 4 faixas de verdade, na ordem que você escolher.
+   PLAYLIST DO CASAL — "Um Dia Te Levo Comigo" (audio_nossa_musica /
+   nossa-musica.mp3) não entra nesta lista numerada: ela é a trilha
+   exclusiva que toca ao abrir a carta final (ver abrirEnvelope() em
+   js/suspense.js), papel diferente da playlist.
 
    Sugestões de Jorge & Mateus pra cada momento, caso queira usar (edite
    título/artista/arquivo com a música real que escolher):
@@ -867,7 +866,14 @@ const CAPSULA_YOUTUBE_ID = 'SaE2B-xA3qM';
 /* Link do YouTube com o vídeo mostrando todo o processo até o pedido
  * (o "making of"). Cole a URL completa aqui quando publicar o vídeo — o
  * botão só aparece na página se este campo não estiver vazio. */
-const VIDEO_PROCESSO_YOUTUBE_URL = 'https://youtu.be/7Sx_eEfSKew';
+const VIDEO_PROCESSO_YOUTUBE_URL = 'https://www.youtube.com/watch?v=SaE2B-xA3qM';
+
+/* Deixe `true` se o vídeo acima foi gravado/exportado na VERTICAL
+ * (retrato — o formato comum de Reels/Stories/vídeo direto do celular
+ * na mão). Sem isso, um vídeo vertical apareceria pequeno, com barras
+ * pretas grandes nas laterais, dentro de uma caixa pensada pra vídeo
+ * horizontal. `false` para vídeo horizontal (paisagem) normal. */
+const VIDEO_PROCESSO_VERTICAL = true;
 
 /* ----------------------------------------------------------------------
    EASTER EGG — brincadeira do sobrenome
@@ -1346,19 +1352,23 @@ const LOJA_EASTER_EGGS = {
 /**
  * Igual a resolverFotoPlaceholder, mas para um vídeo estático em
  * assets/video/ (não gravado pelo usuário, um arquivo que você mesmo
- * coloca na pasta) — o arquivo precisa estar salvo como .mp4. Devolve
- * null se não for encontrado (quem chamar decide o que fazer nesse
- * caso, ex.: esconder a seção toda).
+ * coloca na pasta) — testa cada extensão de VIDEO_EXTENSOES_ACEITAS,
+ * maiúscula e minúscula (mesmo padrão de resolverAudioPorBase, logo
+ * abaixo). Devolve null se não for encontrado (quem chamar decide o que
+ * fazer nesse caso, ex.: esconder a seção toda).
  */
 const __cacheResolverVideoPorBase = {};
 async function resolverVideoPorBase(arquivoBase) {
     if (!arquivoBase) return null;
     if (arquivoBase in __cacheResolverVideoPorBase) return __cacheResolverVideoPorBase[arquivoBase];
 
-    const caminho = `assets/video/${arquivoBase}.mp4`;
-    if (await arquivoExisteNoServidor(caminho)) {
-        __cacheResolverVideoPorBase[arquivoBase] = caminho;
-        return caminho;
+    const candidatos = VIDEO_EXTENSOES_ACEITAS.flatMap(ext => [ext, ext.toUpperCase()]);
+    for (const ext of candidatos) {
+        const caminho = `assets/video/${arquivoBase}.${ext}`;
+        if (await arquivoExisteNoServidor(caminho)) {
+            __cacheResolverVideoPorBase[arquivoBase] = caminho;
+            return caminho;
+        }
     }
     return null; // não guarda no cache — se o arquivo for adicionado depois, uma nova tentativa pode encontrar
 }

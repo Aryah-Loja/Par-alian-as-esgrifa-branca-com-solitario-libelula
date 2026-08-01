@@ -1,12 +1,8 @@
 /**
- * ============================================================================
- * ROMANCE.JS — Página "Nossa História"
- * ============================================================================
+ * ROMANCE.JS — Página "Nossa História".
  * Reúne: contador vivo do relacionamento, timeline com fotos, "nossos
  * momentos", playlist, quiz, seleção de regras do contrato, lembranças
- * (prints salvos pelo usuário), cápsula do tempo e o easter egg do
- * sobrenome.
- * ============================================================================
+ * (prints salvos pelo usuário), cápsula do tempo e o easter egg do sobrenome.
  */
 
 /* ---------------- Contador vivo do relacionamento ---------------- */
@@ -160,14 +156,8 @@ function iniciarEstrelasCadentes() {
         const dx = indoDireita ? distanciaX : -distanciaX;
         const dy = 50 + Math.random() * 110; // sempre descendo um pouco, em graus variados
 
-        // CORREÇÃO (risco branco "sobrando" onde não devia): o rastro
-        // (::before) antes sempre apontava pra um lado fixo (esquerda),
-        // então quando a estrela ia pra outro sentido, o rastro ficava
-        // apontando pra FRENTE do movimento em vez de atrás dele — dava a
-        // impressão de um traço solto, fora do lugar. Calculando o ângulo
-        // de verdade a partir de (dx, dy) e girando o rastro 180° em
-        // relação a ele, o rastro sempre fica atrás da estrela, não
-        // importa a direção que ela cruzar.
+        // Ângulo real do movimento, girado 180° para o rastro sempre ficar
+        // atrás da estrela (não importa a direção que ela cruzar).
         const anguloMovimento = Math.atan2(dy, dx) * (180 / Math.PI);
         const anguloRastro = anguloMovimento + 180;
 
@@ -184,28 +174,15 @@ function iniciarEstrelasCadentes() {
     iniciarNaveAlienigena(camada);
 }
 
-/**
- * Easter egg raro: uma navezinha alienígena cruza o céu bem devagar, uma
- * vez a cada 3 minutos (tempo real, não só na abertura da página) — se
- * ela ficar olhando o céu por tempo suficiente, tem chance de ver.
- *
- * CORREÇÃO (ela mal andava e ficava só no canto): o "--nave-dx" era
- * definido em porcentagem (140%/-140%) e usado dentro de um
- * transform: translate(...) no CSS — só que porcentagem em translate()
- * é relativa ao tamanho do PRÓPRIO elemento sendo movido, não ao
- * tamanho da tela/contêiner. Como a navezinha tem só 46px de largura,
- * 140% disso é ~64px: ela nascia fora da tela, "tremia" uns 64px pro
- * lado e sumia, sem nunca realmente atravessar o céu — por isso parecia
- * aparecer pouco tempo e ficar presa num canto. Agora a distância é
- * calculada em pixels a partir da largura real do céu na tela (mais uma
- * folga extra pra nascer e morrer totalmente fora da vista), então ela
- * de fato atravessa a tela inteira de um lado a outro.
- */
+// Easter egg raro: uma navezinha alienígena cruza o céu bem devagar, uma
+// vez a cada 3 minutos (tempo real). A distância do trajeto é calculada em
+// pixels a partir da largura real do céu (percentagem não funciona aqui,
+// pois translate() em % é relativo ao próprio elemento, não ao contêiner).
 function iniciarNaveAlienigena(camada) {
     const TRES_MINUTOS_MS = 3 * 60 * 1000;
 
     function cruzarUmaVez() {
-        if (!document.body.contains(camada)) return; // saiu da página "Nossa História" — não continua gerando em segundo plano
+        if (!document.body.contains(camada)) return; // saiu de "Nossa História" — não continua gerando em segundo plano
         const nave = document.createElement('div');
         nave.className = 'ceu-nave-alienigena';
         nave.innerHTML = '<span class="ceu-nave-cupula"></span><span class="ceu-nave-corpo"></span><span class="ceu-nave-luz ceu-nave-luz-1"></span><span class="ceu-nave-luz ceu-nave-luz-2"></span><span class="ceu-nave-luz ceu-nave-luz-3"></span>';
@@ -213,17 +190,11 @@ function iniciarNaveAlienigena(camada) {
         nave.style.top = `${10 + Math.random() * 50}%`;
         nave.style.left = indoDireita ? '-20%' : '120%';
 
-        // Distância real do trajeto: largura da camada do céu (ou da
-        // janela, se por algum motivo a camada ainda não tiver tamanho)
-        // mais uma folga extra, pra ela nascer e desaparecer totalmente
-        // fora da vista dos dois lados, atravessando a tela toda.
+        // Largura real da camada (ou da janela, como fallback) + folga extra.
         const largura = camada.getBoundingClientRect().width || window.innerWidth;
         const distancia = largura + 120;
         nave.style.setProperty('--nave-dx', `${indoDireita ? distancia : -distancia}px`);
 
-        // Trajeto bem mais longo agora (tela inteira, não só ~64px) —
-        // aumenta a duração da animação também, senão ela cruzaria rápido
-        // demais e deixaria de parecer "bem devagar".
         nave.style.animationDuration = '16s';
 
         camada.appendChild(nave);
@@ -242,12 +213,7 @@ function iniciarFechamentoEstrelaModal() {
     const fecharEstrelaModal = () => {
         overlay.classList.add('d-none');
         desbloquearScrollFundoLembranca();
-        // Mesma correção do "espaço vazio/roxo no fim da tela" usada ao
-        // fechar o lightbox de fotos e a lojinha (ver forcarRecalculoDeLayout()
-        // em js/utils.js) — sem isso, fechar o modal às vezes deixava a
-        // altura da página desatualizada, mostrando só a cor de fundo
-        // escura/roxa por baixo, como se o conteúdo tivesse sumido.
-        forcarRecalculoDeLayout();
+        forcarRecalculoDeLayout(); // evita espaço vazio no fim da tela (ver js/utils.js)
     };
     fechar.addEventListener('click', fecharEstrelaModal);
     overlay.addEventListener('click', (evt) => { if (evt.target === overlay) fecharEstrelaModal(); });
@@ -262,15 +228,9 @@ async function abrirEstrelaModal(indice) {
     if (!marco) return;
     estrelaIndiceAtual = indice;
     const overlay = document.getElementById('estrelaModalOverlay');
-    // CORREÇÃO (site travando/fundo roxo ao usar "anterior"/"próxima"):
-    // essa função também é chamada ao NAVEGAR entre lembranças com o modal
-    // já aberto (estrelaModalAnterior/estrelaModalProxima), não só ao abrir
-    // do zero. bloquearScrollFundoLembranca() usa contagem de referências
-    // (ver js/utils.js) — travar de novo a cada troca de lembrança, sem um
-    // desbloquear correspondente (só existe UM desbloquear, ao fechar o
-    // modal), fazia a contagem nunca voltar a 0, deixando a trava de
-    // scroll (aurora-scroll-lock) presa pra sempre depois de fechar. Só
-    // trava aqui se o modal estava REALMENTE fechado antes desta chamada.
+    // Esta função também é chamada ao navegar entre lembranças com o modal
+    // já aberto; como bloquearScrollFundoLembranca() usa contagem de
+    // referências (js/utils.js), só trava aqui se estava realmente fechado.
     const jaEstavaAberto = !overlay.classList.contains('d-none');
     const foto = document.getElementById('estrelaModalFoto');
     const dataEl = document.getElementById('estrelaModalData');
@@ -332,14 +292,8 @@ async function iniciarGaleriaMomentos() {
     if (!galeria) return;
     const cartoes = Array.from(galeria.querySelectorAll('.table-photo'));
 
-    // REFORMULAÇÃO (30/07/2026 — ver comentário grande em js/utils.js):
-    // "Nossos momentos" roda em TODA abertura do site depois que o pedido
-    // já aconteceu (ver js/main.js), então era a principal responsável
-    // pelo site "demorando mais que o normal" ao abrir — varria a rede do
-    // zero toda vez. Agora usa o cache local primeiro (de uma varredura
-    // anterior, completa ou parcial, tanto faz — aqui só interessam
-    // fotos) e só varre a rede de verdade se não existir cache nenhum
-    // ainda neste aparelho.
+    // Usa o cache local primeiro (evita varrer a rede do zero em toda
+    // abertura); só varre de verdade se não existir cache neste aparelho.
     let fotos = [];
     const cacheExistente = galeriaLerCache(); // aceita parcial ou completo
     if (cacheExistente) {
@@ -356,12 +310,8 @@ async function iniciarGaleriaMomentos() {
         }
     }
 
-    // CORREÇÃO ("é inaceitável espaço vazio"): as buscas acima já cobrem
-    // a faixa inteira de fotos, mas se por qualquer motivo ainda assim
-    // não achar NENHUMA foto (ex.: instabilidade de rede grande demais
-    // mesmo com os retries), refaz a busca com a varredura COMPLETA e
-    // exaustiva da Galeria (fotos e vídeos, filtrando só fotos) antes de
-    // aceitar que realmente não há fotos.
+    // Se nenhuma foto foi achada (ex.: instabilidade de rede), refaz com a
+    // varredura completa e exaustiva da Galeria antes de aceitar que não há fotos.
     if (fotos.length === 0) {
         try {
             const todosOsItens = await galeriaEscanearCompleta(null, null);
@@ -371,55 +321,29 @@ async function iniciarGaleriaMomentos() {
         }
     }
 
-    // Atualiza o cache em segundo plano (throttlado — ver
-    // GALERIA_REVALIDACAO_INTERVALO_MS em js/utils.js), sem travar a tela:
-    // fotos/vídeos novos aparecem na próxima abertura, não nesta.
-    galeriaRevalidarEmSegundoPlano();
+    galeriaRevalidarEmSegundoPlano(); // atualiza o cache em segundo plano, sem travar a tela
 
-    // Escolhe as fotos ESPALHADAS pela numeração (ver escolherFotosEspalhadas
-    // em js/utils.js) — evita pegar várias fotos seguidas na numeração, que
-    // costumam ser do mesmo dia/momento, em vez de um sorteio totalmente
-    // livre que podia (por acaso) escolher fotos vizinhas.
+    // Escolhe fotos espalhadas pela numeração (evita várias seguidas, que
+    // costumam ser do mesmo dia/momento).
     let escolhidas = escolherFotosEspalhadas(fotos, cartoes.length);
 
-    // CORREÇÃO (espaço vazio inaceitável): se existir pelo menos UMA foto
-    // real mas menos de 4 no total (ex.: site recém-criado, ainda subindo
-    // fotos), repete as que existem para preencher os 4 cartões em vez de
-    // deixar quadros vazios com placeholder — só cai no placeholder "adicione
-    // esta foto" se não existir NENHUMA foto real na galeria.
+    // Se existir ao menos 1 foto real mas menos que o total de cartões,
+    // repete as existentes para preencher, em vez de deixar quadros vazios.
     if (escolhidas.length > 0 && escolhidas.length < cartoes.length) {
         const preenchidas = [];
         for (let i = 0; i < cartoes.length; i++) preenchidas.push(escolhidas[i % escolhidas.length]);
         escolhidas = preenchidas;
     }
 
-    // CORREÇÃO (30/07/2026 — "às vezes fica sem imagem"): antes, se uma
-    // foto escolhida falhasse ao carregar de verdade (ex.: o cache local
-    // deste aparelho ainda apontava pra um caminho que foi renomeado ou
-    // removido da galeria depois que o cache foi salvo — cache só
-    // revalida a cada GALERIA_REVALIDACAO_INTERVALO_MS, em segundo
-    // plano), o `img.onerror` só liberava a Promise sem colocar nada no
-    // lugar: o cartão ficava com o ícone de imagem quebrada. Diferente da
-    // Galeria (que pode simplesmente remover um item quebrado da grade),
-    // aqui os 4 cartões são fixos e sempre precisam mostrar algo — então
-    // a lógica é própria: reserva outras fotos candidatas e, se uma
-    // escolhida falhar, tenta a próxima reserva automaticamente antes de
-    // desistir de vez.
+    // Os 4 cartões são fixos e sempre precisam mostrar algo: reserva outras
+    // fotos candidatas e, se uma escolhida falhar ao carregar, tenta a
+    // próxima reserva automaticamente antes de desistir.
     const jaEscolhidos = new Set(escolhidas);
     const reservas = fotos.map(f => f.caminho).filter((caminho) => !jaEscolhidos.has(caminho));
 
-    // CORREÇÃO (pedido: a página só deve aparecer com as 4 fotos já
-    // carregadas): até aqui só confirmamos que os ARQUIVOS existem (via
-    // HEAD) e escolhemos quais mostrar — isso não é o mesmo que a foto já
-    // ter sido baixada pelo navegador. Antes, esta função retornava assim
-    // que decidia `escolhidas`, então "Nossa História" podia aparecer
-    // (ver goToRomancePage/executarComBarraDeProgresso, que só revela a
-    // página quando TODAS as tarefas — incluindo esta — terminam) com as
-    // fotos da mesa ainda em branco por uma fração de segundo. Agora só
-    // consideramos a mesa "pronta" quando cada <img> escolhida terminar
-    // de carregar de verdade (evento load/error), com um limite de tempo
-    // de segurança pra nunca travar a experiência por causa de uma foto
-    // lenta ou quebrada.
+    // Só considera a mesa "pronta" quando cada <img> escolhida terminar de
+    // carregar de verdade (não só confirmar via HEAD que o arquivo existe),
+    // com um limite de tempo de segurança para nunca travar a experiência.
     const LIMITE_ESPERA_FOTO_MS = 6000;
     const promessasDeCarregamento = [];
 
@@ -437,8 +361,7 @@ async function iniciarGaleriaMomentos() {
                 const tentarCarregar = (caminho) => {
                     img.onload = finalizar;
                     img.onerror = () => {
-                        // Essa foto específica não carregou de verdade —
-                        // tenta a próxima da reserva antes de desistir.
+                        // Não carregou de verdade — tenta a próxima reserva.
                         const proxima = reservas.shift();
                         if (proxima) {
                             escolhidas[i] = proxima;
@@ -446,10 +369,7 @@ async function iniciarGaleriaMomentos() {
                             tentarCarregar(proxima);
                             return;
                         }
-                        // Sem mais reservas: cai no mesmo placeholder usado
-                        // quando não há foto nenhuma, em vez de deixar o
-                        // ícone de imagem quebrada visível.
-                        aplicarImagemPlaceholder(img, null, 'Foto do casal');
+                        aplicarImagemPlaceholder(img, null, 'Foto do casal'); // sem mais reservas: cai no placeholder
                         cartao.style.cursor = '';
                         cartao.onclick = null;
                         finalizar();
@@ -598,7 +518,7 @@ function gerarContratoPersonalizado(idsEscolhidos) {
         const regra = OPCOES_REGRAS_CONTRATO.find(o => o.id === id);
         if (!regra) return;
         const li = document.createElement('li');
-        li.innerHTML = `<strong>Art. ${i + 1}º —</strong> ${regra.artigo}`;
+        li.innerHTML = `<strong>Art. ${i + 1}º.</strong> ${regra.artigo}`;
         lista.appendChild(li);
     });
     document.getElementById('regrasSelecaoWrap').classList.add('d-none');
@@ -653,23 +573,10 @@ async function prepararCapsulaDoTempo() {
     }
 }
 
-/**
- * CORREÇÃO DE SEGURANÇA: esta função revela o texto da carta (e o botão do
- * vídeo, se houver) — antes, ela confiava cegamente em quem a chamava
- * (só era chamada a partir do branch já "desbloqueado" de
- * prepararCapsulaDoTempo). Isso significa que alguém abrindo o console do
- * navegador e digitando "iniciarEnvelopeCapsula()" diretamente conseguia
- * pular a checagem de data inteira. Agora a própria função reconfere a
- * data (com a hora do servidor) antes de mostrar qualquer coisa — mesmo
- * chamada "na unha" pelo console, ela se recusa a abrir antes da hora.
- * Aviso importante (sem prometer o que este site não pode cumprir): isso
- * cobre bem o golpe mais comum (mudar a data/hora do aparelho) e impede
- * abrir o console e pular direto pra função de revelar. Mas como é um
- * site estático, sem servidor/autenticação por trás, alguém tecnicamente
- * capaz de abrir os arquivos-fonte (js/config.js) ainda consegue ler o
- * texto e o ID do vídeo antes da data — isso é uma limitação de QUALQUER
- * site que roda só no navegador, não uma falha específica deste código.
- */
+// Revela o texto da carta (e o vídeo, se houver) da cápsula do tempo.
+// Reconfere a data de desbloqueio (com a hora do servidor) sempre que
+// roda — mesmo chamada direto pelo console, não abre antes da hora.
+// Limites dessa proteção: ver CONTEXTO-PROJETO.md.
 async function iniciarEnvelopeCapsula() {
     const envelope = document.getElementById('capsulaEnvelope');
     const hint = document.getElementById('capsulaHint');
@@ -677,16 +584,8 @@ async function iniciarEnvelopeCapsula() {
     const assinaturaEl = document.getElementById('capsulaAssinatura');
     if (!envelope || envelope.dataset.iniciado === '1') return;
 
-    // CORREÇÃO DE SEGURANÇA (achada testando de verdade, simulando alguém
-    // chamando esta função pelo console do navegador): a checagem NUNCA
-    // pode confiar no parâmetro "dataAlvoConhecida" recebido de fora —
-    // ele existe só como otimização (evita recalcular quando quem chamou,
-    // aqui dentro do próprio arquivo, já sabe a data). Se essa validação
-    // usasse o valor recebido, bastava chamar
-    // "iniciarEnvelopeCapsula(new Date(0))" no console pra passar uma
-    // data forjada lá do passado e abrir a carta na hora. Por isso a
-    // linha abaixo IGNORA por completo o parâmetro na hora de validar e
-    // recalcula a data real (mesma fonte usada em prepararCapsulaDoTempo).
+    // Ignora qualquer parâmetro externo e recalcula a data real (mesma
+    // fonte de prepararCapsulaDoTempo) — nunca confia em valor recebido de fora.
     const dataAlvoReal = await calcularDataDesbloqueioCapsula();
     const agora = await obterHoraConfiavel();
     if (!dataAlvoReal || agora < dataAlvoReal) return; // recusa revelar — reconfirmação real, não decorativa
@@ -696,20 +595,11 @@ async function iniciarEnvelopeCapsula() {
     textoEl.textContent = textoCapsulaDoTempo();
     assinaturaEl.textContent = `Com amor, ${NOME_DELE}.`;
 
-    // Vídeo do YouTube com a mensagem em vídeo pra cápsula do tempo (se um
-    // ID tiver sido preenchido em CAPSULA_YOUTUBE_ID, js/config.js): entra
-    // como opção pro abrirModoVela, no addEventListener de clique logo
-    // abaixo — embutido ali dentro, junto do texto da carta (modo "luz de
-    // vela"), não direto no envelope, que fica visível só um instante
-    // antes desse overlay abrir.
+    // Vídeo do YouTube (CAPSULA_YOUTUBE_ID, js/config.js) entra como opção
+    // do abrirModoVela, junto do texto da carta.
 
-    // CORREÇÃO (carta ficando "flutuando" na tela depois de fechar): esta
-    // carta pode ser aberta e fechada várias vezes (ao contrário da carta
-    // final, que só abre uma vez e segue direto pro flashback). Por isso
-    // ela precisa VOLTAR ao estado fechado sempre que o modo vela for
-    // fechado — tanto visualmente (o envelope fecha de novo) quanto no
-    // controle interno (`emAnimacao`), senão um segundo toque no envelope
-    // não fazia nada (ficava travado como "já abriu" pra sempre).
+    // Esta carta pode ser aberta e fechada várias vezes (diferente da carta
+    // final): precisa voltar ao estado fechado sempre que o modo vela fechar.
     let emAnimacao = false;
     function fecharEnvelopeCapsula() {
         emAnimacao = false;
@@ -723,9 +613,7 @@ async function iniciarEnvelopeCapsula() {
         hint.classList.remove('visivel');
         envelope.classList.add('aberto');
 
-        // A carta abre direto no modo "luz de vela" (pedido explícito) — não
-        // existe mais nenhuma versão "solta" da carta fora desse modo, então
-        // ela nunca fica flutuando por cima da tela depois de fechada.
+        // Abre direto no modo "luz de vela" — nunca fica flutuando por cima da tela depois de fechada.
         setTimeout(() => {
             abrirModoVela('Um ano depois', textoEl.innerHTML, assinaturaEl.textContent, {
                 aoFechar: fecharEnvelopeCapsula,
@@ -1000,17 +888,12 @@ async function goToRomancePage(primeiraVez) {
     document.getElementById('heroSubRomanceTexto').textContent = TEXTOS.heroSubRomance;
     document.getElementById('encerramentoRomanceTexto').textContent = TEXTOS.encerramentoRomance;
 
-    // Só corta a música de fundo (a que tocou na revelação da carta) se
-    // NÃO for a primeira vez chegando aqui — ou seja, em qualquer visita
-    // depois do dia do pedido em si. Na primeira vez (vindo direto do
-    // pedido de verdade), a música continua tocando naturalmente pra
-    // dentro de "Nossa História", sem cortar de repente.
+    // Só corta a música de fundo se não for a primeira vez (na primeira,
+    // vindo direto do pedido, ela continua tocando naturalmente).
     if (!primeiraVez) pausarMusicaFundoImediatamente();
     iniciarPlaylistDaGente();
 
-    // CORREÇÃO (item 1 do prompt de correções): só a partir daqui o
-    // contador de girassóis pode aparecer (ver js/utils.js).
-    ativarContadorEasterEggsFaseFinal();
+    ativarContadorEasterEggsFaseFinal(); // só a partir daqui o contador de girassóis pode aparecer
 
     // Rápidas e sem leitura pesada no banco — chamadas direto, sem entrar na barra de progresso.
     iniciarQuiz();
@@ -1029,23 +912,19 @@ async function goToRomancePage(primeiraVez) {
         const wrapProcesso = document.getElementById('videoProcessoWrap');
         const idProcesso = extrairIdYoutube(VIDEO_PROCESSO_YOUTUBE_URL);
         if (iframeProcesso && wrapProcesso && idProcesso) {
-            // Embutido dentro do site (mesmo esquema usado no vídeo do
-            // pedido e na galeria) — não abre mais o app/site do YouTube.
             iframeProcesso.src = `https://www.youtube.com/embed/${idProcesso}?rel=0&modestbranding=1`;
             wrapProcesso.classList.remove('d-none');
+            // Vídeo vertical (ver VIDEO_PROCESSO_VERTICAL em js/config.js):
+            // troca a caixa de 16:9 para 9:16, senão o vídeo fica pequeno
+            // com barras pretas grandes nas laterais.
+            const caixaProcesso = iframeProcesso.closest('.galeria-youtube-wrap');
+            if (caixaProcesso) caixaProcesso.classList.toggle('vertical', typeof VIDEO_PROCESSO_VERTICAL !== 'undefined' && !!VIDEO_PROCESSO_VERTICAL);
         }
     }
 
-    /* CORREÇÃO DE VELOCIDADE (carregamento lento com muita coisa salva e
-     * vídeo longo): antes, cada leitura no IndexedDB abaixo rodava uma de
-     * cada vez (await em sequência) — o tempo total era a SOMA de todas.
-     * Agora rodam em PARALELO (Promise.all): o tempo total passa a ser o
-     * da mais lenta (normalmente o próprio vídeo do pedido), não a soma de
-     * todas as outras leituras pequenas. localStorage NÃO é uma opção
-     * viável aqui: tem limite de ~5–10MB e é síncrono (travaria a aba
-     * inteira ao tentar guardar um vídeo de dezenas de MB) — o IndexedDB
-     * (assíncrono, sem esse limite) já é a ferramenta certa; o ganho real
-     * está em paralelizar as leituras, não em trocar de tecnologia. */
+    /* As leituras no IndexedDB abaixo rodam em paralelo (Promise.all): o
+     * tempo total passa a ser o da mais lenta (normalmente o vídeo do
+     * pedido), não a soma de todas. */
     const tarefas = [
         prepararContrato(),
         iniciarContadorVivo(),
@@ -1488,13 +1367,9 @@ async function renderizarMapaDaRelacao() {
     if (!gridPrevia || !Array.isArray(MAPA_LUGARES)) return;
 
     const extras = await obterLugaresExtrasDoMapa();
-    // CORREÇÃO: antes, os locais adicionados pelo painel entravam sempre
-    // no FINAL da lista (MAPA_LUGARES.concat(extras)) — como o card
-    // "Próximo destino" (futuro: true) é o último item de MAPA_LUGARES,
-    // todo local novo aparecia DEPOIS dele. Agora separamos o(s) card(s)
-    // marcados como "futuro" e sempre os colocamos no final de verdade,
-    // então qualquer local novo (fixo ou adicionado pelo painel) sempre
-    // fica antes de "Próximo destino".
+    // Separa o(s) card(s) marcados como "futuro" (ex.: "Próximo destino")
+    // e os mantém sempre no final, para que locais novos (fixos ou
+    // adicionados pelo painel) sempre apareçam antes deles.
     const lugaresFixosSemFuturo = MAPA_LUGARES.filter(lugar => !lugar.futuro);
     const lugaresFuturo = MAPA_LUGARES.filter(lugar => lugar.futuro);
     const todosOsLugares = lugaresFixosSemFuturo.concat(extras, lugaresFuturo);
@@ -1756,26 +1631,16 @@ function fecharLojaSomenteVisualizacao() {
     definirFundoBody(CORES_FUNDO.escuro);
     window.scrollTo(0, 0);
 
-    // CORREÇÃO ("tela roxa/vazia" ao voltar da loja): alternar
-    // display:none -> '' faz o navegador RECRIAR a renderização da página
-    // inteira, o que reinicia do zero as animações de entrada
-    // (".reveal-up", que começam com opacity:0 e só aparecem depois de
-    // 0.8s). Como ela já tinha visto "Nossa História" antes, replay dessa
-    // animação de novo só dá a impressão de uma tela em branco por um
-    // instante. Aqui a gente força tudo a aparecer JÁ no estado final,
-    // sem re-tocar a animação.
+    // Alternar display:none -> '' reinicia as animações de entrada
+    // (.reveal-up), dando a impressão de tela em branco por um instante;
+    // força tudo a aparecer já no estado final, sem re-tocar a animação.
     romancePage.querySelectorAll('.reveal-up').forEach(el => {
         el.style.animation = 'none';
         el.style.opacity = '1';
         el.style.transform = 'none';
     });
 
-    // Mesma correção do "espaço vazio/roxo no fim da tela" (ver
-    // forcarRecalculoDeLayout() em js/utils.js): como essa troca acontece
-    // dentro da mesma página (display:none -> '', sem navegação de
-    // verdade), o listener de "pageshow" não dispara aqui, então força o
-    // reflow manualmente também.
-    forcarRecalculoDeLayout();
+    forcarRecalculoDeLayout(); // essa troca não dispara "pageshow", força o reflow manualmente
 }
 
 /**

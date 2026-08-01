@@ -895,3 +895,136 @@ validada com `node --check` depois da mudança.
 - Ideias discutidas mas não implementadas: diário de bordo vivo, mais
   locais de easter egg (preço da pulseira, texto do prazo de entrega),
   indicador de progresso mais rico no contador de easter eggs.
+
+## Notas técnicas extraídas dos comentários do código (limpeza de comentários de IA)
+
+Estas notas guardam o "porquê" e o histórico de bugs/decisões que estavam
+espalhados em comentários grandes pelo código. Os arquivos `.js` agora têm
+só comentários curtos (divisão + o que a função faz); o raciocínio por trás
+de cada decisão não óbvia está aqui.
+
+### js/galeria.js — bug da barra de carregamento dos vídeos (corrigido)
+A barra de progresso das fotos só se esconde quando `totalCarregados >=
+totalEncontrados` (espera os arquivos carregarem de verdade). A dos vídeos
+estava sendo escondida na hora, logo após a varredura (`galeriaEscanearVideos`)
+terminar — sem esperar os vídeos, que são lazy-loaded via
+IntersectionObserver, realmente carregarem. Corrigido para espelhar a
+mesma lógica das fotos (ver `carregarVideosDaGaleria`).
+
+### js/sync.js — configuração do Supabase (Storage)
+Sincronização usa um bucket público do Supabase Storage. Para ativar/trocar
+de projeto:
+1. Criar conta em supabase.com (plano gratuito) e um projeto novo.
+2. Em Storage, criar um bucket público chamado exatamente `aurora-backups`.
+3. Em Storage > aurora-backups > Policies, adicionar política permitindo
+   INSERT, UPDATE, SELECT e DELETE para o público (anon) — usar os modelos
+   prontos do próprio painel do Supabase.
+4. Em Project Settings > API: copiar "Project URL" para `SUPABASE_URL` e a
+   chave "anon"/"public" (NUNCA a "service_role") para `SUPABASE_ANON_KEY`.
+5. Testar em diagnostico.html > "Testar conexão com a nuvem".
+
+Limite de segurança: a chave "anon" é pública por design (a proteção real
+vem das Policies do bucket). Como o site é 100% estático, a senha "1406"
+protege a tela do site, mas não o arquivo bruto no bucket — quem vir o
+código-fonte consegue montar a URL pública do backup e baixá-lo direto,
+sem passar pela senha. É uma limitação de arquitetura de qualquer app
+estático sem back-end, não um bug a corrigir. Na prática o link só chega
+a quem for compartilhado, então o risco real é baixo.
+
+### js/sync.js — histórico do reset propagado entre aparelhos
+O reset (zerar a experiência) precisa avisar TODOS os aparelhos, senão um
+aparelho com dados antigos guardados localmente reenvia tudo de volta pra
+nuvem, ressuscitando o que acabou de ser apagado. Histórico de tentativas:
+- Tentativa 1: só apagar o backup da nuvem — não bastava (motivo acima).
+- Tentativa 2: comparar contra um "ack" por aparelho — falhava quando esse
+  aparelho nunca tinha visto aquele reset específico.
+- Tentativa 3: publicar um arquivo separado (`${EXPERIENCE_ID}-reset.json`)
+  numa segunda escrita, depois de apagar o backup. Se essa segunda escrita
+  falhasse silenciosamente (rede, política do bucket), o outro aparelho
+  nunca via sinal do reset e reenviava dados antigos por cima.
+- Solução final (atual): eliminar o arquivo separado — o reset sobrescreve
+  o próprio `${EXPERIENCE_ID}-meta.json` (o mesmo arquivo pequeno já lido
+  em toda sincronização normal) com `resetado: true`. Uma única escrita,
+  um único arquivo: ou o reset é publicado, ou não é.
+
+### js/sync.js — envio imediato de mídia grande (bug do iPhone)
+O envio automático era silencioso e esperava ~2s pra começar. No iPhone,
+se a pessoa trava a tela ou troca de app logo depois de gravar (comum), o
+Safari/Chrome-iOS costuma suspender esse envio antes de terminar — o vídeo
+ficava salvo no aparelho mas nunca chegava na nuvem, e por isso nunca
+aparecia no outro celular. Solução: mídia grande dispara o envio
+IMEDIATAMENTE (sem esperar), mostra um aviso fixo dizendo pra não fechar o
+app até terminar, e o navegador confirma antes de sair da aba durante o envio.
+
+### js/sync.js — supressão de sincronização durante os testes de diagnóstico
+Os testes de diagnóstico (diagnostico.html) salvam e apagam dados de teste
+reais no banco para confirmar que salvar/ler funciona. Sem proteção, isso
+disparava sincronizações de verdade com a nuvem, podendo inclusive apagar
+o sinal de um reset antes do outro aparelho o ver (o diagnóstico roda
+automaticamente a cada abertura da página). `window.__auroraSuprimirSyncDiagnostico`
+é ligada por js/diagnostics.js antes dos testes e desligada depois.
+
+### js/sync.js — condição de envio automático ao abrir a página
+`!nuvemFoiResetada`: sem essa condição, um aparelho cujo timestamp local já
+fosse >= ao do reset (por já ter "visto" aquele reset antes) podia reenviar
+dados antigos por cima da marca de reset, ressuscitando informação apagada.
+`>` estrito (em vez de `>=`): depois de um envio com sucesso, o timestamp
+da nuvem fica igual ao local; usar `>=` fazia reenviar o backup inteiro
+(zip com vídeos/fotos) em toda abertura seguinte, mesmo sem nada mudar —
+deixando o site lento pra abrir com o banco cheio de vídeo grande.
+
+### js/utils.js — descoberta da galeria: cache local + manifesto (motivo do redesenho)
+Antes, tanto a Galeria (galeria.html) quanto "Nossos momentos" (index.html)
+descobriam quais fotos/vídeos existem "no chute": testavam galeria_1,
+galeria_2, galeria_3... um por um, em lotes, via requisições HEAD, do zero,
+toda vez que a página abria — inclusive toda vez que alguém reabria o link
+já na fase "Nossa História" (não só na primeira vez). Isso era a causa
+principal da Galeria e do site em geral "demorando mais que o normal" pra
+abrir, especialmente no 4G/5G do celular: cada HEAD request pode levar
+centenas de ms no celular, e o navegador limita a ~6 conexões simultâneas
+por servidor, então os "lotes em paralelo" viravam várias filas na prática.
+
+Duas mudanças, mantendo o espírito de "só jogar os arquivos numerados na
+pasta, sem editar nada":
+1. Cache local (localStorage, por aparelho): o resultado de uma varredura
+   completa fica guardado. Da segunda abertura em diante no mesmo aparelho,
+   a Galeria e "Nossos momentos" usam o cache e aparecem na hora; a
+   varredura de verdade roda em segundo plano só pra achar itens novos.
+2. Manifesto (assets/img/galeria/manifesto.json): um arquivo único que já
+   lista tudo que existe, trocando dezenas/centenas de idas-e-voltas ao
+   servidor por uma só. É gerado automaticamente (scripts/gerar-manifesto-
+   galeria.js + workflow do GitHub Actions) toda vez que fotos/vídeos novos
+   são enviados ao repositório. Se o manifesto não existir, o site cai de
+   volta no método antigo (varredura por HEAD) sem quebrar nada.
+   Fetch usa `cache: 'no-cache'` (não 'no-store'): permite o navegador
+   guardar a resposta mas obriga revalidar com o servidor (ETag/Last-
+   Modified) antes de usar — evita servir um manifesto.json desatualizado
+   por minutos depois de fotos novas, mas ainda é mais barato que HEAD
+   (o servidor costuma responder "304 não mudou" quase sem custo).
+   Uma lista de itens vazia é um resultado válido (galeria realmente
+   vazia) — só `null` significa "sem manifesto, usa o jeito antigo".
+
+Cache local guarda `{ itens, completo, salvoEm }`. `completo` distingue um
+cache que varreu a Galeria inteira (fotos + vídeos, único confiável para
+montar a página da Galeria) de um cache parcial (só fotos, suficiente para
+"Nossos momentos"). Um cache parcial nunca sobrescreve um completo já salvo.
+
+### js/romance.js — segurança da cápsula do tempo (iniciarEnvelopeCapsula)
+A função reconfere a data de desbloqueio (com a hora do servidor) toda vez
+que roda, mesmo chamada diretamente pelo console do navegador — ela não
+confia no branch que a chamou nem em nenhum parâmetro de data recebido de
+fora (um parâmetro de data existe só como otimização interna e é ignorado
+na hora de validar; usá-lo permitiria forjar uma data passada via console
+e abrir a carta antes da hora). Isso cobre o golpe mais comum (mudar a
+data/hora do aparelho). Limitação honesta: como é um site estático sem
+servidor, alguém tecnicamente capaz de abrir js/config.js ainda consegue
+ler o texto e o ID do vídeo antes da data — isso é inerente a qualquer
+site que roda só no navegador, não uma falha específica deste código.
+
+### Limpeza de comentários de IA (01/08/2026)
+Todo o código (`.js`, `index.html`, `css/style.css`) passou por uma
+limpeza: comentários de código agora têm só divisão clara de seções + uma
+explicação breve de como cada trecho funciona. O histórico de bugs,
+tentativas anteriores e o "porquê" das decisões que antes vivia espalhado
+em comentários grandes (marcados "CORREÇÃO"/"REFORMULAÇÃO"/"item X do
+prompt") foi movido pra este arquivo, nas seções acima.

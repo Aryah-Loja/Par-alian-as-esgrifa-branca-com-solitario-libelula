@@ -1,60 +1,8 @@
 /**
- * ============================================================================
- * SYNC.JS — Sincronização na nuvem (Prioridade 1, item 6)
- * ============================================================================
- * IMPORTANTE — LEIA ANTES DE USAR "COMPARTILHAR":
- * Por padrão, tudo neste site fica salvo SÓ no aparelho onde foi criado
- * (é assim que IndexedDB funciona em qualquer site, não é uma limitação
- * deste projeto especificamente). Para o link "Compartilhar" abrir de
- * verdade em outro celular — com fotos, vídeo, contrato e mensagens — é
- * necessário um lugar na nuvem para guardar esses dados.
- *
- * Eu (Claude) não tenho acesso à internet neste ambiente, então não
- * recebo, não guardo e não posso validar nenhuma chave por conta própria.
- * As constantes abaixo já foram preenchidas em uma etapa anterior deste
- * projeto (ver nota "Já configurado", abaixo).
- *
- * COMO ATIVAR (gratuito, leva ~5 minutos, sem precisar programar):
- *   1. Crie uma conta em https://supabase.com (tem plano gratuito).
- *   2. Crie um novo projeto.
- *   3. No menu lateral, vá em "Storage" e crie um bucket público chamado
- *      exatamente: aurora-backups
- *   4. Ainda em Storage > aurora-backups > Policies, adicione uma política
- *      permitindo INSERT, UPDATE, SELECT e DELETE para o público (anon) —
- *      o próprio painel do Supabase tem um botão "New policy" com modelos
- *      prontos ("Enable read access for all users" / "Enable insert for
- *      anon users" / "Enable delete for anon users"); use esses modelos.
- *   5. Vá em "Project Settings" > "API".
- *        - Copie a "Project URL" → cole em SUPABASE_URL.
- *        - Copie a chave da seção "Project API keys" com o rótulo
- *          "anon" / "public" (NÃO a "service_role", que é secreta e não
- *          deve nunca ir para um site público) → cole em SUPABASE_ANON_KEY.
- *        - Se você já tinha uma chave antiga colada aqui e gerou uma nova
- *          (botão "Generate new anon key" no Supabase), troque pela nova —
- *          a antiga para de funcionar assim que é regenerada.
- *   6. Abra diagnostico.html no celular e toque em "Testar conexão com a
- *      nuvem": isso faz uma escrita + leitura reais no seu bucket, então
- *      você confirma que a chave colada é a correta antes do grande dia.
- *
- * Já configurado: as constantes abaixo já estão com URL/chave preenchidas
- * (feito em uma etapa anterior). Se um dia precisar trocar de projeto
- * Supabase, é só repetir os passos acima e colar os novos valores aqui.
- *
- * LIMITE DE SEGURANÇA HONESTO (vale a pena entender):
- * a chave "anon" É PARA SER PÚBLICA — é assim que o Supabase funciona
- * (a proteção de verdade vem das "Policies" do bucket, não do segredo da
- * chave). Como este é um site 100% estático (sem servidor próprio), a
- * senha "1406" protege a TELA do site, mas não o arquivo bruto no bucket:
- * qualquer pessoa que veja o código-fonte da página (ex: "Ver código-fonte"
- * no navegador) consegue ler SUPABASE_URL, a chave e o nome do arquivo
- * (EXPERIENCE_ID, em js/config.js) e montar a URL pública do backup direto
- * pelo Supabase, sem passar pela senha. Isso é uma limitação inerente de
- * qualquer app puramente estático (sem back-end) que sincroniza dados
- * "privados" na nuvem — não é um bug para corrigir com mais código, e sim
- * um limite de arquitetura. Na prática, o link só chega a quem vocês dois
- * compartilharem, então o risco real é baixo — mas é bom saber que a
- * senha protege a experiência dentro do site, não o arquivo na nuvem.
- * ============================================================================
+ * SYNC.JS — Sincronização na nuvem (Supabase Storage).
+ * Envia/baixa o backup (.zip) de um bucket público para que o link
+ * "Compartilhar" funcione em outro aparelho. Configuração e limites de
+ * segurança: ver CONTEXTO-PROJETO.md.
  */
 
 const SUPABASE_URL = 'https://mdiohswwximmsggmrzue.supabase.co';
@@ -65,18 +13,9 @@ function syncEstaConfigurado() {
     return Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 }
 
-/**
- * Hora "confiável" para checagens de data que não podem depender só do
- * relógio do próprio aparelho (ex.: desbloqueio da cápsula do tempo) —
- * sem isso, adiantar a data/hora do celular nas Configurações seria
- * suficiente pra abrir a cápsula antes da hora. Lê o cabeçalho HTTP
- * "Date" (todo servidor manda isso, não precisa de nenhuma rota
- * especial) de uma chamada já usada no projeto. Se não houver internet,
- * cai de volta pro relógio do aparelho (única opção possível offline —
- * ver aviso sobre isso na resposta ao usuário: essa é uma proteção
- * prática contra o golpe mais comum ("mudar a data do celular"), não uma
- * garantia absoluta, já que o app roda 100% no navegador da pessoa.
- */
+// Hora "confiável" (cabeçalho HTTP Date) para checagens que não podem
+// depender do relógio do aparelho (ex.: desbloqueio da cápsula do tempo).
+// Sem internet, cai de volta pro relógio local.
 async function obterHoraConfiavel() {
     if (!syncEstaConfigurado()) return new Date();
     try {
@@ -92,17 +31,10 @@ async function obterHoraConfiavel() {
     } catch (e) {
         console.warn('Não consegui confirmar a hora do servidor (sem internet?) — usando o relógio do aparelho como alternativa.', e);
     }
-    return new Date(); // alternativa offline — inevitável sem servidor próprio
+    return new Date();
 }
 
-/**
- * Validação básica de formato (não garante que a chave é válida no
- * servidor — só confere se "parece" uma chave anon do Supabase, que é
- * sempre um JWT com 3 partes separadas por ponto, começando com "eyJ").
- * Ajuda a pegar erros bobos de copiar/colar (chave cortada, com espaço,
- * ou colada a "service_role" por engano, que também é um JWT mas nunca
- * deve ser usada aqui).
- */
+// Confere se a chave "parece" um JWT anon do Supabase (3 partes, começa com "eyJ").
 function validarFormatoAnonKey(chave) {
     if (!chave) return { ok: false, motivo: 'Chave vazia.' };
     const partes = chave.trim().split('.');
@@ -118,30 +50,21 @@ function validarFormatoAnonKey(chave) {
     }
 }
 
-/**
- * Envia o backup completo para o bucket público do Supabase Storage.
- * Formato NOVO (ver js/export.js): um .zip binário com todas as mídias
- * (sem base64), mais um arquivo ".meta.json" pequeno contendo só o
- * timestamp — para que sincronizarNaAbertura() consiga checar "existe
- * algo mais novo?" sem precisar baixar o zip inteiro toda vez.
- */
+// Envia o backup (.zip) para o bucket, mais um ".meta.json" com o
+// timestamp (para checar "existe algo mais novo?" sem baixar o zip inteiro).
 
-const TAMANHO_MAXIMO_PARTE_BYTES = 45 * 1024 * 1024; // cada parte fica um pouco abaixo do limite fixo de 50MB do plano gratuito
-const AVISO_QUOTA_TOTAL_BYTES = 900 * 1024 * 1024; // aviso ao se aproximar do 1GB de espaço TOTAL do plano gratuito (dividir em partes não resolve isso)
+const TAMANHO_MAXIMO_PARTE_BYTES = 45 * 1024 * 1024; // abaixo do limite de 50MB por arquivo do plano gratuito
+const AVISO_QUOTA_TOTAL_BYTES = 900 * 1024 * 1024; // aviso perto do 1GB de quota total
 
-/** Caminho de uma parte do backup — se só existe 1 parte, usa o nome de sempre (compatível com backups antigos). */
+// Caminho de uma parte do backup (nome simples se só existir 1 parte).
 function caminhoParteZip(codigo, indice, totalPartes) {
     return totalPartes <= 1 ? `${codigo}.zip` : `${codigo}.zip.parte${indice}`;
 }
 
 /**
- * CORREÇÃO (a pergunta que gerou isso: "não dá pra, se passar de 48MB,
- * dividir em 2 arquivos?"): em vez de só recusar backups grandes demais,
- * quando o total passa do limite fixo de 50MB por arquivo do plano
- * gratuito do Supabase, o backup é dividido em pedaços menores — cada um
- * enviado como um arquivo próprio — e remontado automaticamente na hora
- * de baixar (ver buscarBackupZipDaNuvem, mais abaixo). O meta.json passa
- * a guardar quantas partes existem.
+ * Backups acima de 50MB (limite por arquivo do Supabase gratuito) são
+ * divididos em partes menores, remontadas automaticamente ao baixar
+ * (ver buscarBackupZipDaNuvem). O meta.json guarda quantas partes existem.
  *
  * Importante: isso contorna o limite POR ARQUIVO, mas não aumenta o
  * espaço TOTAL disponível — o plano gratuito do Supabase continua tendo
@@ -282,36 +205,15 @@ async function apagarZipDaNuvem() {
 /* ----------------------------------------------------------------------
  * RESET PROPAGADO VIA O PRÓPRIO meta.json (sem arquivo separado)
  * ----------------------------------------------------------------------
- * CORREÇÃO IMPORTANTE (bug relatado: resetar em um aparelho não resetava
- * o outro): apagar o backup da nuvem sozinho não bastava. O OUTRO
- * aparelho ainda tinha os dados antigos guardados localmente — e como ele
- * nunca soube que um reset aconteceu, reenviava tudo de volta pra nuvem,
- * ressuscitando o que acabou de ser apagado.
- *
- * TENTATIVA 2 (bug: "para meu amor" some e volta pra loja): comparar
- * contra um "ack" por aparelho falhava quando aquele aparelho nunca tinha
- * visto um reset específico (ex.: teste antigo).
- *
- * TENTATIVA 3 (bug relatado: banco resetava mas o outro aparelho
- * continuava pedindo a senha e voltando pro final) — a causa provável:
- * essa versão usava um ARQUIVO SEPARADO ("${EXPERIENCE_ID}-reset.json")
- * publicado numa segunda escrita, depois de apagar o backup. Se essa
- * segunda escrita falhasse silenciosamente por qualquer motivo (rede,
- * política do bucket, etc.) — mesmo a primeira (apagar) tendo funcionado
- * — o outro aparelho nunca via sinal nenhum de reset, e pior: ao ver a
- * nuvem "vazia" sem saber por quê, ele reenviava seus dados antigos de
- * volta, resSUCITANDO tudo outra vez.
- *
- * CORREÇÃO FINAL: eliminar o arquivo separado. O reset agora SOBRESCREVE
- * o próprio "${EXPERIENCE_ID}-meta.json" (o mesmo arquivo pequeno que já
- * é lido em toda sincronização normal) com uma marca "resetado: true".
- * Uma única escrita, um único arquivo, sem risco de "uma parte funcionou
- * e a outra não" — ou o reset é publicado, ou não é; nunca um meio-termo.
+ * O reset sobrescreve o "${EXPERIENCE_ID}-meta.json" (o mesmo arquivo
+ * pequeno lido em toda sincronização normal) com uma marca "resetado:
+ * true", numa única escrita — assim outros aparelhos ficam sabendo do
+ * reset e não reenviam dados antigos por cima. Histórico das tentativas
+ * anteriores (por que um arquivo separado não funcionava): ver CONTEXTO-PROJETO.md.
  * ---------------------------------------------------------------------- */
 
-/** Publica o reset diretamente no meta.json (sobrescreve), avisando qualquer outro aparelho a se limpar também.
- *  Tenta várias vezes antes de desistir: essa é a escrita mais crítica de todo o fluxo de reset — se ela
- *  falhar silenciosamente (rede instável, por exemplo), o outro aparelho nunca fica sabendo do reset. */
+// Publica o reset no meta.json e confirma relendo da nuvem; tenta várias
+// vezes, pois é a escrita mais crítica do fluxo de reset.
 async function publicarResetNaNuvem() {
     if (!syncEstaConfigurado()) return;
 
@@ -361,39 +263,23 @@ async function limparArmazenamentoLocal() {
 /* ----------------------------------------------------------------------
  * SINCRONIZAÇÃO AUTOMÁTICA (link único, sem "?c=")
  * ----------------------------------------------------------------------
- * Diferente do fluxo antigo (que só sincronizava quando alguém tocava em
- * "Compartilhar" e gerava um "?c=codigo" na URL), aqui TODA alteração de
- * dados (ver hook em db.js) agenda um envio para a nuvem, e TODA abertura
- * da página primeiro confere se existe algo mais novo na nuvem do que no
- * aparelho local. Isso é o que garante que abrir o link puro em qualquer
- * celular mostre exatamente o mesmo estado, sem precisar de código nenhum.
+ * Toda alteração de dados (hook em db.js) agenda um envio à nuvem, e toda
+ * abertura da página confere se há algo mais novo na nuvem que localmente.
  * ---------------------------------------------------------------------- */
 
 let __auroraAplicandoBackupRemoto = false; // suprime auto-envio enquanto aplicamos um backup vindo da nuvem
 let __auroraTimeoutEnvioNuvem = null;
 let __auroraSyncEmAndamento = 0; // contador de envios em voo (pode haver mais de um sobreposto)
 
-/**
- * CORREÇÃO IMPORTANTE (bug relatado: vídeo/foto/áudio somem em outro
- * aparelho mesmo com "diagnóstico" passando): o envio automático era
- * SILENCIOSO e esperava 2 segundos pra começar. No iPhone, se a pessoa
- * trava a tela ou troca de app logo depois de gravar (bem comum!), o
- * Safari/Chrome (que no iOS usa o mesmo motor do Safari) costuma
- * suspender esse envio antes dele terminar — o vídeo fica salvo NO
- * APARELHO, mas nunca chega na nuvem, e por isso nunca aparece no outro
- * celular. Agora: (1) mídia grande dispara o envio IMEDIATAMENTE, sem
- * esperar; (2) um aviso fica visível na tela dizendo pra não fechar o
- * app até terminar; (3) se a pessoa tentar fechar a aba/navegar para
- * fora durante o envio, o navegador pergunta antes de sair.
- */
+// Banner "Salvando na nuvem": mídia grande dispara o envio imediatamente
+// (sem esperar) e mostra este aviso até terminar, pois o iOS costuma
+// suspender envios em segundo plano se a tela travar antes de terminarem.
 function mostrarBannerSync(emAndamento) {
     __auroraSyncEmAndamento = Math.max(0, __auroraSyncEmAndamento + (emAndamento ? 1 : -1));
     const banner = document.getElementById('auroraSyncBanner');
     if (!banner) return;
     if (emAndamento) {
-        // Reseta pro texto padrão — evita mostrar um erro antigo (com botão de
-        // fechar) por cima de um envio novo que está começando agora.
-        banner.classList.remove('aurora-sync-banner-erro');
+        banner.classList.remove('aurora-sync-banner-erro'); // reseta pro texto padrão
         banner.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Salvando na nuvem — não feche o app nem tranque a tela ainda...';
     }
     banner.classList.toggle('d-none', __auroraSyncEmAndamento <= 0);
@@ -410,18 +296,9 @@ window.addEventListener('beforeunload', (evt) => {
 let __auroraPublicacaoEmAndamento = false; // true enquanto um envio já está em voo
 let __auroraPublicacaoPendente = false;    // true se algo mudou DE NOVO enquanto esse envio estava em voo
 
-/**
- * Publica na nuvem mostrando o aviso visível na tela enquanto durar. Serializado
- * de propósito: como mídia grande agora dispara o envio IMEDIATAMENTE (ver
- * agendarEnvioNuvem), duas ações rápidas em sequência (ex.: gravar o vídeo e,
- * enquanto ele ainda está subindo, adicionar uma lembrança) poderiam disparar
- * DOIS envios em paralelo — e se o mais antigo (e mais lento, por ser maior)
- * terminasse DEPOIS do mais novo, ele sobrescreveria a nuvem com um estado
- * desatualizado, perdendo a lembrança adicionada depois. Em vez de deixar os
- * dois rodarem ao mesmo tempo, uma nova chamada enquanto já existe um envio em
- * voo só marca "pendente" e é reprocessada assim que o envio atual terminar —
- * sempre lendo o estado mais atual do banco na hora de gerar o próximo zip.
- */
+// Publica na nuvem de forma serializada: se já existe um envio em voo,
+// uma nova chamada só marca "pendente" e é reprocessada ao terminar (evita
+// dois envios em paralelo sobrescreverem um ao outro fora de ordem).
 async function publicarComIndicadorVisivel() {
     if (__auroraPublicacaoEmAndamento) {
         __auroraPublicacaoPendente = true;
@@ -441,16 +318,8 @@ async function publicarComIndicadorVisivel() {
     }
 }
 
-/**
- * Mostra um aviso persistente no topo da tela (o mesmo espaço do "Salvando
- * na nuvem...") — diferente do status pequeno da página final
- * (#compartilharStatus), este aparece em QUALQUER tela do site, o que
- * importa pra avisos críticos como "o backup passou perto do limite total de espaço",
- * que costumam acontecer logo depois de gravar o vídeo — bem antes da
- * pessoa chegar na página final onde o status pequeno fica escondido.
- * Fica visível até a pessoa tocar pra fechar (não se limita a alguns
- * segundos, pra não passar despercebido).
- */
+// Aviso persistente (mesmo banner do "Salvando na nuvem"), visível em
+// qualquer tela do site até a pessoa tocar para fechar.
 function mostrarAvisoPersistente(mensagem) {
     const banner = document.getElementById('auroraSyncBanner');
     if (!banner) return;
@@ -464,26 +333,13 @@ function mostrarAvisoPersistente(mensagem) {
     });
 }
 
-/**
- * Chamado (via hook em db.js) sempre que algo muda localmente.
- * `imediato = true` (usado para vídeo, foto, áudio — ver salvarMedia em
- * js/db.js) dispara o envio na hora, sem esperar; `imediato = false`
- * (usado para configurações pequenas, ex.: respostas de quiz) continua
- * agrupando várias mudanças rápidas num único envio, para não martelar
- * a rede a cada tecla digitada.
- */
-/**
- * CORREÇÃO CRÍTICA (bug relatado: reset não propagava mesmo depois de
- * várias tentativas): os testes de diagnóstico em diagnostico.html salvam
- * e apagam dados de teste reais no banco (pra confirmar que salvar/ler
- * funciona) — e isso, sem essa proteção, disparava sincronizações de
- * verdade com a nuvem, reenviando (ou sobrescrevendo) o estado real só
- * por causa de um teste técnico. Como o diagnóstico roda automaticamente
- * toda vez que a página abre, isso significava que CONFERIR o estado do
- * reset podia, ele mesmo, apagar o sinal de reset antes do outro
- * aparelho ter a chance de vê-lo. js/diagnostics.js liga essa chave antes
- * de rodar os testes e desliga depois.
- */
+// Chamado (hook em db.js) sempre que algo muda localmente. imediato=true
+// (vídeo/foto/áudio) dispara o envio na hora; imediato=false (configs
+// pequenas) agrupa várias mudanças num único envio.
+//
+// __auroraSuprimirSyncDiagnostico: ligada por js/diagnostics.js enquanto
+// roda testes que salvam/apagam dados de teste reais no banco, para que
+// esses testes não disparem sincronizações de verdade com a nuvem.
 window.__auroraSuprimirSyncDiagnostico = false;
 
 function agendarEnvioNuvem(imediato = false) {
@@ -497,10 +353,7 @@ function agendarEnvioNuvem(imediato = false) {
             console.error('Falha no envio automático para a nuvem:', err);
             const mensagemEspecifica = (err && err.message && err.message.includes('espaço TOTAL')) ? err.message : null;
 
-            if (mensagemEspecifica) {
-                // Aviso importante — mostra em qualquer tela do site, não só na página final.
-                mostrarAvisoPersistente(mensagemEspecifica);
-            }
+            if (mensagemEspecifica) mostrarAvisoPersistente(mensagemEspecifica);
 
             const statusEl = document.getElementById('compartilharStatus');
             if (statusEl) {
@@ -541,22 +394,15 @@ async function sincronizarNaAbertura() {
     const timestampNuvem = (meta && meta.atualizadoEm) ? meta.atualizadoEm : 0;
     const nuvemFoiResetada = Boolean(meta && meta.resetado);
 
-    // Um reset só é "pendente" pra este aparelho se for mais novo que
-    // qualquer dado que ele já conhece — ou seja, se ele ainda não sabe
-    // desse reset. Assim que este aparelho publica algo novo (mesmo que
-    // seja só "recomeçando vazio"), o meta.json deixa de ter a marca
-    // "resetado", e o reset vira página virada pra sempre — sem precisar
-    // de nenhum controle extra por aparelho.
+    // Um reset é "pendente" pra este aparelho se for mais novo que qualquer
+    // dado que ele já conhece; assim que este aparelho publica algo novo, a
+    // marca "resetado" some do meta.json.
     const resetPendente = nuvemFoiResetada && timestampNuvem > timestampLocal;
 
     if (resetPendente) {
         await limparArmazenamentoLocal();
-        // Alinha o relógio local com o do reset (em vez de deixar em zero):
-        // assim, na PRÓXIMA abertura (logo depois do reload abaixo), este
-        // aparelho já sabe que está "em dia" com esse reset específico, e
-        // não entra num loop de detectar o mesmo reset de novo a cada
-        // recarregamento (o que aconteceria se local ficasse em zero pra
-        // sempre, já que zero é sempre "mais velho" que qualquer reset).
+        // Alinha o relógio local com o do reset (em vez de zero) para não
+        // reentrar no mesmo reset a cada recarregamento.
         try { await db.configuracoes.put({ chave: 'aurora_atualizado_em', valor: String(timestampNuvem) }); } catch (e) { /* ignora */ }
         try { localStorage.setItem('aurora_atualizado_em', String(timestampNuvem)); } catch (e) { /* ignora */ }
         location.reload();
@@ -579,19 +425,10 @@ async function sincronizarNaAbertura() {
             __auroraAplicandoBackupRemoto = false;
         }
     } else if (!nuvemFoiResetada && timestampLocal > 0 && timestampLocal > timestampNuvem) {
-        // Este aparelho tem dados que a nuvem ainda não tem (ex.: primeira vez, ou sem internet antes) — envia agora.
-        // Isso também é o que "tira" a marca de reset do meta.json quando este aparelho já está em dia com o reset.
-        // CORREÇÃO: exige "!nuvemFoiResetada" — sem isso, um aparelho cujo timestamp local já fosse >= ao do
-        // reset (por já ter "visto" esse reset antes) podia reenviar dados antigos por cima da marca de reset,
-        // ressuscitando informação que deveria ter sido apagada.
-        //
-        // CORREÇÃO DE PERFORMANCE (site demorando pra abrir com banco cheio de
-        // vídeo grande): antes era "timestampLocal >= timestampNuvem" — depois
-        // de um envio com sucesso, o timestamp da nuvem fica IGUAL ao local
-        // (nunca menor), então na próxima abertura "igual" também entrava
-        // aqui e reenviava o backup inteiro (zip com todos os vídeos/fotos) de
-        // novo, mesmo sem nada ter mudado. Com ">" estrito, só reenvia quando
-        // este aparelho realmente tem algo mais novo que a nuvem ainda não viu.
+        // Este aparelho tem dados que a nuvem ainda não tem — envia agora.
+        // !nuvemFoiResetada evita reenviar dados antigos por cima de um
+        // reset; ">" estrito (não ">=") evita reenviar o backup à toa a
+        // cada abertura quando nada mudou (ver CONTEXTO-PROJETO.md).
         try {
             await publicarComIndicadorVisivel();
         } catch (err) {

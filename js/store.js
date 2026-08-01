@@ -14,13 +14,7 @@ function iniciarVinheta() {
     const tela = document.getElementById('vinhetaAbertura');
     if (!tela) return;
 
-    // Se o pedido já aconteceu, o texto já foi trocado por um script embutido
-    // no <head>/HTML (roda antes de qualquer script externo, pra "AURORA
-    // JOIAS" nunca aparecer nem por um instante — ver index.html). Aqui só
-    // deixamos a tela como está, visível; quem esconde é
-    // esconderVinhetaCarregamento(), chamada em js/main.js assim que a
-    // decisão do que mostrar for tomada (pode levar alguns segundos, por
-    // causa da sincronização com a nuvem).
+    // Modo retorno (pedido já feito): quem esconde é esconderVinhetaCarregamento().
     if (tela.classList.contains('vinheta-modo-retorno')) return;
 
     const jaExibida = sessionStorage.getItem('aurora_vinheta_exibida');
@@ -65,14 +59,7 @@ function iniciarCupomFalso() {
     }, 7000);
 }
 
-/**
- * Cancela o popup do cupom assim que o usuário avança para o checkout.
- * CORREÇÃO: antes, o timer de 7s do cupom não sabia que a pessoa já tinha
- * saído da "loja" (o checkout é um overlay fixo por cima, então
- * `lojaScreen` nunca era formalmente escondido) — isso podia fazer o
- * cupom aparecer por cima do checkout e travar o botão "Confirmar
- * Pagamento" até ser fechado manualmente.
- */
+// Cancela o timer do cupom falso quando o usuário avança para o checkout.
 function cancelarCupomFalsoPendente() {
     if (cupomFalsoTimeoutId) { clearTimeout(cupomFalsoTimeoutId); cupomFalsoTimeoutId = null; }
 }
@@ -155,7 +142,7 @@ function atualizarResumoCheckout() {
     const gravacoes = [];
     if (pedido.gravMasc) gravacoes.push(`Masculina: "${pedido.gravMasc}"`);
     if (pedido.gravFem) gravacoes.push(`Feminina: "${pedido.gravFem}"`);
-    document.getElementById('resumoGravacoes').textContent = gravacoes.length ? `Gravações — ${gravacoes.join(' · ')}` : '';
+    document.getElementById('resumoGravacoes').textContent = gravacoes.length ? `Gravações: ${gravacoes.join(' · ')}` : '';
 }
 
 /* ---------------- Tela de processamento do "Comprar Agora" ---------------- */
@@ -200,19 +187,9 @@ function preencherValoresPadraoPedido() {
 }
 
 /* ---------------- Inicialização da tela de loja ---------------- */
-/**
- * Easter eggs da loja: 5 toques no mesmo elemento (dentro de uma janela
- * curta de tempo, pra não contar cliques espalhados ao longo do dia)
- * revelam uma mensagem escondida. Mecanismo genérico e reutilizável —
- * qualquer elemento pode virar um easter egg novo só adicionando uma
- * entrada em LOJA_EASTER_EGGS (js/config.js) com o mesmo id do elemento.
- */
-/**
- * Os girassolzinhos-dica dos easter eggs ficam bem discretos na primeira
- * visita de propósito (ela não deve reparar neles de cara) e um pouco
- * mais visíveis nas visitas seguintes, uma vez que ela já sabe que
- * existem e pode ir atrás com mais atenção.
- */
+// Easter eggs da loja: 5 toques no mesmo elemento revelam uma mensagem
+// escondida (config em LOJA_EASTER_EGGS, js/config.js). As dicas ficam mais
+// visíveis a partir da segunda visita.
 async function aplicarTamanhoDicasEasterEgg() {
     let jaVisitouAntes = false;
     try { jaVisitouAntes = !!(await obterConfiguracao('lojaJaVisitouAntes')); } catch (e) { /* sem configuração salva ainda, trata como primeira visita */ }
@@ -267,9 +244,7 @@ function iniciarLoja() {
     document.getElementById('btnFecharCupom').addEventListener('click', fecharCupomFalso);
     document.getElementById('btnFecharCupomBtn').addEventListener('click', fecharCupomFalso);
 
-    // O popup de manutenção já aparece visível por padrão (parte da ilusão
-    // de e-commerce real, ver .maintenance-overlay em style.css) — trava o
-    // scroll do fundo assim que a loja monta, não espera um clique de abrir.
+    // Popup de manutenção já vem visível por padrão: trava o scroll do fundo.
     bloquearScrollFundoLembranca();
     document.getElementById('btnFecharManutencao').addEventListener('click', () => {
         document.getElementById('maintenancePopup').style.display = 'none';

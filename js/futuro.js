@@ -1,11 +1,7 @@
 /**
- * ============================================================================
  * FUTURO.JS — "Deixe uma mensagem para nós do futuro"
- * ============================================================================
- * Texto, voz ou vídeo — cada mensagem vira o seu próprio registro na
- * tabela "media" do IndexedDB (ver db.js), o que resolve os problemas de
- * perda de dados e falha no Safari que existiam na versão anterior.
- * ============================================================================
+ * Texto, voz ou vídeo — cada mensagem vira um registro na tabela "media" do
+ * IndexedDB (ver db.js).
  */
 
 let futuroStream = null;
@@ -123,10 +119,7 @@ function iniciarGravacaoFuturo() {
 
     const opcoesGravacao = montarOpcoesMediaRecorder(futuroModo); // limita o bitrate (ver utils.js) para não estourar 50MB
 
-    // Espelha o vídeo de verdade antes de gravar (ver criarStreamEspelhado em
-    // js/utils.js) — corrige aparelhos onde a câmera frontal entrega o
-    // stream já espelhado, o que fazia a mensagem gravada sair invertida.
-    // Áudio não precisa disso (não tem "lado").
+    // Espelha o vídeo antes de gravar (ver criarStreamEspelhado em js/utils.js).
     const streamParaGravar = futuroModo === 'video'
         ? (futuroStreamEspelhado = criarStreamEspelhado(futuroStream)).stream
         : futuroStream;
@@ -134,7 +127,7 @@ function iniciarGravacaoFuturo() {
     try {
         futuroRecorder = new MediaRecorder(streamParaGravar, opcoesGravacao);
     } catch (err) {
-        // Navegador antigo que não aceita videoBitsPerSecond/audioBitsPerSecond — tenta o padrão dele antes de desistir.
+        // Fallback para navegadores sem suporte a videoBitsPerSecond/audioBitsPerSecond.
         try {
             const mimeType = getSupportedMimeTypeParaModo(futuroModo);
             futuroRecorder = mimeType ? new MediaRecorder(streamParaGravar, { mimeType }) : new MediaRecorder(streamParaGravar);
@@ -176,12 +169,10 @@ function iniciarGravacaoFuturo() {
     document.getElementById('btnFuturoIniciar').classList.add('d-none');
     document.getElementById('btnFuturoParar').classList.remove('d-none');
 
-    // Limite de 1 minuto pra mensagens em vídeo, pra não encher o banco de
-    // dados com gravações longas (ver prompt de correções). Áudio fica sem
-    // limite por enquanto — arquivos de áudio são bem mais leves.
+    // Limite de 1 minuto só para vídeo (áudio é bem mais leve).
     if (futuroModo === 'video') {
         futuroTimeoutMaximo = setTimeout(() => {
-            statusEl.textContent = 'Chegou no limite de 1 minuto — parando a gravação automaticamente.';
+            statusEl.textContent = 'Chegou no limite de 1 minuto, parando a gravação automaticamente.';
             statusEl.className = 'save-status pending';
             pararGravacaoFuturo();
         }, FUTURO_VIDEO_DURACAO_MAXIMA_SEGUNDOS * 1000);
@@ -231,7 +222,7 @@ async function salvarMensagemFuturoGravada() {
         document.getElementById('futuroSucesso').classList.remove('d-none');
         const proximoDoLimite = futuroModo === 'video' && futuroBlobPendente.size > 45 * 1024 * 1024;
         statusEl.textContent = proximoDoLimite
-            ? `Essa mensagem ficou com ${(futuroBlobPendente.size / (1024 * 1024)).toFixed(1)}MB — grande demais pra sincronizar com a nuvem (limite de 50MB do plano gratuito). Prefira mensagens mais curtas, ou envie essa por outro meio.`
+            ? `Essa mensagem ficou com ${(futuroBlobPendente.size / (1024 * 1024)).toFixed(1)}MB, grande demais pra sincronizar com a nuvem (limite de 50MB do plano gratuito). Prefira mensagens mais curtas, ou envie essa por outro meio.`
             : '';
         statusEl.className = proximoDoLimite ? 'save-status pending' : 'save-status';
         renderizarMensagensFuturo();

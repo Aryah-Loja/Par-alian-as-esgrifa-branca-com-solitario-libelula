@@ -1,56 +1,25 @@
 /**
- * ============================================================================
  * CHECKLIST.JS — "Nosso Checklist" (checklist.html)
- * ============================================================================
  * Lista de programas/experiências do casal (CHECKLIST_ENCONTROS, em
- * js/config.js), cada item marcável. O progresso é salvo via
- * obterConfiguracao/salvarConfiguracao ('aurora_checklist_encontros') —
- * a mesma camada usada pelo resto do site — e entra automaticamente no
- * backup/sincronização entre aparelhos (ver a inclusão desse campo em
- * gerarBackupZipBlob/aplicarBackupDeZip, em js/export.js).
- *
- * FORMATO DO ESTADO SALVO: objeto só com os itens MARCADOS, ex.:
- *   { "0_3": true, "2_1": true }
- * onde a chave é "<índice da categoria>_<índice do item>" dentro de
- * CHECKLIST_ENCONTROS. Item desmarcado simplesmente não aparece no objeto
- * (evita salvar uma porção de "false" à toa). Por ser baseado em POSIÇÃO,
- * reordenar ou remover itens de CHECKLIST_ENCONTROS no meio da lista faz
- * o progresso salvo "escorregar" para os itens vizinhos — para adicionar
- * itens novos no futuro, o mais seguro é sempre ACRESCENTAR no final de
- * uma categoria (ou no final da lista, como categoria nova).
- * ============================================================================
+ * js/config.js). Progresso salvo via obterConfiguracao/salvarConfiguracao
+ * ('aurora_checklist_encontros'), sincronizado entre aparelhos.
+ * Estado salvo: objeto só com os itens marcados, chave "<catIdx>_<itemIdx>".
  */
 
 const CHECKLIST_CHAVE_CONFIG = 'aurora_checklist_encontros';
 
-// Itens que o próprio casal adiciona direto pela tela (não fazem parte da
-// lista original CHECKLIST_ENCONTROS, em js/config.js). Cada item é
-// { id, catIdx, texto, criadoEm }: "id" é uma string única gerada na hora
-// (nunca baseada em posição, por isso pode ser removido sem bagunçar os
-// vizinhos), "catIdx" é o índice de uma categoria JÁ EXISTENTE em
-// CHECKLIST_ENCONTROS (o casal escolhe entre as categorias já criadas,
-// não cria categoria nova). Marcado/desmarcado usa o MESMO objeto de
-// estado dos itens originais (CHECKLIST_CHAVE_CONFIG), só que com o "id"
-// do item customizado como chave, em vez de "<catIdx>_<itemIdx>".
-// Entra no backup/sincronização entre aparelhos como qualquer config
-// pequena (ver a inclusão desse campo em gerarBackupZipBlob/
-// aplicarBackupDeZip, em js/export.js) — assim, um item adicionado num
-// aparelho aparece no outro na próxima sincronização, igual ao progresso.
+// Itens adicionados pelo casal direto na tela (fora de CHECKLIST_ENCONTROS):
+// { id, catIdx, texto, criadoEm }, com "id" único e "catIdx" apontando pra
+// uma categoria já existente. Usa o mesmo objeto de estado dos itens
+// originais, com "id" como chave.
 const CHECKLIST_ITENS_CUSTOM_CHAVE_CONFIG = 'aurora_checklist_itens_customizados';
 
-// Estado em memória, carregado uma vez em montarChecklist() e usado como
-// fonte única da verdade daqui pra frente. CORREÇÃO (condição de corrida):
-// a versão anterior relia obterConfiguracao() -> mutava -> salvava a cada
-// clique; marcar vários itens em sequência rápida (comum ao tocar vários
-// checkboxes um atrás do outro) fazia dois toggles lerem o MESMO estado
-// antigo antes de qualquer um salvar, e o segundo salvamento sobrescrevia
-// o primeiro, perdendo a marcação. Mantendo o objeto em memória e só
-// persistindo (sem reler) a cada mudança, isso não pode mais acontecer.
+// Estado em memória (carregado uma vez em montarChecklist), só mutado e
+// persistido localmente a cada mudança, sem reler o banco — evita perder
+// marcações ao tocar vários checkboxes em sequência rápida.
 let __checklistEstadoAtual = null;
 
-// Lista em memória dos itens customizados, mesmo princípio do estado acima:
-// carregada uma vez em montarChecklist() e só mutada/persistida daqui pra
-// frente (evita a mesma condição de corrida ao adicionar/remover rápido).
+// Itens customizados em memória, mesmo princípio do estado acima.
 let __checklistItensCustomizados = null;
 
 function checklistTotalItens() {
@@ -118,9 +87,7 @@ function checklistAtualizarProgresso(estado) {
     });
 }
 
-// Recebe direto o "id" final (já pronto, "<catIdx>_<itemIdx>" pra item
-// original ou o id gerado pra item customizado) — trata os dois tipos de
-// item da mesma forma, já que o estado salvo é só um mapa id -> true.
+// Marca/desmarca um item (original ou customizado) pelo id final.
 async function checklistAlternarItem(id, marcado) {
     if (!__checklistEstadoAtual) __checklistEstadoAtual = await checklistCarregarEstadoDoBanco();
     if (marcado) __checklistEstadoAtual[id] = true; else delete __checklistEstadoAtual[id];
@@ -128,11 +95,7 @@ async function checklistAlternarItem(id, marcado) {
     await salvarConfiguracao(CHECKLIST_CHAVE_CONFIG, JSON.stringify(__checklistEstadoAtual));
 }
 
-// Escapa o texto antes de jogar no innerHTML — importante aqui porque o
-// texto de um item customizado vem de um <textarea> digitado na hora (os
-// itens originais de CHECKLIST_ENCONTROS já são texto de confiança, escrito
-// direto no código, mas passar todo mundo pela mesma função é mais simples
-// e não muda nada visualmente pros itens originais).
+// Escapa o texto antes de jogar no innerHTML (itens customizados vêm de um <textarea>).
 function checklistEscaparHtml(texto) {
     const div = document.createElement('div');
     div.textContent = texto;
@@ -305,10 +268,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     bloquearZoom();
 
-    // Puxa qualquer marcação feita no outro aparelho antes de desenhar a
-    // lista (mesmo mecanismo de main.js) — assim, quem abre o checklist
-    // direto (sem passar pela página principal antes) também vê o
-    // progresso mais recente.
+    // Sincroniza com a nuvem antes de desenhar a lista.
     if (typeof sincronizarNaAbertura === 'function') {
         try { await sincronizarNaAbertura(); } catch (e) { console.error('Falha ao sincronizar o checklist com a nuvem:', e); }
     }

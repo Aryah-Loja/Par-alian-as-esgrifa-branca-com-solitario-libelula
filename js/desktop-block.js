@@ -1,15 +1,7 @@
 /**
- * ============================================================================
- * DESKTOP-BLOCK.JS — Bloqueia o uso em computadores (Prioridade 1, item 9)
- * ============================================================================
- * A experiência foi desenhada para celular (fotos em tela cheia, gravação de
- * câmera, vibração, etc.) e não faz sentido — nem funciona bem — em telas
- * grandes de computador. Detectamos o dispositivo e, se não for um celular,
- * mostramos uma tela elegante com QR Code para abrir no celular.
- *
- * Critério de detecção: um celular real tem ponteiro "grosso" (dedo) e não
- * tem "hover" de mouse. Isso é mais confiável do que apenas checar a largura
- * da tela (que falha com janelas de desktop redimensionadas ou emuladores).
+ * DESKTOP-BLOCK.JS — Bloqueia o uso em computadores.
+ * Detecta se o dispositivo é celular (sem hover, ponteiro grosso, tela
+ * pequena) e, se não for, mostra uma tela com QR Code para abrir no celular.
  */
 function ehDispositivoMovel() {
     const semHover = window.matchMedia && window.matchMedia('(hover: none)').matches;
@@ -18,14 +10,8 @@ function ehDispositivoMovel() {
     return semHover && ponteiroGrosso && larguraRazoavel;
 }
 
-/**
- * BYPASS PRA TESTES NO COMPUTADOR — digite a sequência abaixo em qualquer
- * lugar da página (não precisa clicar em nada primeiro) para liberar o
- * site no desktop. Fica lembrado neste navegador (localStorage), então só
- * precisa digitar uma vez por computador/navegador. Continua escutando
- * mesmo com a tela de bloqueio visível, porque o listener é registrado no
- * "document", não em algo dentro do body (que é apagado ao bloquear).
- */
+// Bypass para testes no desktop: digitar a sequência abaixo em qualquer
+// lugar da página libera (ou bloqueia de novo) o site neste navegador.
 const CHAVE_BYPASS_DESKTOP = 'aurora_bypass_desktop_teste';
 const SEQUENCIA_BYPASS_DESKTOP = 'abrirauroradesktop'; // digite isso (rápido, tudo minúsculo) pra liberar o desktop
 
@@ -62,7 +48,7 @@ function iniciarBloqueioDesktop() {
             <i class="bi bi-phone text-rosegold desktop-block-icon"></i>
             <p class="desktop-block-eyebrow">Aryah Joias</p>
             <h1 class="desktop-block-title">Esta experiência foi criada para o celular</h1>
-            <p class="desktop-block-texto">Para preservar cada detalhe — fotos, sons e um pequeno segredo guardado no caminho — abra este link no seu smartphone.</p>
+            <p class="desktop-block-texto">Para preservar cada detalhe (fotos, sons e um pequeno segredo guardado no caminho), abra este link no seu smartphone.</p>
             <div id="desktopBlockQr" class="desktop-block-qr" aria-label="QR Code para abrir no celular"></div>
             <p class="desktop-block-hint">Aponte a câmera do seu celular para o código acima.</p>
         </div>

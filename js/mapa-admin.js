@@ -1,29 +1,9 @@
 /**
- * ============================================================================
- * MAPA-ADMIN.JS — Painel "Adicionar local ao mapa" (usado só em diagnostico.html)
- * ============================================================================
- * Deixa adicionar novos locais no "Nosso mapa" (ver MAPA_LUGARES em
- * js/config.js e a renderização em js/romance.js) direto pelo site, sem
- * precisar editar código.
- *
- * Os locais adicionados aqui são guardados com salvarConfiguracao() (ver
- * js/db.js) na chave 'aurora_mapa_lugares_extra' — o mesmo mecanismo usado
- * pelo resto do site pra dados pequenos (data do pedido, respostas do
- * quiz, etc). Isso significa que eles entram automaticamente no backup e
- * na sincronização com a nuvem (ver mapaLugaresExtra em js/export.js), e
- * aparecem no "Nosso mapa" em qualquer aparelho que abrir o site depois,
- * sem precisar mexer em config.js nem publicar o site de novo.
- *
- * A foto continua sendo manual, de propósito (não dá pra fazer upload de
- * arquivo puro por um site estático sem backend de verdade): depois de
- * salvar o local aqui, salve o arquivo da foto em assets/img/ com o nome
- * mostrado no campo "Nome do arquivo da foto" — ele é gerado sozinho a
- * partir do nome do local, seguindo o mesmo padrão "mapa-..." já usado
- * pelos locais fixos (ver comentário de PLACEHOLDERS em js/config.js).
- * Aceita .jpg, .jpeg, .png ou .webp, igual ao resto do site (ver
- * EXTENSOES_FOTO_ACEITAS) — a foto aparece sozinha assim que existir,
- * sem precisar editar nada de novo aqui.
- * ============================================================================
+ * MAPA-ADMIN.JS — Painel "Adicionar local ao mapa" (diagnostico.html).
+ * Salva locais extras do "Nosso mapa" via salvarConfiguracao() (chave
+ * 'aurora_mapa_lugares_extra'), sincronizados com a nuvem como qualquer
+ * config pequena. A foto continua manual: salvar o arquivo em assets/img/
+ * com o nome gerado no campo "Nome do arquivo da foto".
  */
 
 const CHAVE_MAPA_LUGARES_EXTRA_ADMIN = 'aurora_mapa_lugares_extra';
@@ -104,7 +84,7 @@ async function mapaAdminRenderizarLista() {
             <i class="bi ${lugar.icon || 'bi-geo-alt-fill'}"></i>
             <div class="flex-grow-1">
                 <strong>${lugar.nome}</strong>
-                <p class="mb-1">${lugar.cidade || ''}${lugar.texto ? ' — ' + lugar.texto : ''}</p>
+                <p class="mb-1">${lugar.cidade || ''}${lugar.texto ? ', ' + lugar.texto : ''}</p>
                 <p class="mb-0">Foto: <code>assets/img/${lugar.fotoBase}.jpg</code> (ou .jpeg/.png/.webp)</p>
             </div>
             <div class="d-flex flex-column gap-1">

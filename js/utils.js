@@ -1,14 +1,9 @@
 /**
- * ============================================================================
- * UTILS.JS — Funções utilitárias compartilhadas
- * ============================================================================
+ * UTILS.JS — Funções utilitárias compartilhadas.
  */
 
-/**
- * Testa (via HEAD request) se um arquivo existe de verdade em
- * /assets — genérico, sem ligação com nenhuma feature específica.
- * Usada por resolverFotoPlaceholder() (js/config.js), entre outras.
- */
+// Testa (via HEAD) se um arquivo existe em /assets. Usada por
+// resolverFotoPlaceholder() (js/config.js), entre outras.
 async function arquivoExisteNoServidor(caminho) {
     try {
         const resposta = await fetch(caminho, { method: 'HEAD', cache: 'no-store' });
@@ -20,17 +15,9 @@ async function arquivoExisteNoServidor(caminho) {
 
 /* ---------------- Trava de rolagem compartilhada por TODOS os modais ---------------- */
 // Trava o scroll do fundo (inclusive o "bounce" do iOS) enquanto qualquer
-// modal/overlay do site está aberto, restaurando a posição exata de onde a
-// pessoa estava ao fechar. Mora em utils.js (carregado em index.html,
-// galeria.html, checklist.html e diagnostico.html) justamente para poder
-// ser usada por QUALQUER modal em QUALQUER página — antes vivia só em
-// romance.js, então diagnostico.html (e qualquer modal fora do romance.js)
-// não tinha como usá-la.
-//
-// É uma contagem de referências: se dois overlays travarem a rolagem de
-// forma sobreposta (ex.: um modal abre outro por cima), só destrava de
-// verdade quando todo mundo que travou também destravou — o primeiro a
-// fechar não derruba a trava do outro que ainda está aberto.
+// modal/overlay está aberto, restaurando a posição ao fechar. Contagem de
+// referências: só destrava quando todos os overlays que travaram também
+// destravaram (um modal fechando não derruba a trava de outro ainda aberto).
 let __auroraScrollSalvo = 0;
 let __auroraScrollContagem = 0;
 function bloquearScrollFundoLembranca() {
@@ -50,18 +37,11 @@ function desbloquearScrollFundoLembranca() {
     }
 }
 
-/**
- * Modo "luz de vela" — escurece a tela e mostra o texto de uma carta já
- * revelada (carta final, cápsula do tempo ou carta de discussão) num
- * papel iluminado, como se estivesse sendo lida à luz de uma vela.
- * Recebe o HTML já pronto (com qualquer troca de nome já feita), não o
- * texto bruto — não refaz nenhuma lógica de revelação, só troca a
- * apresentação visual.
- *
- * `opcoes.aoContinuar`, se fornecido, mostra um botão "Continuar" dentro
- * do próprio modo vela (usado só pela carta final, que precisa seguir
- * pro flashback/"Nossa História" depois de lida).
- */
+// Modo "luz de vela": escurece a tela e mostra o texto de uma carta já
+// revelada (carta final, cápsula do tempo, carta de discussão) num papel
+// iluminado. Recebe o HTML já pronto, só troca a apresentação visual.
+// `opcoes.aoContinuar`, se fornecido, mostra um botão "Continuar" (usado
+// pela carta final, para seguir ao flashback/"Nossa História").
 function abrirModoVela(eyebrowTexto, textoHtml, assinaturaTexto, opcoes = {}) {
     const overlay = document.getElementById('modoVelaOverlay');
     if (!overlay) return;
@@ -72,10 +52,8 @@ function abrirModoVela(eyebrowTexto, textoHtml, assinaturaTexto, opcoes = {}) {
     overlay.scrollTop = 0;
     bloquearScrollFundoLembranca();
 
-    // Player embutido, hoje só usado pela cápsula do tempo (ver
-    // iniciarEnvelopeCapsula em js/romance.js) — as outras cartas que usam
-    // este mesmo modal (final e de discussão) não passam videoYoutubeId,
-    // então este bloco fica escondido e vazio pra elas.
+    // Player embutido, só usado pela cápsula do tempo (ver
+    // iniciarEnvelopeCapsula em js/romance.js).
     const videoWrap = document.getElementById('modoVelaVideoWrap');
     if (videoWrap) {
         videoWrap.innerHTML = '';
@@ -105,30 +83,19 @@ function abrirModoVela(eyebrowTexto, textoHtml, assinaturaTexto, opcoes = {}) {
         btnContinuar.onclick = null;
     }
 
-    /* CORREÇÃO (item 2 do prompt de correções): quando existe um botão
-       "Continuar" obrigatório (hoje só a carta final usa isso), o X de
-       fechar precisa sumir e clicar fora também não pode fechar — fechar
-       sem apertar "Continuar" pulava o passo que salva o estágio como
-       'final' e leva pro flashback/"Nossa História", deixando o site
-       travado sem conseguir avançar. Nas demais cartas (cápsula do tempo,
-       carta de discussão), que não usam aoContinuar, o X continua
-       funcionando exatamente como antes. */
+    // Com "Continuar" obrigatório (só a carta final usa), o X de fechar
+    // some e clicar fora não fecha — evita pular o passo que avança o estágio.
     if (exigeContinuar) {
         btnFechar.classList.add('d-none');
         btnFechar.onclick = null;
         overlay.onclick = null;
     } else {
         btnFechar.classList.remove('d-none');
-        // `opcoes.aoFechar`, se fornecido, roda depois de fechar o modo vela
-        // (usado pela cápsula do tempo pra fechar o envelope de novo e
-        // deixar pronto pra abrir do zero na próxima vez — ver
-        // iniciarEnvelopeCapsula em romance.js).
+        // `opcoes.aoFechar`, se fornecido, roda depois de fechar (usado pela
+        // cápsula do tempo para resetar o envelope).
         const fechar = () => {
             overlay.classList.add('d-none');
-            // Some o player junto (não só esconde): sem isso, um vídeo do
-            // YouTube tocando continuaria rodando com áudio escondido atrás
-            // do overlay fechado.
-            if (videoWrap) videoWrap.innerHTML = '';
+            if (videoWrap) videoWrap.innerHTML = ''; // remove o player, não só esconde (evita YouTube tocando escondido)
             desbloquearScrollFundoLembranca();
             if (typeof opcoes.aoFechar === 'function') opcoes.aoFechar();
         };
@@ -138,11 +105,8 @@ function abrirModoVela(eyebrowTexto, textoHtml, assinaturaTexto, opcoes = {}) {
 }
 
 /* ---------------- Substituição segura de imagens (placeholders) ---------------- */
-/**
- * Aplica getAsset() a uma <img> e prepara um "onerror" elegante: se o
- * arquivo real ainda não foi enviado para o /assets, mostra um quadro com
- * ícone + legenda em vez de um ícone de imagem quebrada.
- */
+// Gera um SVG de placeholder com ícone + legenda, usado quando um arquivo
+// real ainda não foi enviado para /assets.
 function gerarSvgPlaceholderComLegenda(legenda) {
     const texto = (legenda || 'Adicione esta foto').slice(0, 40);
     return 'data:image/svg+xml;utf8,' + encodeURIComponent(`
@@ -154,14 +118,9 @@ function gerarSvgPlaceholderComLegenda(legenda) {
     `);
 }
 
-/**
- * Aplica getAsset() a uma <img> e prepara um "onerror" elegante: se o
- * arquivo real ainda não foi enviado para o /assets, mostra uma imagem de
- * substituição (ícone + legenda) em vez do ícone de imagem quebrada do
- * navegador. Mantém sempre um elemento <img> de verdade (em vez de trocar
- * por uma <div>), para que trocas futuras de "src" (ex: miniaturas do
- * produto) continuem funcionando normalmente.
- */
+// Aplica getAsset() a uma <img> com "onerror" elegante: mostra a imagem de
+// substituição em vez do ícone de imagem quebrada. Mantém sempre um <img>
+// de verdade (não uma <div>), para trocas futuras de "src" continuarem funcionando.
 function aplicarImagemPlaceholder(imgEl, placeholderId, legenda) {
     if (!imgEl) return;
     imgEl.dataset.placeholderId = placeholderId;
@@ -173,13 +132,8 @@ function aplicarImagemPlaceholder(imgEl, placeholderId, legenda) {
     imgEl.src = getAsset(placeholderId);
 }
 
-/**
- * Rede de segurança global: qualquer <img> do site que falhe ao carregar
- * (arquivo de placeholder ainda não enviado, link quebrado, etc.) recebe
- * uma imagem de substituição elegante em vez do ícone padrão de "imagem
- * quebrada" do navegador. Complementa aplicarImagemPlaceholder() para os
- * casos em que o src é trocado dinamicamente (ex: miniaturas do produto).
- */
+// Rede de segurança global: qualquer <img> que falhe ao carregar recebe uma
+// imagem de substituição, em vez do ícone padrão de "imagem quebrada".
 const SVG_PLACEHOLDER_GENERICO = 'data:image/svg+xml;utf8,' + encodeURIComponent(`
     <svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
         <rect width="400" height="400" fill="#f3e6e8"/>
@@ -217,13 +171,8 @@ function paraCodigoMorse(texto) {
 }
 
 
-/**
- * Conta toques repetidos no MESMO elemento dentro de uma janela curta de
- * tempo (evita contar cliques espalhados ao longo do dia) e dispara um
- * callback ao atingir a quantidade necessária. Mecanismo genérico por
- * trás de todos os easter eggs de "N toques" do site (loja e a lua do
- * Nosso céu).
- */
+// Conta toques repetidos no mesmo elemento numa janela curta de tempo e
+// dispara um callback ao atingir a quantidade necessária (base dos easter eggs).
 function contarToquesRepetidos(elemento, quantidadeNecessaria, aoCompletar) {
     const JANELA_ENTRE_TOQUES_MS = 1800;
     let contador = 0;
@@ -242,12 +191,8 @@ function contarToquesRepetidos(elemento, quantidadeNecessaria, aoCompletar) {
     });
 }
 
-/**
- * Contador de easter eggs — compartilhado por TODOS eles (loja, lua,
- * frete). Marca o id como encontrado (persistido, sobrevive a reload),
- * sem contar duas vezes o mesmo, e atualiza o contador discreto no canto
- * da tela. Não revela QUAIS ela já achou, só o total.
- */
+// Marca um easter egg como encontrado (persistido, sem duplicar) e
+// atualiza o contador discreto no canto da tela (só o total, não quais).
 async function marcarEasterEggEncontrado(id) {
     let encontrados = [];
     try { encontrados = JSON.parse(await obterConfiguracao('easterEggsEncontrados') || '[]'); } catch (e) { /* trata como nenhum encontrado ainda */ }
@@ -260,16 +205,10 @@ async function marcarEasterEggEncontrado(id) {
     atualizarContadorEasterEggs(encontrados.length);
 }
 
-/**
- * CORREÇÃO (item 1 do prompt de correções): o contador só pode aparecer
- * depois que o pedido de namoro já aconteceu, dentro de "Nossa História" —
- * nunca na loja inicial nem no checkout/carta. `contadorEasterEggsFaseFinal`
- * só vira true dentro de ativarContadorEasterEggsFaseFinal(), chamada em
- * goToRomancePage() (js/romance.js). Antes disso, os easter eggs da loja
- * continuam sendo contados e persistidos normalmente por baixo dos panos,
- * só o número não é exibido ainda. Quando todos os 9 já foram encontrados,
- * o contador some sozinho (não tem mais função depois de completo).
- */
+// O contador visível só aparece dentro de "Nossa História" (nunca na loja
+// ou checkout/carta); ativado por goToRomancePage() (js/romance.js). Os
+// easter eggs da loja continuam sendo contados por baixo dos panos antes
+// disso. Some sozinho quando todos já foram encontrados.
 let contadorEasterEggsFaseFinal = false;
 let contadorEasterEggsQuantidadeAtual = 0;
 
@@ -296,7 +235,7 @@ function atualizarContadorEasterEggs(quantidadeEncontrada) {
     aplicarVisibilidadeContadorEasterEggs();
 }
 
-/** Chamado uma vez no carregamento da página pra ter o número certo desde o início (mesmo com o contador ainda escondido). */
+// Chamado uma vez no carregamento para ter o número certo desde o início.
 async function iniciarContadorEasterEggs() {
     let encontrados = [];
     try { encontrados = JSON.parse(await obterConfiguracao('easterEggsEncontrados') || '[]'); } catch (e) { /* nenhum ainda */ }
@@ -304,17 +243,9 @@ async function iniciarContadorEasterEggs() {
     atualizarContadorEasterEggs(encontrados.length);
 }
 
-/**
- * CORREÇÃO ("espaço vazio/roxo no fim da tela"): força o navegador a
- * recalcular o layout de verdade (lendo offsetHeight, que obriga um
- * reflow síncrono) depois de qualquer troca de tela que mexe na altura
- * do documento. Sem isso, o valor de altura interno do navegador às
- * vezes fica desatualizado até um reload manual (F5), deixando uma
- * faixa vazia no fim da página, só com a cor de fundo do body (o
- * "roxo" escuro de CORES_FUNDO.escuro, ver definirFundoBody()), sem
- * nenhum conteúdo em cima. Reaproveitada em vários gatilhos diferentes,
- * ver comentários abaixo de cada um.
- */
+// Força o navegador a recalcular o layout (lendo offsetHeight, que obriga
+// um reflow síncrono) depois de trocas de tela que mexem na altura do
+// documento — evita um espaço vazio no fim da página até um F5 manual.
 function forcarRecalculoDeLayout() {
     requestAnimationFrame(() => {
         document.body.style.display = 'none';
@@ -323,136 +254,53 @@ function forcarRecalculoDeLayout() {
     });
 }
 
-/**
- * Rede de segurança pra "espaço em branco no fim da página depois de sair
- * e voltar, que só some com F5": em navegadores de celular, quando o
- * app fica em segundo plano no meio de alguma transição (um overlay
- * fechando, a barra de endereço mudando de tamanho), o layout às vezes
- * fica com um valor de altura desatualizado até a página recalcular tudo
- * de novo — o que normalmente só acontece mesmo num reload. Forçando um
- * reflow manual quando a aba volta a ficar visível, resolve sem precisar
- * de F5.
- */
+// Força um reflow quando a aba volta a ficar visível — evita um espaço em
+// branco no fim da página que só sumiria com F5.
 document.addEventListener('visibilitychange', () => {
     if (document.visibilityState !== 'visible') return;
     forcarRecalculoDeLayout();
 });
 
-/**
- * CORREÇÃO (espaço vazio "roxo" ao sair da galeria.html de volta pro
- * index.html, ou ao voltar de qualquer outra página pelo gesto/botão
- * "voltar" do navegador): esses casos são navegação entre PÁGINAS
- * diferentes (galeria.html <-> index.html), não uma troca de tela dentro
- * da mesma página, então o listener de visibilitychange acima não é
- * suficiente sempre - o Safari/Chrome do celular costuma restaurar a
- * página anterior direto do cache de navegação (bfcache) sem recarregar
- * nada, o que dispara o evento "pageshow" em vez de visibilitychange. O
- * mesmo reflow forçado resolve aqui.
- */
+// Voltar entre páginas (ex.: galeria.html <-> index.html) pelo gesto/botão
+// "voltar" costuma restaurar do bfcache e disparar "pageshow" em vez de
+// visibilitychange — o mesmo reflow forçado resolve aqui também.
 window.addEventListener('pageshow', () => {
     forcarRecalculoDeLayout();
 });
 
 /* ----------------------------------------------------------------------
    Descoberta de itens da galeria (compartilhado entre galeria.html e
-   "Nossos momentos" em index.html)
-   ----------------------------------------------------------------------
-   REFORMULAÇÃO (30/07/2026) — motivo: tanto a página da Galeria quanto o
-   quadro "Nossos momentos" descobriam quais fotos/vídeos existem "no
-   chute": iam testando galeria_1, galeria_2, galeria_3... um por um (em
-   lotes) via requisições HEAD, do ZERO, toda vez que a página abria. Pior
-   ainda: depois que o pedido de namoro já aconteceu, TODA abertura do
-   site cai direto em "Nossa História" (ver js/main.js), que inclui
-   "Nossos momentos" — ou seja, essa varredura rodava a cada vez que ela
-   abria o link, não só na primeira vez. Isso é a causa principal tanto da
-   Galeria demorando quanto do site "demorando mais que o normal" ao
-   abrir.
-   Duas mudanças resolvem isso, mantendo intacto o espírito de "só jogar
-   os arquivos numerados na pasta, sem editar nada" (ver comentário grande
-   em js/config.js):
-   1) CACHE LOCAL (`localStorage`, por aparelho): o resultado de uma
-      varredura completa fica guardado. Da SEGUNDA abertura em diante (no
-      mesmo aparelho/navegador), tanto a Galeria quanto "Nossos momentos"
-      usam esse cache e aparecem na hora, sem esperar nenhuma requisição
-      de rede — a varredura de verdade roda só em segundo plano, sem
-      travar a tela, só pra pegar fotos/vídeos novos que Gabriel tenha
-      adicionado depois.
-   2) MAIS PARALELISMO na varredura em si (quando ela precisa mesmo
-      acontecer, como na primeiríssima abertura de um aparelho): antes
-      cada lote de 8 números esperava terminar pra só então começar o
-      próximo; agora o lote é maior (24), fazendo bem menos idas-e-voltas
-      até o servidor no total.
+   "Nossos momentos" em index.html). Usa cache local + manifesto para
+   evitar varreduras lentas a cada abertura — ver CONTEXTO-PROJETO.md.
    ---------------------------------------------------------------------- */
 const GALERIA_MAX_NUMERO = 500;       // teto de segurança, nunca deve ser alcançado na prática
 const GALERIA_LACUNA_PARA_PARAR = 6;  // depois de 6 números seguidos sem nada, para de procurar
 
 /* ----------------------------------------------------------------------
-   MANIFESTO DA GALERIA (correção de velocidade no celular)
-   ----------------------------------------------------------------------
-   PROBLEMA: sem o manifesto, a ÚNICA forma de descobrir quais fotos/vídeos
-   existem é perguntar ao servidor, um por um, via HEAD request
-   (galeriaDescobrirItem/galeriaVarrerFaixa abaixo). Cada requisição HEAD é
-   rápida no wi-fi/cabo de um computador (poucos ms de ida-e-volta), mas no
-   4G/5G do celular cada uma pode levar centenas de ms — e como o navegador
-   limita quantas conexões abre ao mesmo tempo para o mesmo servidor
-   (normalmente 6), os "lotes de 24 em paralelo" do código abaixo na
-   prática viram várias filas de 6, multiplicando ainda mais o tempo total.
-   É por isso que a Galeria (e "Nossa História", que espera a mesma busca
-   terminar antes de aparecer — ver iniciarGaleriaMomentos() em
-   js/romance.js) carregava rápido no computador e devagar no celular.
-
-   SOLUÇÃO: em vez de "perguntar" arquivo por arquivo, o site agora tenta
-   primeiro buscar um único arquivo pequeno — assets/img/galeria/manifesto.json
-   — que já lista tudo que existe. Isso troca dezenas/centenas de idas-e-
-   voltas ao servidor por UMA só, e a Galeria/"Nossa História" ficam prontas
-   quase instantaneamente, mesmo em rede ruim. Esse arquivo é gerado
-   automaticamente (ver scripts/gerar-manifesto-galeria.js e o workflow do
-   GitHub Actions em .github/workflows/gerar-manifesto-galeria.yml) toda
-   vez que fotos/vídeos novos são enviados para o repositório — ninguém
-   precisa editar nada manualmente.
-
-   Se o manifesto ainda não existir (ex.: projeto ainda não configurado com
-   o GitHub Actions, ou alguém apagou o arquivo), o site cai automaticamente
-   de volta no método antigo de varredura por HEAD request — nada quebra,
-   só volta a ficar mais lento até o manifesto existir.
+   MANIFESTO DA GALERIA — assets/img/galeria/manifesto.json lista tudo que
+   existe, evitando descobrir arquivo por arquivo via HEAD request. Gerado
+   automaticamente (scripts/gerar-manifesto-galeria.js + GitHub Actions) a
+   cada novo upload de fotos/vídeos. Sem manifesto, cai de volta na
+   varredura por HEAD — ver CONTEXTO-PROJETO.md para o raciocínio completo.
    ---------------------------------------------------------------------- */
 let __galeriaManifestoPromise = null;
 
-/**
- * Busca e valida assets/img/galeria/manifesto.json. Devolve a lista de
- * itens ({numero, caminho, tipo}) já pronta, ou `null` se o arquivo não
- * existir/estiver inválido (nesse caso quem chamou deve usar a varredura
- * por HEAD como antes). O resultado é guardado em memória (não repete a
- * busca várias vezes na mesma visita à página).
- */
+// Busca e valida o manifesto.json; devolve a lista de itens pronta, ou
+// `null` se não existir/estiver inválido (usa a varredura por HEAD nesse caso).
 function galeriaCarregarManifesto() {
     if (__galeriaManifestoPromise) return __galeriaManifestoPromise;
 
     __galeriaManifestoPromise = (async () => {
         try {
-            // 'no-cache' (diferente de 'no-store'): permite que o navegador
-            // guarde a resposta, mas OBRIGA a revalidar com o servidor antes
-            // de usá-la (requisição condicional via ETag/Last-Modified) —
-            // sem isso, o cache HTTP padrão do navegador/CDN podia continuar
-            // servindo um manifesto.json ANTIGO por vários minutos depois do
-            // Gabriel subir fotos novas, escondendo o conteúdo mais recente
-            // sem nenhum aviso. Ainda assim é bem mais barato que a
-            // varredura por HEAD: na maioria das vezes o servidor responde
-            // "304 não mudou" quase sem custo nenhum.
+            // 'no-cache': permite guardar a resposta mas obriga revalidar com
+            // o servidor antes de usá-la (evita servir um manifesto desatualizado).
             const resposta = await fetch(`${PASTA_GALERIA}/manifesto.json`, { cache: 'no-cache' });
             if (!resposta.ok) return null;
             const dados = await resposta.json();
             if (!dados || !Array.isArray(dados.itens)) return null;
 
-            // CORREÇÃO (galeria genuinamente vazia sendo tratada como "sem
-            // manifesto"): antes, uma lista de itens vazia (situação normal
-            // antes do Gabriel subir a primeira foto) fazia esta função
-            // devolver `null` — o mesmo sinal usado para "manifesto não
-            // existe" — e isso disparava a varredura lenta por HEAD à toa,
-            // justamente o problema que o manifesto existe pra evitar. Um
-            // array vazio agora é um resultado válido e definitivo (a
-            // galeria está mesmo vazia), só `null` significa "sem
-            // manifesto, tenta do jeito antigo".
+            // Array vazio é um resultado válido (galeria realmente vazia);
+            // só `null` significa "sem manifesto, tenta o jeito antigo".
             return dados.itens
                 .filter(item => item && Number.isFinite(item.numero) && (item.tipo === 'foto' || item.tipo === 'video') && item.ext)
                 .map(item => ({
@@ -470,13 +318,9 @@ function galeriaCarregarManifesto() {
 
 /* ---------------- Cache local da descoberta (localStorage) ---------------- */
 // Guarda { itens: [{numero, caminho, tipo}], completo: boolean, salvoEm }.
-// `completo` distingue um cache que já varreu a Galeria INTEIRA (fotos +
-// vídeos, gerado por galeriaEscanearCompleta — o único confiável para
-// montar a página da Galeria) de um cache PARCIAL (só a faixa de fotos,
-// gerado por descobrirFotosParaDestaque — suficiente para "Nossos
-// momentos", que só precisa de fotos). Nunca deixamos um cache parcial
-// sobrescrever um completo já salvo, pra Galeria nunca perder itens que
-// já sabia que existiam.
+// `completo` distingue uma varredura completa (fotos+vídeos, única
+// confiável para a página da Galeria) de uma parcial (só fotos, para
+// "Nossos momentos"). Um cache parcial nunca sobrescreve um completo.
 const GALERIA_CACHE_CHAVE = 'aurora_galeria_cache_v1';
 
 function galeriaLerCacheBruto() {
@@ -519,35 +363,19 @@ function galeriaLimparCache() {
     try { localStorage.removeItem(GALERIA_CACHE_CHAVE); } catch (e) { /* nada a fazer */ }
 }
 
-// De quanto em quanto tempo, no máximo, vale a pena refazer a varredura de
-// verdade em segundo plano (só pra pegar fotos/vídeos novos que Gabriel
-// tenha adicionado) — sem isso, o cache nunca atualizaria sozinho.
-const GALERIA_REVALIDACAO_INTERVALO_MS = 3 * 60 * 60 * 1000; // 3 horas
+const GALERIA_REVALIDACAO_INTERVALO_MS = 3 * 60 * 60 * 1000; // intervalo mínimo entre revalidações, 3h
 
-/**
- * Roda `galeriaEscanearFotos` em segundo plano (sem bloquear nada na
- * tela) só se o cache não existir ainda ou já estiver "velho" o
- * suficiente (ver GALERIA_REVALIDACAO_INTERVALO_MS) — assim uma pessoa
- * que abre o site várias vezes seguidas não dispara uma varredura nova a
- * cada abertura, mas o cache também não fica desatualizado pra sempre.
- * Chamada tanto por "Nossos momentos" (index.html) quanto pela página da
- * Galeria, sempre DEPOIS de já ter mostrado algo na tela (cache ou
- * varredura própria) — nunca é o que decide o que aparece agora.
- *
- * REFORMULAÇÃO (botão "Ver vídeos", 30/07/2026): antes revalidava fotos E
- * vídeos juntos (`galeriaEscanearCompleta`). Agora revalida só fotos —
- * a faixa de vídeos nunca roda sozinha em segundo plano, só quando a
- * pessoa aperta "Ver vídeos" de propósito (ver galeriaEscanearVideos
- * acima), justamente para não pesar a abertura normal da página com
- * arquivos maiores que ninguém pediu pra ver ainda.
- */
+// Roda galeriaEscanearFotos em segundo plano só se o cache não existir ou já
+// estiver velho o suficiente. Revalida só fotos (não vídeos, que só varrem
+// quando a pessoa aperta "Ver vídeos"). Chamada sempre depois de já mostrar
+// algo na tela — nunca decide o que aparece agora.
 function galeriaRevalidarEmSegundoPlano() {
     const dados = galeriaLerCacheBruto();
     if (dados && (Date.now() - (dados.salvoEm || 0)) < GALERIA_REVALIDACAO_INTERVALO_MS) return;
     galeriaEscanearFotos(null, null).catch(() => { /* sem problema, tenta de novo na próxima abertura */ });
 }
 
-/** Confere (via HEAD, sem baixar o arquivo inteiro) se um caminho existe no servidor. */
+// Confere (via HEAD) se um caminho existe no servidor.
 async function galeriaArquivoExiste(caminho) {
     try {
         const resposta = await fetch(caminho, { method: 'HEAD', cache: 'no-store' });
@@ -557,16 +385,9 @@ async function galeriaArquivoExiste(caminho) {
     }
 }
 
-/**
- * Tenta descobrir o item "galeria_N" testando a extensão fixa de foto
- * (.jpg) e/ou de vídeo (.mp4), em paralelo quando os dois tipos são
- * relevantes. Devolve { caminho, tipo } da primeira que existir, ou
- * `null` se nenhuma existir.
- */
+// Testa a extensão fixa de foto e/ou vídeo para "galeria_N", em paralelo.
+// Devolve { caminho, tipo } da primeira que existir, ou `null`.
 async function galeriaDescobrirItem(numero, tipoAlvo) {
-    // Só testa a extensão fixa do(s) tipo(s) relevante(s) — quem varre
-    // uma faixa (ver galeriaVarrerFaixa) informa `tipoAlvo` ('foto' ou
-    // 'video') e só a extensão daquele tipo é testada.
     const candidatos = [
         ...(tipoAlvo !== 'video' ? GALERIA_EXTENSOES_FOTO.map(ext => ({ ext, tipo: 'foto' })) : []),
         ...(tipoAlvo !== 'foto' ? GALERIA_EXTENSOES_VIDEO.map(ext => ({ ext, tipo: 'video' })) : [])
@@ -577,14 +398,8 @@ async function galeriaDescobrirItem(numero, tipoAlvo) {
         const tentar = async () => {
             const resposta = await fetch(caminho, { method: 'HEAD', cache: 'no-store', signal: controlador.signal });
             if (resposta.ok) return { encontrado: true, resultado: { caminho, tipo: c.tipo } };
-            // CORREÇÃO ("Nossos momentos" às vezes não achava foto nenhuma):
-            // só um 404 de verdade significa "o arquivo não existe". Qualquer
-            // outro status (429 de limite de requisições, 503/500 de
-            // instabilidade do servidor, etc.) é uma falha PASSAGEIRA, não uma
-            // confirmação de ausência — tratar isso como "não encontrado" sem
-            // repetir a tentativa fazia buscas com rede instável (comum em
-            // 4G) confundirem "servidor engasgou" com "essa foto não existe",
-            // cortando fotos reais da seleção.
+            // Só um 404 de verdade confirma ausência; outros status (429,
+            // 503...) são falhas passageiras e merecem nova tentativa.
             return { encontrado: false, confirmado: resposta.status === 404 };
         };
         try {
@@ -594,11 +409,7 @@ async function galeriaDescobrirItem(numero, tipoAlvo) {
         } catch (e) {
             if (controlador.signal.aborted) throw e; // cancelado porque outra extensão já achou — não é erro de rede, não faz sentido re-tentar
         }
-        // Erro de rede ou status ambíguo (não é um 404 confirmado) — sempre
-        // vale uma segunda tentativa antes de desistir de vez, porque aqui
-        // NÃO temos certeza se o arquivo existe ou não. Sem essa distinção,
-        // um arquivo que EXISTE de verdade podia sumir de "Nossos momentos"
-        // (ou da galeria) só por causa de uma falha de rede passageira.
+        // Status ambíguo (não confirmado 404) — vale uma segunda tentativa.
         try {
             const r2 = await tentar();
             if (r2.encontrado) return r2.resultado;
@@ -628,31 +439,12 @@ async function galeriaDescobrirItem(numero, tipoAlvo) {
     return testarTodasAsExtensoes();
 }
 
-/**
- * Varre uma faixa de números da galeria (de `inicio` até `teto`, ou até
- * bater a tolerância de buracos seguidos — `lacunaTolerancia`), chamando
- * `aoEncontrar(numero, resultado)` pra cada item real que achar.
- * Extraída como função própria (em vez de duplicar o laço em cada lugar
- * que precisa dela: descobrirFotosParaDestaque(), galeriaEscanearCompleta()
- * pra dar suporte a DUAS faixas independentes — uma pra fotos, outra pra
- * vídeos (ver GALERIA_INICIO_VIDEOS em js/config.js) — sem duplicar a
- * lógica de descoberta em cada lugar que precisa dela.
- *
- * `lacunaTolerancia` (padrão GALERIA_LACUNA_PARA_PARAR) permite que quem
- * chama desative a parada antecipada por buraco (passando Infinity) —
- * usado na faixa de fotos abaixo, que já é naturalmente pequena e
- * limitada por GALERIA_INICIO_VIDEOS, então não há necessidade da
- * otimização de "desistir cedo" e ela só causava fotos reais que vinham
- * depois de um buraco na numeração (ex.: pulou um número ao subir as
- * fotos) serem cortadas da galeria.
- */
+// Varre uma faixa de números da galeria (`inicio` até `teto`, ou até bater
+// a tolerância de buracos seguidos) chamando `aoEncontrar(numero, resultado)`
+// para cada item real. `lacunaTolerancia = Infinity` desativa a parada
+// antecipada (usado na faixa de fotos, naturalmente pequena e limitada).
 async function galeriaVarrerFaixa(inicio, teto, aoEncontrar, aoProgredir, tipoAlvo, lacunaTolerancia = GALERIA_LACUNA_PARA_PARAR) {
-    // Lote aumentado de 8 para 24 (REFORMULAÇÃO 30/07/2026): como essa
-    // varredura de verdade só roda mesmo na primeira abertura de cada
-    // aparelho (depois disso entra o cache, ver bloco acima), vale testar
-    // mais números em paralelo por vez — bem menos idas-e-voltas até o
-    // servidor até cobrir a faixa inteira.
-    const TAMANHO_LOTE = 24;
+    const TAMANHO_LOTE = 24; // testado em paralelo por vez
     let proximoNumero = inicio;
     let lacunaAtual = 0;
 
@@ -677,39 +469,14 @@ async function galeriaVarrerFaixa(inicio, teto, aoEncontrar, aoProgredir, tipoAl
     }
 }
 
-/**
- * Varre a galeria inteira (fotos e vídeos) e devolve TODOS os itens
- * encontrados ({ numero, caminho, tipo }). Usada só dentro de
- * galeria.html (js/galeria.js), a única tela que precisa mesmo da lista
- * completa — e a única que tem uma barra de carregamento visível pra
- * cobrir o tempo dessa varredura. `aoProgredir`, se passado, é chamado a
- * cada lote conferido, pra alimentar essa barra.
- *
- * `aoEncontrarItem`, se passado, é chamado IMEDIATAMENTE a cada item
- * real encontrado (em vez de só no final) — permite que quem chama já
- * comece a carregar/exibir a foto/vídeo assim que ela é descoberta, ao
- * invés de esperar a varredura inteira (fotos + vídeos) terminar pra só
- * então começar a mostrar qualquer coisa na tela.
- *
- * CORREÇÃO (galeria demorando pra aparecer e "parando" antes da hora):
- * cada item agora é entregue via `aoEncontrarItem` assim que é achado —
- * quem chama (galeria.js) já bota a foto na grade e começa a carregá-la
- * na hora, sem esperar a varredura inteira terminar primeiro. As duas
- * faixas continuam em sequência (fotos, depois vídeos) pra manter a
- * ordem de exibição (fotos em ordem crescente, depois os vídeos), mas
- * como as fotos já vão aparecendo desde o primeiro lote, a demora
- * percebida cai bastante mesmo sem paralelizar as faixas. Além disso, a
- * faixa de fotos agora varre até o fim sem desistir por causa de
- * buracos na numeração (ver `lacunaTolerancia` em galeriaVarrerFaixa) —
- * evita cortar fotos reais que vêm depois de um número faltando/pulado
- * (a faixa de vídeos continua com a tolerância normal, já que ali sim
- * vale a pena desistir cedo pra não varrer até GALERIA_MAX_NUMERO à toa).
- */
+// Varre a galeria inteira (fotos e vídeos) e devolve todos os itens
+// encontrados. Usada só em galeria.html, a única tela com barra de
+// carregamento visível pra cobrir o tempo da varredura. `aoProgredir`
+// alimenta essa barra a cada lote; `aoEncontrarItem`, se passado, é
+// chamado a cada item já encontrado (não só no final), para exibir cada
+// foto assim que é descoberta. A faixa de fotos varre até o fim sem
+// desistir por buracos na numeração; a de vídeos mantém a tolerância normal.
 async function galeriaEscanearCompleta(aoProgredir, aoEncontrarItem) {
-    // CORREÇÃO (celular demorando muito): se existir um manifesto pronto
-    // (ver bloco "MANIFESTO DA GALERIA" acima), usa ele direto — uma única
-    // requisição em vez de dezenas/centenas de HEAD request. Só cai na
-    // varredura manual abaixo se o manifesto não existir ou vier vazio.
     const doManifesto = await galeriaCarregarManifesto();
     if (doManifesto) {
         const itensOrdenados = doManifesto.slice().sort((a, b) => a.numero - b.numero);
@@ -736,33 +503,21 @@ async function galeriaEscanearCompleta(aoProgredir, aoEncontrarItem) {
 }
 
 /* ----------------------------------------------------------------------
-   BOTÃO "VER VÍDEOS" NA GALERIA (novo, 30/07/2026)
-   ----------------------------------------------------------------------
-   PROBLEMA: mesmo com o manifesto e o cache (ver blocos acima), galeria.html
-   sempre varria E MONTAVA na grade fotos e vídeos juntos (galeriaEscanearCompleta),
-   mesmo quando a pessoa só queria ver as fotos. Vídeo é sempre um arquivo bem
-   mais pesado que foto, então montar todos de cara deixava a abertura da
-   página mais pesada do que precisava, mesmo em aparelhos rápidos.
-
-   SOLUÇÃO: galeria.html (js/galeria.js) agora usa só galeriaEscanearFotos()
-   na abertura da página — a faixa de vídeos (GALERIA_INICIO_VIDEOS em
-   diante) nunca é varrida nem montada na grade sozinha, nem em segundo
-   plano. Só quando a pessoa aperta o botão "Ver vídeos" é que
-   galeriaEscanearVideos() roda de verdade. galeriaEscanearCompleta() (acima)
-   continua existindo por causa do fallback em "Nossos momentos"
-   (js/romance.js), que precisa da varredura inteira só como último recurso
-   se nada mais achar nenhuma foto.
+   BOTÃO "VER VÍDEOS" NA GALERIA — galeria.html usa só galeriaEscanearFotos()
+   na abertura (vídeos são arquivos pesados); a faixa de vídeos só é varrida
+   quando a pessoa aperta "Ver vídeos" (galeriaEscanearVideos, abaixo).
+   galeriaEscanearCompleta() segue existindo como fallback de "Nossos
+   momentos" (js/romance.js), usada só se nenhuma foto for achada de outro jeito.
    ---------------------------------------------------------------------- */
 
-/** Varre (ou usa manifesto/cache) só a faixa de FOTOS da galeria. */
+// Varre (ou usa manifesto/cache) só a faixa de fotos da galeria.
 async function galeriaEscanearFotos(aoProgredir, aoEncontrarItem) {
     const doManifesto = await galeriaCarregarManifesto();
     if (doManifesto) {
         const fotos = doManifesto.filter(item => item.tipo === 'foto').sort((a, b) => a.numero - b.numero);
         if (aoEncontrarItem) fotos.forEach(aoEncontrarItem);
-        // Guarda o manifesto INTEIRO (fotos + vídeos) como cache completo —
-        // já veio tudo numa única resposta, sem custo extra nenhum, e deixa
-        // o botão "Ver vídeos" instantâneo depois (ver galeriaEscanearVideos).
+        // Guarda o manifesto inteiro como cache completo (já veio tudo numa
+        // única resposta), deixando "Ver vídeos" instantâneo depois.
         galeriaSalvarCacheSeMelhor(doManifesto, true);
         return fotos;
     }
@@ -773,16 +528,12 @@ async function galeriaEscanearFotos(aoProgredir, aoEncontrarItem) {
         if (aoEncontrarItem) aoEncontrarItem({ numero, ...resultado });
     };
     await galeriaVarrerFaixa(1, GALERIA_INICIO_VIDEOS - 1, aoEncontrar, aoProgredir, 'foto', Infinity);
-    galeriaSalvarCacheSeMelhor(fotosEncontradas, false); // parcial (só fotos) — não sobrescreve um cache completo já salvo
+    galeriaSalvarCacheSeMelhor(fotosEncontradas, false); // parcial — não sobrescreve um cache completo já salvo
     return fotosEncontradas;
 }
 
-/**
- * Varre (ou usa manifesto/cache) só a faixa de VÍDEOS locais (a partir de
- * GALERIA_INICIO_VIDEOS) da galeria. Chamada só quando a pessoa aperta o
- * botão "Ver vídeos" em galeria.html (js/galeria.js) — nunca sozinha na
- * abertura da página, nem em segundo plano.
- */
+// Varre (ou usa manifesto/cache) só a faixa de vídeos locais, a partir de
+// GALERIA_INICIO_VIDEOS. Chamada só quando a pessoa aperta "Ver vídeos".
 async function galeriaEscanearVideos(aoProgredir, aoEncontrarItem) {
     const doManifesto = await galeriaCarregarManifesto();
     if (doManifesto) {
@@ -812,41 +563,20 @@ async function galeriaEscanearVideos(aoProgredir, aoEncontrarItem) {
     return videosEncontrados;
 }
 
-/**
- * CORREÇÃO (checagem duplicada/pesada na home): "Nossos momentos"
- * (index.html) só precisa de umas poucas fotos pra sortear entre elas —
- * não faz sentido ela repetir a MESMA varredura pesada e completa (até
- * GALERIA_MAX_NUMERO, fotos e vídeos) que a página galeria.html já faz
- * direito, com barra de carregamento própria pra isso. Aqui a varredura
- * olha só a faixa de fotos (nem entra na faixa de vídeo, que "Nossos
- * momentos" nem usa), o que já é bem mais leve.
- *
- * CORREÇÃO (fotos escolhidas ficavam "grudadas", parecendo do mesmo
- * dia): para poder escolher fotos espalhadas pela numeração (ver
- * escolherFotosEspalhadas abaixo) é preciso conhecer TODAS as fotos
- * existentes na faixa, não só um pedaço perto de um ponto sorteado —
- * por isso a varredura agora sempre percorre a faixa inteira (sem parar
- * ao achar uma quantidade-alvo), mantendo o NÚMERO de cada foto, não só
- * o caminho do arquivo.
- */
-const GALERIA_DESTAQUE_TETO_MAX = 150; // trava de segurança: mesmo que GALERIA_INICIO_VIDEOS seja configurado bem alto no futuro, essa varredura continua leve
+// "Nossos momentos" (index.html) só precisa de umas poucas fotos para
+// sortear — varredura mais leve que galeriaEscanearCompleta, olhando só a
+// faixa de fotos e sempre até o fim (sem parar numa quantidade-alvo), para
+// poder espalhar a escolha por toda a numeração (ver escolherFotosEspalhadas).
+const GALERIA_DESTAQUE_TETO_MAX = 150; // trava de segurança
 
 async function descobrirFotosParaDestaque() {
-    // CORREÇÃO (a página "Nossa História" ficava presa na tela de
-    // "preparando nossa história..." por muito tempo no celular): antes
-    // desta função rodar sempre a varredura por HEAD abaixo, mesmo sem
-    // cache — e como ela é uma das tarefas que goToRomancePage() espera
-    // terminar antes de esconder o overlay de carregamento (ver
-    // js/romance.js), essa varredura lenta em rede móvel travava a
-    // entrada inteira em "Nossa História", não só a Galeria. Usar o
-    // manifesto (quando existir) resolve os dois casos de uma vez.
+    // Usa o manifesto quando existir (evita travar "Nossa História" numa
+    // varredura lenta em rede móvel, já que goToRomancePage() espera esta
+    // função terminar antes de esconder o overlay de carregamento).
     const doManifesto = await galeriaCarregarManifesto();
     if (doManifesto) {
-        // Aproveita para alimentar o MESMO cache completo que
-        // galeriaEscanearCompleta() usaria — o manifesto já traz fotos E
-        // vídeos, então não faz sentido guardar só a parte de fotos aqui.
-        // Isso faz a Galeria (galeria.html) abrir direto do cache na
-        // próxima visita, sem precisar nem buscar o manifesto de novo.
+        // Alimenta o mesmo cache completo de galeriaEscanearCompleta(): o
+        // manifesto já traz fotos e vídeos juntos.
         galeriaSalvarCacheSeMelhor(doManifesto, true);
         return doManifesto
             .filter(item => item.tipo === 'foto')
@@ -861,36 +591,19 @@ async function descobrirFotosParaDestaque() {
         if (resultado.tipo === 'foto') fotosEncontradas.push({ numero, caminho: resultado.caminho });
     };
 
-    // Infinity: não desiste por causa de buracos na numeração — a faixa é
-    // pequena (no máximo GALERIA_DESTAQUE_TETO_MAX números) e usa HEAD
-    // (bem leve), então varrer até o fim garante achar todas as fotos
-    // reais em vez de cortar cedo demais.
+    // Infinity: faixa pequena, varre até o fim para achar todas as fotos reais.
     await galeriaVarrerFaixa(1, tetoFotos, aoEncontrar, null, 'foto', Infinity);
 
-    // Cache PARCIAL (só fotos) — só é salvo se ainda não existir um cache
-    // completo melhor (ver galeriaSalvarCacheSeMelhor). Guarda `tipo: 'foto'`
-    // em cada item pra ficar no mesmo formato usado pelo cache completo.
+    // Cache parcial (só fotos); não sobrescreve um cache completo melhor.
     galeriaSalvarCacheSeMelhor(fotosEncontradas.map(f => ({ numero: f.numero, caminho: f.caminho, tipo: 'foto' })), false);
 
     return fotosEncontradas;
 }
 
-/**
- * Escolhe `quantidade` fotos dentro de `fotos` ({numero, caminho}[])
- * tentando ao máximo EVITAR números próximos entre si — fotos tiradas no
- * mesmo dia/momento tendem a ter números seguidos (ex.: galeria_12,
- * galeria_13, galeria_14), então escolher de perto demais dava a
- * impressão de que todas as fotos em destaque eram do mesmo dia.
- *
- * Estratégia: ordena pela numeração e divide a faixa em `quantidade`
- * pedaços (aproximadamente) iguais, sorteando UMA foto de dentro de cada
- * pedaço. Assim, com fotos numeradas de 1 a 28 e 4 fotos pedidas, por
- * exemplo, cada escolha sai de um quarto diferente da numeração (tipo
- * foto 1, foto 8, foto 16, foto 24 — nunca duas do mesmo pedaço), o que
- * bate com o espaçamento pedido (ex.: foto 1, foto 5, foto 13, foto 25).
- * Devolve só os caminhos, já na ordem de exibição embaralhada (a divisão
- * em pedaços cuida do espaçamento; a ordem de exibição pode ser livre).
- */
+// Escolhe `quantidade` fotos de `fotos`, evitando números próximos entre si
+// (fotos do mesmo dia tendem a ter números seguidos). Ordena por número,
+// divide em `quantidade` pedaços aproximadamente iguais e sorteia uma foto
+// de cada pedaço.
 function escolherFotosEspalhadas(fotos, quantidade) {
     if (!Array.isArray(fotos) || fotos.length === 0 || quantidade <= 0) return [];
 
@@ -1075,15 +788,10 @@ function criarStreamEspelhado(streamOriginal) {
 function montarOpcoesMediaRecorder(modo) {
     const mimeType = getSupportedMimeTypeParaModo(modo);
 
-    // CORREÇÃO (bug relatado: vídeo do pedido não salvava no iPhone): o
-    // WebKit do iOS (Safari e também o Chrome no iPhone, que usa o mesmo
-    // motor por exigência da Apple) tem bugs conhecidos onde informar
-    // videoBitsPerSecond/audioBitsPerSecond — mesmo dentro de valores
-    // razoáveis — faz o MediaRecorder gravar um arquivo vazio ou
-    // corrompido, SEM lançar nenhum erro visível no JavaScript. Como essa
-    // otimização de tamanho não é confiável nesse ambiente, no iOS usamos
-    // só o mimeType (o vídeo pode ficar um pouco maior, mas grava de
-    // verdade — o que importa muito mais aqui).
+    // No iOS (Safari/Chrome, mesmo motor WebKit), informar
+    // videoBitsPerSecond/audioBitsPerSecond pode fazer o MediaRecorder
+    // gravar um arquivo vazio/corrompido sem erro visível — usamos só o
+    // mimeType lá (vídeo maior, mas grava de verdade).
     if (ehIOS()) return mimeType ? { mimeType } : {};
 
     const bitrate = modo === 'video' ? OPCOES_GRAVACAO_VIDEO : OPCOES_GRAVACAO_AUDIO;
@@ -1216,22 +924,11 @@ async function carregarFonteDeImagem(arquivo) {
     });
 }
 
-/**
- * CORREÇÃO: os botões de exportar (constelação, carta em PDF) usavam só
- * um link com atributo "download" — isso funciona bem no
- * computador e no Android, mas no Safari do iPhone (o navegador que essa
- * pessoa realmente vai usar) o atributo "download" é praticamente
- * ignorado quando o link aponta pra uma data URI: o toque não faz nada
- * visível, mesmo com o arquivo gerado certinho por trás. Por isso a
- * mensagem de sucesso aparecia mas nenhum arquivo chegava a lugar nenhum.
- *
- * Solução: tenta primeiro a folha de compartilhamento nativa
- * (navigator.share com um arquivo de verdade), que no iPhone é o jeito
- * confiável de salvar direto nas Fotos ou nos Arquivos. Se o aparelho
- * não suportar isso, cai pro link de download tradicional (funciona bem
- * fora do iPhone). Se nem isso rolar, abre a imagem numa aba nova como
- * último recurso, pra pelo menos dar pra segurar o dedo e salvar.
- */
+// No Safari do iPhone, o atributo "download" é praticamente ignorado
+// quando o link aponta pra uma data URI — nada era salvo apesar da
+// mensagem de sucesso. Tenta primeiro navigator.share (confiável no
+// iPhone), cai para o link de download tradicional, e por fim abre numa
+// aba nova como último recurso.
 async function salvarOuCompartilharArquivo(blob, nomeArquivo, mimeType) {
     try {
         const arquivo = new File([blob], nomeArquivo, { type: mimeType });

@@ -1,21 +1,10 @@
 /**
- * ============================================================================
- * GALERIA.JS — Álbum permanente de lembranças
- * ============================================================================
- * 100% estático: os itens são arquivos colocados manualmente em
- * assets/img/galeria/ (galeria_1.jpg, galeria_2.mp4, ...) ou links do
- * YouTube (GALERIA_YOUTUBE em js/config.js). Não usa banco de dados nem
- * sincronização — só HTML/CSS/JS lendo arquivos do próprio repositório.
- *
- * DESCOBERTA AUTOMÁTICA: em vez de exigir configurar quantos itens
- * existem e qual o tipo de cada um, o site tenta cada número em
- * sequência (galeria_1, galeria_2, ...) contra cada extensão aceita
- * (fotos e vídeos, ver GALERIA_EXTENSOES_FOTO/VIDEO em js/config.js) e
- * usa a primeira que encontrar — o tipo (foto ou vídeo) é decidido pela
- * própria extensão do arquivo que existir. Para de procurar depois de
- * alguns números seguidos sem encontrar nada, então não precisa
- * "reservar" números nem editar nenhuma configuração ao adicionar itens.
- * ============================================================================
+ * GALERIA.JS — Álbum permanente de lembranças. 100% estático: itens são
+ * arquivos em assets/img/galeria/ (galeria_1.jpg, galeria_2.mp4, ...) ou
+ * links do YouTube (GALERIA_YOUTUBE em js/config.js). Descoberta
+ * automática: testa cada número em sequência contra cada extensão aceita
+ * e usa a primeira que existir; para depois de alguns números seguidos
+ * sem achar nada — não precisa reservar números nem editar configuração.
  */
 
 let __galeriaFotosCarregadas = 0;
@@ -25,23 +14,14 @@ let __galeriaFotosCarregadas = 0;
 // entre itens (anterior/próxima) dentro do lightbox.
 let __galeriaItens = [];
 
-// CORREÇÃO (galeria "trava" pela metade se a pessoa sai do site no meio
-// do carregamento): no celular, sair do site (trocar de app, apagar a
-// tela) quase nunca fecha a aba de verdade — o navegador congela a
-// página como está e, ao voltar, restaura ela exatamente daquele jeito
-// (bfcache), sem rodar DOMContentLoaded de novo. Como montarGaleria() só
-// era chamada nesse evento, uma varredura interrompida nunca era
-// retomada: a pessoa via só as fotos que já tinham entrado na grade até
-// o momento de sair. Esta flag marca quando a varredura termina de
-// verdade, para o listener de pageshow (abaixo) saber se precisa
-// reiniciar o carregamento ao restaurar a página de um congelamento.
+// Marca quando a varredura termina de verdade, para o listener de
+// pageshow saber se precisa reiniciar ao restaurar a página do bfcache
+// (trocar de app no celular raramente fecha a aba; o navegador só congela
+// e restaura a página como estava, sem rodar DOMContentLoaded de novo).
 let __galeriaCarregamentoCompleto = false;
 
-// Colunas do masonry, uma lista por "galeria" — a de fotos (sempre visível
-// na abertura) e a de vídeos (seção própria, ver #galeriaSecaoVideos em
-// galeria.html), guardadas em nível de módulo pra sobreviver a
-// redimensionamentos de tela sem precisar refazer nenhuma busca no
-// servidor.
+// Colunas do masonry (fotos e vídeos), guardadas em nível de módulo para
+// sobreviver a redimensionamentos de tela sem refazer a busca no servidor.
 let __galeriaColunasFotos = [];
 let __galeriaColunasVideos = [];
 let __galeriaUltimoNumeroColunas = 0;
@@ -56,23 +36,15 @@ let __galeriaModoAtual = 'fotos'; // 'fotos' | 'videos'
 // está visível, sem varrer o servidor de novo.
 let __galeriaVideosCarregamentoIniciado = false;
 
-/* CORREÇÃO (barra de "Procurando fotos..." aparecendo por cima da seção de
- * vídeos): a barra #galeriaCarregando só é escondida quando as fotos
- * terminam de carregar DE VERDADE no navegador (ver montarGaleria), mas o
- * botão "Ver vídeos" fica clicável antes disso. Se a pessoa troca pra
- * vídeos enquanto as fotos ainda estão carregando (comum em rede lenta),
- * mostrarSecaoVideos() escondia só a grade de fotos, esquecendo dessa
- * barra — ela ficava visível, sobreposta à seção de vídeos. Esta flag
- * guarda se as fotos ainda estão em carregamento, pra mostrarSecaoVideos()
- * poder escondê-la também, e mostrarSecaoFotos() só trazê-la de volta se
- * ainda fizer sentido (fotos realmente ainda carregando). */
+// Guarda se as fotos ainda estão carregando, para mostrarSecaoVideos()
+// poder esconder a barra #galeriaCarregando também (se a pessoa trocar
+// para vídeos antes das fotos terminarem) e mostrarSecaoFotos() só trazê-la
+// de volta se ainda fizer sentido.
 let __galeriaFotosAindaCarregando = false;
 
-// As "colunas" são divs de verdade (ver CSS .galeria-coluna), não a
-// propriedade column-count do CSS — isso evita que o navegador fique
-// rebalanceando/pulando os itens de coluna conforme cada foto termina de
-// carregar com uma altura diferente da esperada (era a causa do efeito
-// "carregando de baixo pra cima"). A quantidade de colunas replica os
+// As "colunas" são divs de verdade (não column-count do CSS), evitando que
+// o navegador rebalanceie os itens conforme cada foto carrega com altura
+// diferente da esperada. A quantidade de colunas replica os
 // mesmos pontos de corte que existiam antes no CSS: 1 coluna no celular,
 // 2/3/4 conforme a tela cresce.
 function galeriaNumeroDeColunas() {
@@ -144,10 +116,8 @@ async function montarGaleria() {
     // isso pras DUAS galerias (fotos e vídeos), já que qualquer uma das
     // duas pode estar com itens montados na hora do redimensionamento.
     __galeriaUltimoNumeroColunas = __galeriaColunasFotos.length;
-    // CORREÇÃO (performance mobile — item 1 da revisão): sem debounce, o
-    // navegador dispara "resize" repetidas vezes durante um redimensionamento
-    // contínuo ou rotação de tela, recalculando/reordenando o DOM a cada
-    // disparo. Agrupa numa única execução 150ms depois do último evento.
+    // Debounce de 150ms: sem isso, "resize" dispara repetidas vezes durante
+    // um redimensionamento contínuo ou rotação de tela.
     let __timeoutResizeGaleria = null;
     window.addEventListener('resize', () => {
         clearTimeout(__timeoutResizeGaleria);
@@ -172,14 +142,8 @@ async function montarGaleria() {
         if (texto && mensagem) texto.textContent = mensagem;
     };
 
-    // CORREÇÃO (galeria demorando muito pra aparecer): antes, a varredura
-    // (achar quais números existem) e o carregamento (o navegador baixar
-    // cada imagem/vídeo) eram duas fases sequenciais — nada aparecia na
-    // tela até a varredura INTEIRA (fotos + vídeos) terminar. Agora cada
-    // item já entra na grade e começa a carregar assim que é descoberto
-    // (aoEncontrarItem abaixo), sem esperar o resto da varredura terminar
-    // — então a primeira foto já aparece logo no primeiro lote conferido,
-    // em vez de só depois de toda a galeria ser varrida.
+    // Cada item entra na grade e começa a carregar assim que é descoberto
+    // (aoEncontrarItem), sem esperar o resto da varredura terminar.
     let totalEncontrados = 0;
     let totalCarregados = 0;
     let varreduraTerminou = false;
@@ -199,28 +163,17 @@ async function montarGaleria() {
     const contarCarregado = () => { totalCarregados++; atualizarProgresso(); };
     const aoEncontrarItem = (item) => {
         totalEncontrados++;
-        // Cada foto entra sempre na MESMA coluna a partir do seu índice
-        // (round-robin) — nunca muda de coluna depois de colocada,
-        // diferente do balanceamento automático do CSS column-count, que
-        // reordenava tudo conforme as alturas reais iam ficando
-        // conhecidas.
+        // Cada foto entra sempre na mesma coluna (round-robin pelo índice),
+        // nunca muda depois de colocada.
         const colunaAlvo = __galeriaColunasFotos[__galeriaItens.length % __galeriaColunasFotos.length];
         adicionarItemNaGrade(item.numero, item.caminho, item.tipo, colunaAlvo, contarCarregado);
         atualizarProgresso();
     };
 
-    // REFORMULAÇÃO (botão "Ver vídeos", 30/07/2026 — ver comentário grande
-    // em js/utils.js): a abertura da página monta só as FOTOS agora —
-    // vídeo é sempre um arquivo mais pesado que foto, então deixar de
-    // montar (e começar a baixar) os vídeos de cara torna a Galeria mais
-    // leve pra abrir, mesmo quando já existe cache. Os vídeos (locais e do
-    // YouTube) só entram na grade quando a pessoa aperta "Ver vídeos" (ver
-    // carregarVideosDaGaleria, mais abaixo).
-    //
-    // Um cache parcial (só fotos, de uma visita anterior a esta página ou
-    // a "Nossos momentos") já é suficiente aqui — ver galeriaLerCache em
-    // js/utils.js — então nem precisa exigir o cache completo (que também
-    // cobriria vídeos) só para mostrar as fotos.
+    // A abertura da página monta só as fotos (vídeos são mais pesados);
+    // eles só entram na grade quando a pessoa aperta "Ver vídeos" (ver
+    // carregarVideosDaGaleria). Um cache parcial (só fotos) já é
+    // suficiente aqui, sem exigir o cache completo.
     const itensEmCache = galeriaLerCache(false);
     const fotosEmCache = itensEmCache
         ? itensEmCache.filter(item => item.tipo === 'foto').sort((a, b) => a.numero - b.numero)
@@ -228,18 +181,10 @@ async function montarGaleria() {
     if (fotosEmCache && fotosEmCache.length) {
         fotosEmCache.forEach(aoEncontrarItem);
         varreduraTerminou = true;
-        // CORREÇÃO (barra de carregamento sumindo): antes a barra era
-        // escondida AQUI, na hora, assim que os itens do cache eram
-        // conhecidos — mas conhecer os itens não é o mesmo que as fotos
-        // já terem carregado de verdade no navegador (cada <img> ainda
-        // precisa baixar, ver adicionarItemNaGrade). Como a partir da
-        // segunda visita ao mesmo aparelho é o cache que sempre roda
-        // (ver galeriaLerCache acima), a barra passou a sumir na hora em
-        // TODA abertura normal da Galeria, sem nunca mostrar o
-        // progresso de verdade. Chamar atualizarProgresso() aqui, como já
-        // acontece no ramo sem cache logo abaixo, deixa a MESMA lógica
-        // (dentro de atualizarProgresso) decidir quando esconder — só
-        // depois que totalCarregados alcançar totalEncontrados.
+        // Conhecer os itens do cache não é o mesmo que as fotos já terem
+        // carregado de verdade (cada <img> ainda precisa baixar) — chamar
+        // atualizarProgresso() deixa a mesma lógica decidir quando esconder
+        // a barra, só depois que totalCarregados alcançar totalEncontrados.
         atualizarProgresso();
     } else {
         await galeriaEscanearFotos(null, aoEncontrarItem);
@@ -291,11 +236,8 @@ function mostrarSecaoFotos() {
     if (secaoVideos) secaoVideos.classList.add('d-none');
     const btn = document.getElementById('btnGaleriaVerVideos');
     if (btn) btn.innerHTML = '<i class="bi bi-camera-reels me-1"></i>Ver vídeos';
-    // CORREÇÃO (barra de "Procurando fotos..." sobreposta à seção de
-    // vídeos): só reexibe a barra de carregamento das fotos se elas ainda
-    // estiverem mesmo carregando (ver __galeriaFotosAindaCarregando, mais
-    // acima) — senão ela ficaria escondida por padrão a cada volta pra
-    // fotos, mesmo quando o carregamento já tinha terminado há tempos.
+    // Só reexibe a barra de carregamento se as fotos ainda estiverem
+    // carregando de verdade (__galeriaFotosAindaCarregando).
     const barraFotos = document.getElementById('galeriaCarregando');
     if (barraFotos) barraFotos.classList.toggle('d-none', !__galeriaFotosAindaCarregando);
     verificarSeGaleriaFicouVazia();
@@ -312,14 +254,8 @@ function mostrarSecaoVideos() {
     if (secaoVideos) secaoVideos.classList.remove('d-none');
     const btn = document.getElementById('btnGaleriaVerVideos');
     if (btn) btn.innerHTML = '<i class="bi bi-images me-1"></i>Ver fotos';
-    // CORREÇÃO (barra de "Procurando fotos..." sobreposta à seção de
-    // vídeos): a barra de carregamento das FOTOS (#galeriaCarregando) vive
-    // fora de #galeriaSecaoVideos no HTML, então trocar de seção não a
-    // escondia sozinha — se a pessoa apertasse "Ver vídeos" enquanto as
-    // fotos ainda estavam carregando, a barra/contagem de fotos
-    // ("Carregando fotos: X/Y") continuava visível por cima da seção de
-    // vídeos. Esconde ela explicitamente sempre que a seção de vídeos é
-    // mostrada; mostrarSecaoFotos() acima decide se ela volta a aparecer.
+    // A barra de carregamento das fotos vive fora de #galeriaSecaoVideos no
+    // HTML, então precisa ser escondida explicitamente aqui; mostrarSecaoFotos() decide se volta.
     const barraFotos = document.getElementById('galeriaCarregando');
     if (barraFotos) barraFotos.classList.add('d-none');
 }
@@ -363,9 +299,13 @@ async function carregarVideosDaGaleria() {
 
     let totalEncontrados = 0;
     let totalCarregados = 0;
+    let varreduraTerminouVideos = false;
     const atualizarProgresso = () => {
         if (totalEncontrados === 0) { atualizarBarra(0, 'Procurando vídeos...'); return; }
         atualizarBarra(totalCarregados / totalEncontrados, `Carregando vídeos: ${totalCarregados}/${totalEncontrados}`);
+        if (varreduraTerminouVideos && totalCarregados >= totalEncontrados && barraWrap) {
+            setTimeout(() => barraWrap.classList.add('d-none'), 400);
+        }
     };
     const contarCarregado = () => { totalCarregados++; atualizarProgresso(); };
     const aoEncontrarItem = (item) => {
@@ -397,7 +337,12 @@ async function carregarVideosDaGaleria() {
 
     montarItensYoutube(__galeriaColunasVideos);
 
-    if (barraWrap) barraWrap.classList.add('d-none');
+    varreduraTerminouVideos = true;
+    if (totalEncontrados === 0 && barraWrap) {
+        barraWrap.classList.add('d-none');
+    }
+    atualizarProgresso();
+
     if (btn) {
         btn.disabled = false;
         btn.innerHTML = '<i class="bi bi-images me-1"></i>Ver fotos';
@@ -426,7 +371,7 @@ function adicionarItemNaGrade(numero, src, tipo, masonry, aoCarregar) {
         video.muted = true;
         video.loop = true;
         video.playsInline = true;
-        video.preload = 'none'; // CORREÇÃO (performance mobile): não baixa nada ainda — só quando o item entrar perto da tela (ver lazyCarregarVideo abaixo)
+        video.preload = 'none'; // não baixa nada ainda — só quando o item entrar perto da tela (ver lazyCarregarVideo)
 
         // Proteção: alguns vídeos gravados direto do celular (metadata no
         // fim do arquivo, codecs variados) não disparam onloadedmetadata de
@@ -450,13 +395,8 @@ function adicionarItemNaGrade(numero, src, tipo, masonry, aoCarregar) {
         video.onloadeddata = revelarUmaVez; // fallback extra — dispara em mais casos que onloadedmetadata
         video.onerror = () => { clearTimeout(timeoutRevelacao); item.remove(); verificarSeVideosFicaramVazios(); if (aoCarregar) aoCarregar(); };
 
-        // CORREÇÃO (performance mobile — item 1 da revisão): antes o vídeo
-        // baixava os metadados (uma requisição de rede) assim que era
-        // descoberto, mesmo estando fora da tela — em um álbum que só
-        // cresce, isso soma requisições desnecessárias em toda abertura da
-        // Galeria. Agora só define `src`/`preload` quando o item entra
-        // perto da área visível (mesmo mecanismo do IntersectionObserver
-        // usado pra revelar o item, com margem maior pra antecipar).
+        // Só define src/preload quando o item entra perto da área visível
+        // (IntersectionObserver, mesmo mecanismo usado para revelar o item).
         lazyCarregarVideo(item, () => {
             video.preload = 'metadata';
             video.src = `${src}#t=0.5`; // pede o frame de 0.5s como "capa" (evita quadro preto do início em alguns vídeos)
@@ -472,12 +412,8 @@ function adicionarItemNaGrade(numero, src, tipo, masonry, aoCarregar) {
     } else {
         const img = document.createElement('img');
         img.alt = legenda || `Lembrança ${numero}`;
-        // CORREÇÃO (performance mobile — item 1 da revisão): `loading="lazy"`
-        // faz o próprio navegador adiar o download até o item chegar perto
-        // da tela, em vez de baixar TODAS as fotos do álbum de uma vez só
-        // — importante porque o álbum foi feito pra crescer com o tempo.
-        // `decoding="async"` evita travar a thread principal decodificando
-        // a imagem (mais sensível em aparelhos de entrada).
+        // loading="lazy" adia o download até o item chegar perto da tela;
+        // decoding="async" evita travar a thread principal ao decodificar.
         img.loading = 'lazy';
         img.decoding = 'async';
         img.src = src;
@@ -699,13 +635,9 @@ function fecharLightbox() {
     desbloquearScrollFundo();
 }
 
-// CORREÇÃO (galeria "trava" pela metade se a pessoa sai do site no meio do
-// carregamento): se a página está sendo restaurada de um congelamento do
-// navegador (bfcache — ver comentário de __galeriaCarregamentoCompleto
-// acima) e a varredura ainda não tinha terminado quando ela foi
-// congelada, refaz o carregamento do zero. As requisições HEAD já feitas
-// e as imagens já baixadas costumam vir do cache do próprio navegador,
-// então isso normalmente é rápido — muito mais rápido que a primeira vez.
+// Se a página for restaurada de um congelamento do navegador (bfcache) com
+// a varredura ainda incompleta, refaz o carregamento do zero — geralmente
+// rápido, pois HEAD requests e imagens já baixadas vêm do cache.
 window.addEventListener('pageshow', (evento) => {
     if (!evento.persisted) return; // página realmente recarregada do zero: DOMContentLoaded já vai cuidar disso
     if (__galeriaCarregamentoCompleto) return; // já tinha terminado antes de sair: nada a fazer

@@ -1,18 +1,8 @@
 /**
- * ============================================================================
- * SUSPENSE.JS — Sequência "Enquanto confirmamos seu pedido" até a carta final
- * ============================================================================
- * Ordem da experiência:
- *   1. Loader de "processando pagamento"
- *   2. Perguntas românticas (o botão "Não" nunca é alcançável de verdade)
- *   3. Galeria de fotos (polaroids)
- *   4. Texto digitado
- *   5. Assinatura
- *   6. Rastreio da entrega (para antes de chegar a 0km)
- *   7. Verificação de identidade -> pede para virar o celular e gravar
- *   8. Foto final + carta (o toque na carta é o que dispara a música — ver
- *      iniciarCartaFinal() para o porquê disso resolver o bug do autoplay)
- * ============================================================================
+ * SUSPENSE.JS — Sequência "Enquanto confirmamos seu pedido" até a carta final.
+ * Ordem: loader -> perguntas românticas -> galeria de polaroids -> texto
+ * digitado -> assinatura -> rastreio da entrega -> gravação de vídeo
+ * (verificação de identidade) -> foto final + carta.
  */
 
 /* ---------------- Perguntas românticas ---------------- */
@@ -34,13 +24,9 @@ function mostrarPergunta() {
     });
 }
 
-/**
- * A brincadeira do botão "Não" (Prioridade 4): a cada tentativa de toque,
- * o botão foge para uma posição aleatória dentro do card e uma mensagem
- * divertida aparece. Depois de algumas fugas, o botão passa a se esquivar
- * também do dedo que se aproxima (via pointerenter), tornando praticamente
- * impossível de tocar — sempre de forma leve e bem-humorada, nunca hostil.
- */
+// Botão "Não": a cada toque foge para uma posição aleatória e mostra uma
+// mensagem; depois de algumas fugas passa a se esquivar do dedo que se
+// aproxima (pointerenter).
 const MENSAGENS_BOTAO_FUJAO = [
     'Ih, ele fugiu! Tenta de novo 😄',
     'Esse botão parece que não quer ser encontrado...',
@@ -62,12 +48,7 @@ function resetarBotaoNaoFujao() {
     if (legenda) legenda.textContent = '';
 }
 
-/**
- * O botão foge de verdade agora: em vez de só se deslocar um pouquinho
- * dentro do card, ele vira position:fixed (relativo à tela inteira) e
- * pula pro lado OPOSTO de onde estava, quase na outra ponta da tela —
- * bem mais dramático e mais difícil de alcançar de propósito.
- */
+// Faz o botão "Não" virar position:fixed e pular para o lado oposto da tela.
 function fugirBotaoNao(origem) {
     const btnNo = origem;
     tentativasBotaoNao++;
@@ -77,10 +58,6 @@ function fugirBotaoNao(origem) {
     const btnRect = btnNo.getBoundingClientRect();
     const margem = 16;
 
-    // Se já está com position:fixed (não é a primeira fuga), usa a
-    // posição atual como referência de "onde está agora" pra fugir pro
-    // lado oposto; senão, usa a posição original na tela como ponto de
-    // partida.
     const posAtualX = btnRect.left;
     const posAtualY = btnRect.top;
     const ladoOpostoX = posAtualX < larguraTela / 2
@@ -89,9 +66,7 @@ function fugirBotaoNao(origem) {
     const novoY = Math.max(margem, Math.min(alturaTela - btnRect.height - margem, posAtualY + (Math.random() - 0.5) * alturaTela * 0.4));
 
     if (btnNo.style.position !== 'fixed') {
-        // primeira fuga: fixa a largura atual antes de tirar do fluxo
-        // normal, pra não "encolher" ao virar position:fixed
-        btnNo.style.width = `${btnRect.width}px`;
+        btnNo.style.width = `${btnRect.width}px`; // fixa a largura antes de tirar do fluxo normal
     }
     btnNo.style.position = 'fixed';
     btnNo.style.zIndex = '99999';
@@ -407,7 +382,7 @@ async function salvarVideoComSeguranca(blob, mimeType) {
             const avisoEl = document.getElementById('videoGrandeAviso');
             if (avisoEl) avisoEl.classList.toggle('d-none', !proximoDoLimite);
         } else {
-            statusEl.textContent = 'Não foi possível confirmar o salvamento interno, mas o download automático foi iniciado — não feche o app até ele terminar.';
+            statusEl.textContent = 'Não foi possível confirmar o salvamento interno, mas o download automático foi iniciado. Não feche o app até ele terminar.';
             statusEl.className = 'save-status err';
         }
     }
@@ -486,17 +461,8 @@ function finalizarSequencia() {
 }
 
 /* ---------------- Carta final (envelope + 1 Coríntios 13) ----------------
-   CORREÇÃO DE TIMING DA MÚSICA (Prioridade 1, item 2):
-   A música agora só começa a tocar dentro do próprio clique que abre o
-   envelope (função abrirEnvelope, abaixo). Isso resolve dois problemas de
-   uma vez: (1) ela deixa de tocar antes da hora, porque literalmente não
-   existe nenhum outro lugar no código que a inicie; e (2) ela passa a
-   funcionar no Safari/iPhone, porque o play() acontece de forma síncrona
-   dentro de um gesto real de toque do usuário — exatamente o que as regras
-   de autoplay do iOS exigem. Antes, o play() era chamado no clique de
-   "Confirmar Pagamento", mas o áudio só ficava audível bem depois (após o
-   rastreio, a verificação e a gravação), o que várias vezes já não contava
-   mais como "gesto recente" para o Safari. */
+   A música só começa a tocar dentro do clique que abre o envelope (play()
+   síncrono num gesto real do usuário — exigência do Safari/iPhone). */
 function iniciarCartaFinal() {
     const envelope = document.getElementById('envelope');
     const envelopeHint = document.getElementById('envelopeHint');
@@ -514,15 +480,12 @@ function iniciarCartaFinal() {
         envelopeHint.classList.remove('visivel');
         envelope.classList.add('aberto');
 
-        // Início da música: aqui, e só aqui — ver comentário acima da função.
+        // Música começa aqui (ver comentário acima da função).
         const audio = document.getElementById('musicaFundo');
         audio.currentTime = 0;
         audio.play().catch(err => console.error('Música não pôde iniciar (autoplay bloqueado?):', err));
 
-        // Simplificado (pedido explícito): só a animação de ABRIR O
-        // ENVELOPE acontece aqui — a carta não fica exibida "lisa" antes
-        // disso. Ela já vai direto pro modo luz de vela, com o nome já
-        // trocado e o botão "Continuar" dentro do próprio modo vela.
+        // Direto pro modo luz de vela, com nome trocado e botão "Continuar" embutido.
         setTimeout(() => {
             abrirModoVela('Para o meu Amor', montarHtmlVersiculo(), TEXTOS.assinaturaCartaFinal, {
                 aoContinuar: async () => {
@@ -560,14 +523,8 @@ function iniciarFlashback(aoTerminar) {
     label.textContent = '';
     btnContinuar.classList.add('d-none');
 
-    /**
-     * CORREÇÃO (relatado: ficava parado esperando a música toda, sem botão
-     * visível — sensação de estar travado): o botão "Continuar" agora
-     * aparece na hora, assim que chega na última foto — nunca espera a
-     * música terminar. A música (se estiver tocando) continua rodando
-     * normalmente por trás mesmo depois de continuar, então nada se perde;
-     * só não FORÇA mais a pessoa a ficar parada minutos numa foto.
-     */
+    // Botão "Continuar" aparece assim que chega na última foto, sem
+    // esperar a música terminar.
     const intervaloEntreFotos = 2800;
     fotos.forEach((id, i) => {
         setTimeout(() => {
@@ -587,8 +544,7 @@ function iniciarFlashback(aoTerminar) {
     function continuar() {
         if (jaContinuou) return;
         jaContinuou = true;
-        // A música (se estiver tocando) NÃO é pausada aqui de propósito —
-        // continua rodando naturalmente por trás da página seguinte.
+        // Música continua rodando por trás, não é pausada aqui.
         tela.style.display = 'none';
         fotos.forEach(id => document.getElementById(id).classList.remove('fb-ativa'));
         label.classList.remove('fb-visivel');
@@ -597,8 +553,7 @@ function iniciarFlashback(aoTerminar) {
     }
 
     setTimeout(() => {
-        // Chegou na última foto — ela fica parada aqui, com o botão
-        // "Continuar" visível na hora (não espera nada tocar até o fim).
+        // Botão "Continuar" já visível na última foto.
         btnContinuar.classList.remove('d-none');
     }, tempoAteUltimaFoto);
 
@@ -653,9 +608,7 @@ function iniciarSuspense() {
         const mimeType = getSupportedMimeType();
         const opcoesGravacao = montarOpcoesMediaRecorder('video'); // limita o bitrate (ver utils.js) para não estourar 50MB
 
-        // Espelha o vídeo de verdade antes de gravar (ver criarStreamEspelhado
-        // em js/utils.js) — corrige aparelhos onde a câmera frontal entrega o
-        // stream já espelhado, o que fazia o vídeo salvo sair invertido.
+        // Espelha o vídeo antes de gravar (ver criarStreamEspelhado em js/utils.js).
         streamGravacaoEspelhada = criarStreamEspelhado(mediaStream);
         const streamParaGravar = streamGravacaoEspelhada.stream;
 

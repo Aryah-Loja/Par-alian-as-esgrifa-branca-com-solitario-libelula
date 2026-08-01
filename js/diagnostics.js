@@ -1,21 +1,12 @@
 /**
- * ============================================================================
- * DIAGNOSTICS.JS — Painel de verificação (usado só em diagnostico.html)
- * ============================================================================
- * Roda uma bateria de testes REAIS (não apenas "parece que sim"): escreve
- * e lê de verdade no IndexedDB, mede o espaço disponível, confere suporte
- * a gravação de câmera/microfone e, se configurado, testa a conexão com a
- * nuvem fazendo upload + download reais de um arquivo de teste.
- *
- * Esta página é separada da experiência principal de propósito: você
- * (Gabriel) pode abrir só para conferir se está tudo certo, sem nenhum
- * risco de a Poloni ver algo fora de hora.
- * ============================================================================
+ * DIAGNOSTICS.JS — Painel de verificação (diagnostico.html).
+ * Roda testes reais: escreve/lê no IndexedDB, mede espaço disponível,
+ * confere suporte a câmera/microfone e testa a conexão com a nuvem
+ * (upload + download reais de um arquivo de teste).
  */
 
+// Gera um Blob de tamanho controlado, simulando fotos/vídeos reais.
 function criarBlobDeTeste(tamanhoBytes) {
-    // Gera um Blob de tamanho controlado para simular fotos/vídeos reais
-    // sem precisar de nenhum arquivo de verdade.
     const bloco = new Uint8Array(tamanhoBytes);
     for (let i = 0; i < bloco.length; i++) bloco[i] = i % 256;
     return new Blob([bloco], { type: 'application/octet-stream' });
@@ -87,10 +78,8 @@ async function testeArmazenamentoPersistente() {
     const resultado = await solicitarArmazenamentoPersistente();
     if (!resultado.suportado) return { ok: null, motivo: 'Este navegador não suporta armazenamento persistente (não é um erro — é comum no Safari mais antigo).' };
     if (resultado.jaEstava) return { ok: true, motivo: 'Já estava concedido.' };
-    // Importante: o navegador pode legitimamente recusar essa concessão (por
-    // política própria, ex: exigir mais "engajamento" prévio do site) mesmo
-    // com tudo implementado corretamente. Isso NÃO é um bug do site — por
-    // isso tratamos como informativo (neutro), nunca como erro vermelho.
+    // O navegador pode recusar por política própria mesmo com tudo certo;
+    // por isso o resultado é tratado como informativo, nunca como erro.
     return {
         ok: resultado.concedido ? true : null,
         motivo: resultado.concedido
@@ -119,11 +108,8 @@ async function testeConfiguracaoNuvem() {
     return { ok: true, motivo: `Formato da chave ok (${formato.motivo}). Use os botões abaixo para um teste completo: "Testar conexão com a nuvem" (JSON pequeno) e "Testar upload de mídia real" (arquivo binário de alguns MB, o que realmente importa para fotos e vídeos).` };
 }
 
-/**
- * Executa todos os testes locais (rápidos) e exibe o resultado. O teste
- * de nuvem completo (upload/download reais) fica em um botão separado
- * porque depende de rede e pode demorar um pouco mais.
- */
+// Executa os testes locais (rápidos); o teste de nuvem (upload/download
+// real) fica num botão separado por depender de rede.
 async function executarDiagnosticoCompleto() {
     const lista = document.getElementById('diagLista');
     const resumo = document.getElementById('diagResumo');
@@ -131,20 +117,11 @@ async function executarDiagnosticoCompleto() {
     resumo.className = 'diag-resumo diag-pending';
     resumo.textContent = 'Executando verificações...';
 
-    // Impede que os testes abaixo (que salvam/apagam dados de verdade no
-    // banco, só pra confirmar que ler/escrever funciona) disparem uma
-    // sincronização real com a nuvem — ver agendarEnvioNuvem em js/sync.js.
+    // Impede que os testes (que salvam/apagam dados reais no banco) disparem
+    // uma sincronização real com a nuvem (ver agendarEnvioNuvem em js/sync.js).
     window.__auroraSuprimirSyncDiagnostico = true;
 
-    // CORREÇÃO (resumo travado em "Executando verificações..."): `todosOk`
-    // precisa ser lida DEPOIS do bloco try/finally abaixo (na atualização
-    // final do resumo), mas antes estava declarada com `let` DENTRO do
-    // try — em JS, let/const só existem dentro do bloco onde nasceram, e
-    // ler fora dali lança "todosOk is not defined". Esse erro acontecia
-    // bem no fim da função (depois de todos os testes já terem rodado e
-    // aparecido na lista), então o resumo no topo nunca era atualizado —
-    // ficava preso no texto inicial pra sempre. Declarando aqui fora, ela
-    // existe nos dois lugares.
+    // Declarada fora do try/finally para poder ser lida na atualização final do resumo.
     let todosOk = true;
 
     try {
@@ -225,13 +202,8 @@ function formatarDataHoraDiag(timestampMs) {
     return `${d.toLocaleDateString('pt-BR')} ${d.toLocaleTimeString('pt-BR')} (${timestampMs})`;
 }
 
-/**
- * Mostra lado a lado o que ESTE aparelho pensa que é o estado atual e o
- * que a nuvem realmente tem agora — lendo os MESMOS valores que
- * sincronizarNaAbertura() usa para decidir entre puxar/empurrar/resetar,
- * sem nenhuma lógica escondida. É o jeito mais direto de ver, com dados
- * reais, por que um reset não chegou (ou chegou) em outro aparelho.
- */
+// Mostra lado a lado o estado local e o da nuvem, lendo os mesmos valores
+// que sincronizarNaAbertura() usa para decidir puxar/empurrar/resetar.
 async function executarVerEstadoReset() {
     const btn = document.getElementById('btnVerEstadoReset');
     const painel = document.getElementById('diagEstadoReset');
@@ -294,22 +266,11 @@ async function executarVerEstadoReset() {
     }
 }
 
-// galeriaArquivoExiste() e galeriaDescobrirItem() agora vêm de js/utils.js
-// (compartilhadas com galeria.html e com "Nossos momentos" em
-// index.html) — antes eram duplicadas aqui pra não precisar carregar
-// galeria.js inteiro nesta página, mas como utils.js já era carregado
-// aqui mesmo, a duplicata virou um conflito de nome (as duas declarações
-// coexistindo quebravam a página). Removida a cópia local.
+// galeriaArquivoExiste()/galeriaDescobrirItem() vêm de js/utils.js
+// (compartilhadas com galeria.html e "Nossos momentos" em index.html).
 
-// REFORMULAÇÃO (30/07/2026): limpa o cache local (localStorage) da
-// descoberta da galeria (ver bloco de cache em js/utils.js) — força a
-// Galeria e "Nossos momentos" a varrerem a pasta de verdade de novo na
-// próxima abertura deste aparelho, em vez de confiar no que já sabiam.
-// Limpa fotos E vídeos juntos (é um cache só); na prática isso só muda o
-// que a próxima varredura de FOTOS encontra na hora — a de vídeos só
-// roda mesmo quando alguém aperta "Ver vídeos" em galeria.html, cache
-// limpo ou não (ver galeriaEscanearFotos/galeriaEscanearVideos em
-// js/utils.js).
+// Limpa o cache local (localStorage) da descoberta da galeria, forçando
+// uma nova varredura da pasta na próxima abertura deste aparelho.
 function executarLimparCacheGaleria() {
     galeriaLimparCache();
     const status = document.getElementById('diagLimparCacheStatus');
@@ -367,13 +328,7 @@ async function executarTesteGaleria() {
     btn.innerHTML = textoOriginal;
 }
 
-/**
- * SENHA DO RESET (proteção contra toque acidental — ver SENHA_RESET_SITE em
- * js/config.js). Movido de js/export.js + index.html para cá a pedido do
- * usuário, para tirar o botão do site principal (a Poloni nunca vê essa
- * página). Mesma proteção por senha de antes, sem nenhuma mudança de
- * comportamento nesse quesito.
- */
+// Senha do reset (proteção contra toque acidental — ver SENHA_RESET_SITE em js/config.js).
 function solicitarSenhaReset(opcoes = {}) {
     return new Promise((resolve) => {
         const overlay = document.getElementById('senhaResetOverlay');
@@ -381,10 +336,8 @@ function solicitarSenhaReset(opcoes = {}) {
         const erro = document.getElementById('senhaResetErro');
         if (!overlay || !input) { resolve(false); return; }
 
-        // Título/subtítulo do modal são customizáveis porque este mesmo modal
-        // de senha é reaproveitado por mais de uma ação sensível (reset total
-        // do site, reset só do contrato, troca de vídeo) — sem isso, o texto
-        // fixo "essa ação apaga tudo" ficaria enganoso para ações parciais.
+        // Título/subtítulo customizáveis: este modal de senha é reaproveitado
+        // por várias ações sensíveis (reset total, reset do contrato, troca de vídeo).
         const titulo = overlay.querySelector('.senha-memorias-titulo');
         const subtitulo = overlay.querySelector('.senha-memorias-sub');
         if (titulo) titulo.textContent = opcoes.titulo || 'Resetar o site';
@@ -436,13 +389,9 @@ async function executarReset() {
     if (botao) { botao.disabled = true; botao.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Resetando...'; }
     if (status) { status.textContent = 'Publicando o reset na nuvem (pode levar alguns segundos — tenta de novo automaticamente se a rede falhar)...'; status.className = 'save-status'; }
 
-    // 1) Nuvem (fonte oficial entre aparelhos) — a parte CRÍTICA é
-    //    sobrescrever o meta.json com a marca de reset (ver
-    //    publicarResetNaNuvem em js/sync.js, que agora tenta várias vezes e
-    //    CONFIRMA lendo de volta antes de considerar sucesso): é isso que
-    //    qualquer outro aparelho confere ao abrir o link, pra saber que
-    //    precisa se limpar também. Apagar o .zip antigo é só limpeza, não
-    //    crítico, por isso roda em paralelo sem bloquear.
+    // 1) Nuvem: a parte crítica é publicarResetNaNuvem (js/sync.js), que
+    //    sobrescreve o meta.json com a marca de reset e confirma lendo de
+    //    volta. Apagar o .zip antigo é só limpeza, roda em paralelo.
     try { await apagarZipDaNuvem(); } catch (e) { console.error('Falha ao apagar o zip antigo na nuvem (não crítico)', e); }
 
     try {
@@ -458,29 +407,14 @@ async function executarReset() {
         return; // não limpa local nem recarrega — evita a experiência "resetou aqui mas não na nuvem"
     }
 
-    // 2) Só chega aqui se a nuvem CONFIRMOU o reset — agora sim, limpa o armazenamento local (IndexedDB + localStorage + sessionStorage + cache).
+    // 2) Só chega aqui se a nuvem confirmou o reset — limpa o armazenamento local.
     await limparArmazenamentoLocal();
 
     location.reload();
 }
 
-/**
- * Reset PARCIAL: apaga só as regras do contrato de namoro escolhidas
- * (chave 'aurora_regras_contrato'), sem mexer em mais nada (vídeo,
- * assinatura, fotos, checklist, easter eggs, etc). Depois disso,
- * "Nossa História" volta a mostrar a grade de seleção de regras do zero
- * (ver prepararContrato() em js/romance.js — hoje, uma vez que o
- * contrato é gerado, o site não mostra mais a grade, só o contrato já
- * pronto, então não existia outro jeito de refazer a escolha).
- *
- * Usa a MESMA senha do reset total (SENHA_RESET_SITE) por ser uma ação
- * destrutiva, mas é bem menos drástica: não apaga vídeo/fotos/progresso,
- * e não usa o mecanismo de "reset publicado na nuvem" (que é reservado
- * pro reset total, para os dois aparelhos saberem que TUDO foi limpo).
- * A remoção da configuração ainda sincroniza normalmente para o outro
- * aparelho pelo caminho de backup de sempre (marcarAtualizacaoLocal via
- * excluirConfiguracao, em js/db.js), como qualquer outra config que muda.
- */
+// Reset parcial: apaga só as regras do contrato de namoro escolhidas
+// (chave 'aurora_regras_contrato'), sem mexer no resto.
 async function executarResetContrato() {
     const senhaOk = await solicitarSenhaReset({
         titulo: 'Resetar só o contrato',
@@ -562,13 +496,8 @@ async function executarTesteCapsula() {
     }
 }
 
-/**
- * Troca o vídeo do pedido salvo — protegido pela mesma senha do reset
- * (SENHA_RESET_SITE, em js/config.js), já que é uma ação sensível e
- * irreversível se feita sem querer. Antes de sobrescrever, oferece pra
- * baixar uma cópia do vídeo atual (backup de segurança), caso o vídeo
- * errado seja escolhido por engano.
- */
+// Troca o vídeo do pedido salvo (protegido pela senha do reset). Oferece
+// baixar uma cópia do vídeo atual antes de sobrescrever.
 function iniciarTrocaDeVideo() {
     const botao = document.getElementById('btnTrocarVideoPedido');
     const input = document.getElementById('inputTrocarVideoPedido');
@@ -634,15 +563,8 @@ function iniciarTrocaDeVideo() {
     });
 }
 
-/**
- * Confere todas as mídias FIXAS do site (PLACEHOLDERS, em js/config.js) —
- * loja falsa, timeline, "seus bichos", mapa, flashback, "nossos
- * momentos", playlist — numa passada só. Diferente de "Testar galeria"
- * (acima), que só cobre assets/img/galeria/. Também informa, à parte, os
- * arquivos opcionais que o site já sabe lidar com a ausência (câmera
- * lenta, especial de aniversário, vídeo secreto) — esses não contam como
- * "faltando" de verdade, só como aviso informativo.
- */
+// Confere todas as mídias fixas do site (PLACEHOLDERS, em js/config.js)
+// numa passada só — diferente de "Testar galeria", que só cobre assets/img/galeria/.
 async function executarVerificarMidiasSite() {
     const btn = document.getElementById('btnVerificarMidiasSite');
     const painel = document.getElementById('diagMidiasSiteResultado');
@@ -666,8 +588,7 @@ async function executarVerificarMidiasSite() {
         if (!existe) faltando.push({ caminho, descricao: item.descricao });
     }
 
-    // Opcionais: usam as mesmas funções de resolução que o site real usa,
-    // então o resultado aqui é exatamente o que "Nossa História" veria.
+    // Usa as mesmas funções de resolução do site real.
     const opcionais = [
         { rotulo: 'Câmera lenta (momento)', existe: !!(await resolverVideoPorBase(MOMENTO_LENTO_ARQUIVO_BASE)) },
         { rotulo: 'Vídeo do especial de aniversário', existe: !!(await resolverVideoPorBase(ANIVERSARIO_VIDEO_ARQUIVO_BASE)) },
@@ -700,14 +621,8 @@ async function executarVerificarMidiasSite() {
     btn.innerHTML = textoOriginal;
 }
 
-/**
- * Dispara um envio real do backup para a nuvem agora, sob demanda —
- * reaproveita publicarComIndicadorVisivel() (js/sync.js), a mesma função
- * usada pelo envio automático depois de salvar uma mídia. Útil pra
- * confirmar, na hora, que tudo que está neste aparelho já chegou na
- * nuvem, sem precisar esperar nenhum agrupamento automático nem depender
- * de mexer em alguma outra tela do site pra disparar o envio.
- */
+// Dispara um envio real do backup à nuvem sob demanda, reaproveitando
+// publicarComIndicadorVisivel() (js/sync.js).
 async function executarForcarSincronizacao() {
     const btn = document.getElementById('btnForcarSincronizacao');
     const status = document.getElementById('diagForcarSyncStatus');
@@ -736,9 +651,7 @@ async function executarForcarSincronizacao() {
 }
 
 /**
- * ============================================================================
- * GERENCIADOR DE ARQUIVOS (mídias salvas) — ferramenta de manutenção
- * ============================================================================
+ * GERENCIADOR DE ARQUIVOS (mídias salvas) — ferramenta de manutenção.
  * Lista todo item guardado na tabela `media` do IndexedDB (vídeo do
  * pedido, assinatura, polaroids, lembranças, mensagens pro futuro em
  * texto/áudio/vídeo) com tipo, tamanho e data — pra você conseguir ver o
@@ -749,7 +662,6 @@ async function executarForcarSincronizacao() {
  *     tipo e demais campos — então o item continua aparecendo no lugar
  *     certo do site depois de sincronizar, só com o conteúdo novo.
  * Itens sem blob (ex.: a assinatura, que é texto/SVG) só mostram Excluir.
- * ============================================================================
  */
 
 function formatarBytesDiag(bytes) {

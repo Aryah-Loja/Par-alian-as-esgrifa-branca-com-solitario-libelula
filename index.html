@@ -6,11 +6,8 @@
     <meta name="theme-color" content="#FAF9F6">
     <title>Aryah Joias | Aliança Esgrifa Branca+ Solitário Libélula</title>
 
-    <!-- CORREÇÃO (performance mobile): abre a conexão com os domínios externos
-         em paralelo enquanto o HTML ainda está sendo lido, em vez de só
-         começar o DNS/TLS quando o parser chega em cada <link>/<script>.
-         Isso adianta a parte mais cara de rede (handshake), que pesa muito
-         mais em 4G/5G do celular do que em wifi/cabo de computador. -->
+    <!-- Abre a conexão com os domínios externos em paralelo enquanto o HTML
+         ainda está sendo lido, adiantando o handshake de rede. -->
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link rel="preconnect" href="https://unpkg.com" crossorigin>
     <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
@@ -27,11 +24,8 @@
     <!-- CSS exclusivo do sistema de Códigos Secretos (isolado, ver /secret/) -->
     <link rel="stylesheet" href="secret/secret.css">
 
-    <!-- Bibliotecas de terceiros (mantidas via CDN, como no projeto original).
-         CORREÇÃO (performance mobile): `defer` faz o navegador baixar estes
-         arquivos SEM travar a leitura do resto do HTML — eles continuam
-         rodando na mesma ordem de antes (e antes dos scripts locais abaixo),
-         só deixam de bloquear a primeira renderização da página. -->
+    <!-- Bibliotecas de terceiros via CDN. `defer` baixa sem travar a leitura
+         do resto do HTML, mantendo a ordem de execução. -->
     <script defer src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
     <script defer src="https://unpkg.com/dexie/dist/dexie.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -61,15 +55,10 @@
     </div>
 
     <!-- Contador discreto de easter eggs — só o número, nunca revela quais.
-         CORREÇÃO (item 1 do prompt de correções): fica com "d-none" por
-         padrão porque ele NUNCA pode aparecer na loja inicial nem no
-         checkout/carta, só depois que o pedido já foi feito, dentro de
-         "Nossa História" (ver ativarContadorEasterEggsFaseFinal(), chamada
-         em goToRomancePage(), js/romance.js). Também some sozinho quando
-         todos os 9 já foram encontrados (ver atualizarContadorEasterEggs()
-         em js/utils.js). Continua escondido também enquanto o modo
-         visualização da loja está ativo, pra não brigar com a barra dele
-         lá embaixo. -->
+         "d-none" por padrão: só aparece dentro de "Nossa História" (ver
+         ativarContadorEasterEggsFaseFinal(), js/romance.js), some sozinho
+         ao achar todos os 9, e fica escondido durante o modo visualização
+         da loja. -->
     <div id="contadorEasterEggs" class="contador-easter-eggs d-none">
         <span aria-hidden="true">🌻</span> <span id="contadorEasterEggsTexto">0 de 9</span>
     </div>
@@ -565,7 +554,7 @@
         <button id="btnFlashbackContinuar" class="btn btn-rosegold rounded-pill fw-bold px-4 flashback-continuar d-none">Continuar</button>
     </div>
 
-    <!-- ===================== PROTEÇÃO POR SENHA DA ÁREA DE MEMÓRIAS (item 8 do prompt) ===================== -->
+    <!-- ===================== PROTEÇÃO POR SENHA DA ÁREA DE MEMÓRIAS ===================== -->
     <div id="senhaMemoriasOverlay" class="senha-memorias-overlay d-none">
         <div class="senha-memorias-box">
             <i class="bi bi-heart-fill" style="font-size: 1.8rem; color: var(--rosegold);"></i>
@@ -589,7 +578,7 @@
 
     <!-- ===================== NOSSA HISTÓRIA ===================== -->
     <div id="romancePage" class="romance-page">
-        <!-- Girassóis decorativos (item 6 do prompt): discretos, atrás do conteúdo,
+        <!-- Girassóis decorativos: discretos, atrás do conteúdo,
              não capturam toque (pointer-events:none) e não afetam a leitura.
              Ilustração própria em SVG (vetor, sem fundo — funciona como um "PNG
              transparente" de verdade, só que leve e nítido em qualquer tamanho de
@@ -1032,13 +1021,8 @@ Se existe uma certeza que eu tenho, é esta: enquanto eu puder, vou continuar es
     </div>
 
     <!-- ===================== "MAIS OPÇÕES" (exportar mapa/constelação/carta/polaroid, rever loja) =====================
-         CORREÇÃO: esse overlay antes ficava dentro de #romancePage, que tem
-         `overflow: hidden` — o mesmo problema já documentado no bug #1 do
-         CONTEXTO-PROJETO.md (position:fixed dentro de ancestral com
-         overflow:hidden se comporta errado no Safari do iPhone, ficando
-         "colado"/clipado em vez de abrir como modal de tela cheia de
-         verdade). Agora é filho direto do body, igual ao
-         #cartaDiscussaoOverlay logo abaixo. -->
+         Filho direto do body (não de #romancePage, que tem overflow:hidden
+         — ver bug #1 do CONTEXTO-PROJETO.md), igual a #cartaDiscussaoOverlay. -->
     <div id="maisOpcoesOverlay" class="carta-discussao-overlay d-none">
         <button id="btnFecharMaisOpcoes" class="modo-vela-fechar" aria-label="Fechar"><i class="bi bi-x-lg"></i></button>
         <div class="carta-discussao-papel mais-opcoes-papel">
@@ -1092,19 +1076,10 @@ Se existe uma certeza que eu tenho, é esta: enquanto eu puder, vou continuar es
     </div>
 
     <!-- ===================== ELEMENTOS OCULTOS USADOS SÓ PARA EXPORTAÇÃO =====================
-         CORREÇÃO: antes cada `.exportavel-oculto` era jogado pra fora da tela
-         sozinho com `position:fixed; left:-9999px`. Isso deixava um bloco de
-         1181x1772px (a constelação, por exemplo) flutuando bem
-         longe à esquerda, mas ainda tecnicamente "no viewport" — em alguns
-         navegadores/momentos (troca de orientação, teclado abrindo, o
-         html2canvas manipulando o elemento pra gerar a imagem) isso podia
-         fazer esse bloco aparecer entrando/saindo pela lateral da tela ou
-         criar rolagem horizontal fantasma. Agora TODOS esses elementos ficam
-         dentro de `.area-exportavel-oculta`, um invólucro fixo de 0x0 com
-         `overflow:hidden`: o conteúdo continua existindo com o tamanho real
-         de exportação (pro html2canvas capturar certinho), mas fica
-         recortado/escondido de verdade, sem depender de um deslocamento
-         gigante em pixels. -->
+         Ficam dentro de `.area-exportavel-oculta`, um invólucro fixo de 0x0
+         com `overflow:hidden`: o conteúdo mantém o tamanho real de
+         exportação (para o html2canvas capturar certinho) mas fica
+         recortado/escondido, sem depender de deslocamento em pixels. -->
     <div class="area-exportavel-oculta" aria-hidden="true">
         <!-- Constelação pra imprimir — gerada a partir de TIMELINE_MARCOS
              (js/config.js), sempre no visual escuro/estrelado (a versão clara

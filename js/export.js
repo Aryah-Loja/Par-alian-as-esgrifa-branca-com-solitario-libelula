@@ -1,24 +1,12 @@
 /**
- * ============================================================================
- * EXPORT.JS — Exportar lembranças (Prioridade 1, item 7) + Backup completo
- * ============================================================================
- * Formatos disponíveis:
- *   - Carta em imagem (PNG)
- *   - Carta em PDF elegante
- *   - Certificado de namoro (PDF, estilo "diploma")
- *   - Foto estilo Polaroid com legenda (PNG)
- * Além disso, mantém o backup/restauração completos (usados também pela
- * sincronização entre aparelhos — ver sync.js).
- * ============================================================================
+ * EXPORT.JS — Exportar lembranças (carta em PNG/PDF, certificado de namoro,
+ * Polaroid) e o backup/restauração completos (também usados pela
+ * sincronização entre aparelhos, ver sync.js).
  */
 
 /* ----------------------------------------------------------------------
-   LEMBRANÇAS PRA IMPRIMIR — constelação (clara e escura) e carta física
-   com QR code. Ambas leem TIMELINE_MARCOS / textoVersiculoBase() DIRETO
-   na hora de gerar a imagem — nada fica "gravado" com antecedência,
-   então qualquer marco novo adicionado em js/config.js já aparece no
-   próximo download,
-   sem precisar mexer em mais nada.
+   LEMBRANÇAS PRA IMPRIMIR — constelação e carta física com QR code. Ambas
+   leem TIMELINE_MARCOS / textoVersiculoBase() na hora de gerar a imagem.
    ---------------------------------------------------------------------- */
 
 function mostrarStatusExportar(mensagem, tipo) {
@@ -29,12 +17,8 @@ function mostrarStatusExportar(mensagem, tipo) {
 }
 
 /** Cartão postal do "Nosso mapa" — um card por lugar, com foto (se já tiver sido adicionada) + nome + texto. */
-/**
- * Calcula quantas colunas usar e qual tamanho de foto cabe, pra QUALQUER
- * quantidade de itens caber dentro do espaço disponível sem cortar nada
- * nem espremer demais. Isso resolve de vez o problema de "funciona hoje,
- * quebra se eu adicionar mais lugares/marcos depois".
- */
+// Calcula quantas colunas usar e o tamanho de foto que cabe para qualquer
+// quantidade de itens, sem cortar nem espremer.
 function calcularGradeParaCaber(quantidade, larguraDisponivel, alturaDisponivel, tamanhoMaximoFoto, tamanhoMinimoFoto) {
     quantidade = Math.max(1, quantidade);
     let melhor = null;
@@ -88,14 +72,7 @@ async function gerarConstelacao() {
     }
 }
 
-/**
- * Timeline usa fotos já resolvidas de forma fixa (getAsset, ver
- * PLACEHOLDERS em config.js) — diferente dos bichos/lugares do mapa, que
- * usam arquivoBase com extensão flexível. Essa função tenta primeiro o
- * jeito "flexível" (resolverFotoPlaceholder) e, se não achar nada,
- * cai no jeito fixo (getAsset), cobrindo os dois formatos de placeholder
- * que o projeto usa.
- */
+// Tenta o formato flexível (arquivoBase) e cai para o fixo (getAsset) se não achar.
 async function resolverFotoPlaceholderOuAsset(id) {
     const item = PLACEHOLDERS[id];
     if (item && item.arquivoBase) return resolverFotoPlaceholder(id);
@@ -138,14 +115,8 @@ async function gerarCartaFisica() {
         const alturaImagemMM = larguraImagemMM * (canvas.height / canvas.width);
         const alturaPaginaMM = alturaA4 - margem * 2;
 
-        // CORREÇÃO: antes a imagem inteira (com todos os parágrafos da
-        // carta) era colocada numa altura fixa, e se o texto fosse
-        // comprido o suficiente, a parte de baixo simplesmente ficava fora
-        // da folha A4 — cortada, sem aviso nenhum. Agora, se a carta
-        // couber numa página só, ela é centralizada certinho (sem sobrar
-        // borda em excesso); se for mais comprida que uma página A4,
-        // divide automaticamente em quantas páginas forem necessárias,
-        // sem cortar nada do texto.
+        // Se a carta couber numa página, centraliza; se for mais comprida
+        // que A4, divide automaticamente em quantas páginas forem necessárias.
         if (alturaImagemMM <= alturaPaginaMM) {
             const yInicial = margem + (alturaPaginaMM - alturaImagemMM) / 2;
             pdf.addImage(canvas.toDataURL('image/png'), 'PNG', margem, yInicial, larguraImagemMM, alturaImagemMM);
@@ -235,13 +206,8 @@ function capturarFotoPolaroid() {
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     const ctx = canvas.getContext('2d');
-    // CORREÇÃO: a câmera frontal entrega o frame "verdadeiro" (não
-    // espelhado), e é a TELA (CSS, #polaroidCameraVideo em style.css) que
-    // espelha o preview pra ficar confortável de enquadrar, tipo espelho
-    // de banheiro. Só que isso significa que se a gente desenhar o frame
-    // cru no canvas, a foto salva sai ao contrário do que ela viu e
-    // enquadrou durante a pose — por isso espelhamos aqui também, pra
-    // bater exatamente com o que apareceu na tela durante a captura.
+    // A câmera entrega o frame não espelhado (só a TELA espelha o preview
+    // via CSS), então espelhamos aqui também para bater com o que foi visto.
     ctx.translate(canvas.width, 0);
     ctx.scale(-1, 1);
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -283,15 +249,14 @@ async function gerarPolaroidComFoto(fotoDataUrl, fraseCustom) {
         const canvas = await html2canvas(document.getElementById('polaroidExportavel'), { backgroundColor: '#ffffff', scale: 2 });
         await baixarCanvasComoPng(canvas, 'nosso-momento-polaroid.png'); // download local: mantém PNG (qualidade máxima, é só um arquivo)
 
-        // Versão salva no banco/nuvem: JPEG reduz bastante o tamanho (a foto já
-        // não tem transparência, então JPEG não perde nada visualmente aqui).
+        // JPEG reduz o tamanho (a foto não tem transparência a perder).
         const blobPolaroid = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.88));
         if (blobPolaroid) {
             await salvarMedia({ id: 'polaroid_gerada', tipo: 'polaroid_gerada', blob: blobPolaroid, mimeType: 'image/jpeg' });
             await exibirPolaroidSalva();
         }
 
-        mostrarStatusExportar('Polaroid gerada, baixada e salva com sucesso — vai aparecer em qualquer aparelho.', 'ok');
+        mostrarStatusExportar('Polaroid gerada, baixada e salva com sucesso, vai aparecer em qualquer aparelho.', 'ok');
     } catch (err) {
         console.error('Falha ao exportar polaroid', err);
         mostrarStatusExportar('Não foi possível gerar a polaroid.', 'err');
@@ -375,8 +340,7 @@ async function gerarBackupZipBlob() {
     const manifest = {
         versao: 3,
         criadoEm: new Date().toISOString(),
-        // Marca de tempo (epoch ms) da última alteração LOCAL — usada pela
-        // sincronização automática para decidir "puxar" ou "empurrar" (ver js/sync.js).
+        // Última alteração local, usada por js/sync.js para decidir "puxar" ou "empurrar".
         atualizadoEm: parseInt(await obterConfiguracao('aurora_atualizado_em'), 10) || Date.now(),
         nomeDela: NOME_DELA,
         nomeDele: NOME_DELE,
@@ -416,11 +380,8 @@ async function gerarBackupZipBlob() {
     }
 
     zip.file('manifest.json', JSON.stringify(manifest));
-    // CORREÇÃO: sem compressão adicional (STORE, não DEFLATE) — vídeo, foto
-    // e áudio já são formatos comprimidos (MP4/JPEG/etc.), então tentar
-    // comprimir de novo só gasta processamento do celular (bem perceptível
-    // num vídeo de 100MB+) pra ganhar quase nada de espaço. O manifest.json
-    // (texto) é pequeno o bastante pra não fazer diferença real.
+    // Sem compressão adicional (STORE): mídia já vem comprimida (MP4/JPEG),
+    // recomprimir só gastaria processamento à toa.
     return await zip.generateAsync({ type: 'blob', compression: 'STORE' });
 }
 
@@ -515,11 +476,8 @@ async function aplicarBackupDeZip(zipDados) {
     if (manifest.checklistItensCustomizados) await salvarConfiguracao('aurora_checklist_itens_customizados', JSON.stringify(manifest.checklistItensCustomizados));
     if (manifest.mapaLugaresExtra) await salvarConfiguracao('aurora_mapa_lugares_extra', JSON.stringify(manifest.mapaLugaresExtra));
 
-    // Listas (mensagens para o futuro / lembranças): o backup é sempre a
-    // "fotografia completa" da experiência naquele instante, então as
-    // listas locais são SUBSTITUÍDAS pelas do backup, em vez de receberem
-    // itens acrescentados — evita duplicar tudo a cada sincronização
-    // automática entre aparelhos (ver sincronizarNaAbertura em js/sync.js).
+    // O backup é a "fotografia completa": listas locais são substituídas
+    // pelas do backup (não acrescentadas), para não duplicar em cada sincronização.
     try {
         const antigasFuturo = await obterMediaPorTipo('mensagem_futuro');
         for (const antiga of antigasFuturo) await db.media.delete(antiga.id);
@@ -622,27 +580,19 @@ async function restaurarBackupDeArquivo(arquivo) {
     statusEl.textContent = 'Lendo arquivo de backup...';
     statusEl.className = 'save-status pending';
 
-    // CORREÇÃO (bug real: restaurar um backup com vários itens disparava um
-    // envio pra nuvem PARA CADA item restaurado — cada salvarMedia() conta
-    // como "mudança nova" e tenta sincronizar na hora. Isso desperdiçava
-    // banda (reenviando o backup inteiro várias vezes seguidas) e, pior,
-    // o location.reload() logo abaixo podia interromper um desses envios
-    // no meio, deixando a nuvem com dados incompletos. Suprime esses
-    // disparos durante a restauração (mesma proteção já usada quando a
-    // nuvem manda um backup pra este aparelho) — a sincronização de
-    // recarrega abaixo). A sincronização de verdade acontece uma vez só,
-    // de forma limpa, no próximo carregamento da página (via
-    // sincronizarNaAbertura, chamada assim que a página recarrega abaixo).
+    // Suprime envios à nuvem durante a restauração (cada item restaurado
+    // dispararia um envio); a sincronização de verdade acontece uma vez só,
+    // no próximo carregamento da página.
     __auroraAplicandoBackupRemoto = true;
     try {
         const nome = (arquivo.name || '').toLowerCase();
         if (nome.endsWith('.json')) {
-            // Formato antigo — mantido só por compatibilidade com backups já existentes.
+            // Formato antigo, compatibilidade com backups já existentes.
             const texto = await arquivo.text();
             const backup = JSON.parse(texto);
             await aplicarBackupLegadoDeJson(backup);
         } else {
-            // Formato novo (.zip) — o padrão de hoje em diante.
+            // Formato novo (.zip), padrão atual.
             const dados = await arquivo.arrayBuffer();
             await aplicarBackupDeZip(dados);
         }
@@ -667,7 +617,7 @@ function iniciarModuloExport() {
     document.getElementById('btnExportarConstelacao').addEventListener('click', () => gerarConstelacao());
     document.getElementById('btnExportarCartaFisica').addEventListener('click', gerarCartaFisica);
 
-    // Novo fluxo da Polaroid: o clique abre a câmera em vez de gerar direto.
+    // O clique abre a câmera em vez de gerar a Polaroid direto.
     document.getElementById('btnExportarPolaroid').addEventListener('click', abrirCameraPolaroid);
     document.getElementById('btnFecharCameraPolaroid').addEventListener('click', fecharModalCameraPolaroid);
     document.getElementById('btnCapturarFotoPolaroid').addEventListener('click', capturarFotoPolaroid);

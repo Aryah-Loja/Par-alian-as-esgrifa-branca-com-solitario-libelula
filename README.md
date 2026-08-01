@@ -53,7 +53,7 @@ js/main.js              → inicialização geral
 assets/img/             → coloque aqui as fotos (ver lista de placeholders)
 assets/img/galeria/     → itens da Galeria (padrão galeria_1.jpg, galeria_2.mp4, ... — ver LEIA-ME.md na pasta)
 assets/audio/           → coloque aqui as músicas
-assets/video/           → (não usado atualmente — nenhum placeholder aponta pra cá)
+assets/video/           → vídeo da "câmera lenta" e do especial de aniversário (ver MOMENTO_LENTO_ARQUIVO_BASE/ANIVERSARIO_VIDEO_ARQUIVO_BASE em js/config.js)
 ```
 
 ## Placeholders de mídia — o que enviar e onde
@@ -72,7 +72,13 @@ A lista completa e atualizável está em `js/config.js`, no objeto
 | foto-final.jpg | Foto grande após "identidade confirmada" |
 | flashback-1.jpg … flashback-5.jpg | Flashback cinematográfico antes de "Nossa História" |
 | timeline-1.jpg … timeline-9.jpg, timeline-hoje.jpg | Linha do tempo |
-| momento-1.jpg … momento-4.jpg | "Nossos momentos" (mesa de fotos) |
+
+> **"Nossos momentos" (mesa de 4 fotos em "Nossa História") não usa
+> arquivo próprio** — ele sorteia automaticamente 4 fotos reais de dentro
+> de `assets/img/galeria/` (mesmos `galeria_1.jpg`, `galeria_2.jpg`... da
+> Galeria de lembranças, ver seção própria abaixo). Não existe
+> `momento-1.jpg` nem similar: nada precisa ser enviado especificamente
+> para essa seção, só ter fotos na Galeria.
 
 ### Fotos da "loja"
 produto-principal.jpg, produto-detalhe.jpg, produto-estojo.jpg,
@@ -95,7 +101,7 @@ Tudo em **`js/config.js`**:
   ajuste como quiser)
 - `OPCOES_REGRAS_CONTRATO` (as cláusulas do "contrato de namoro", até 5 selecionáveis)
 - `PEDIDO_PADRAO` (valores padrão de aro/gravação da home da joalheria)
-- `TOTAL_FOTOS_GALERIA` / `TIPO_GALERIA` / `YOUTUBE_GALERIA` / `GALERIA_LEGENDAS` (Galeria de lembranças — ver seção própria abaixo)
+- `GALERIA_YOUTUBE` / `GALERIA_LEGENDAS` (Galeria de lembranças — ver seção própria abaixo)
 - `COISAS_QUE_ELA_AMA` (pequena seção com coisas que ela ama, na página de memórias)
 - `CARTA_USAR_TEXTO_TESTE` (liga/desliga o texto de teste da carta final)
 - `SENHA_AREA_MEMORIAS` (senha que protege a área de memórias após o pedido)
@@ -246,13 +252,22 @@ testa sozinho, a partir de `galeria_1`, `galeria_2`... até parar de achar
 arquivos. Três tipos de item, todos na mesma pasta:
 
 - **Foto** (padrão): salve em `assets/img/galeria/` como `galeria_1.jpg`,
-  `galeria_2.jpg`... (extensões aceitas em `GALERIA_EXTENSOES_FOTO`, em
-  `js/config.js`). Nenhuma configuração extra necessária.
+  `galeria_2.jpg`... sempre em `.jpg` minúsculo (extensão fixada em
+  `GALERIA_EXTENSOES_FOTO`, em `js/config.js`). Nenhuma configuração
+  extra necessária.
 - **Vídeo local**: mesma pasta, mesma numeração, só troca a extensão —
-  ex. `galeria_3.mp4` (extensões aceitas em `GALERIA_EXTENSOES_VIDEO`). O
-  site reconhece pela extensão automaticamente (inclusive em MAIÚSCULO,
-  ex. `.MOV`/`.MP4`, comum em export de iPhone) — não precisa marcar nada
-  em lugar nenhum. Aparece na grade com um ícone de play por cima da capa.
+  ex. `galeria_3.mp4`, sempre em `.mp4` minúsculo (extensão fixada em
+  `GALERIA_EXTENSOES_VIDEO`). **Diferente de outros vídeos do site**
+  (câmera lenta, especial de aniversário), aqui a extensão é fixa de
+  propósito, e não em MAIÚSCULO/outros formatos: o manifesto gerado
+  automaticamente (`scripts/gerar-manifesto-galeria.js`) só reconhece
+  exatamente `.jpg`/`.mp4` minúsculo, para sempre bater com o que o site
+  procura (um descompasso aqui faria um item entrar no manifesto
+  apontando para um arquivo que não existe de verdade). Se o vídeo vier
+  do iPhone como `.MOV`, converta para `.mp4` antes de subir (o próprio
+  app Fotos do iPhone exporta em MP4 se você escolher "Mais compatível"
+  ao compartilhar/exportar). Aparece na grade com um ícone de play por
+  cima da capa.
 - **Vídeo do YouTube** (ótimo para vídeos grandes, sem precisar do
   arquivo): adicione uma entrada em `GALERIA_YOUTUBE` (em `js/config.js`)
   com o link (ou só o ID). Roda embutido dentro do site, sem levar a
