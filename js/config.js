@@ -867,7 +867,7 @@ const CAPSULA_YOUTUBE_ID = 'SaE2B-xA3qM';
 /* Link do YouTube com o vídeo mostrando todo o processo até o pedido
  * (o "making of"). Cole a URL completa aqui quando publicar o vídeo — o
  * botão só aparece na página se este campo não estiver vazio. */
-const VIDEO_PROCESSO_YOUTUBE_URL = 'https://www.youtube.com/watch?v=SaE2B-xA3qM';
+const VIDEO_PROCESSO_YOUTUBE_URL = 'https://youtu.be/7Sx_eEfSKew';
 
 /* ----------------------------------------------------------------------
    EASTER EGG — brincadeira do sobrenome
