@@ -1774,7 +1774,7 @@ E se hoje eu tenho a certeza de uma coisa, é que esse é só o começo, porque 
 
 Obrigado por ser você, por ter deixado eu entrar na sua vida e por transformar meus dias em algo muito melhor. ❤️`,
     encerramentoRomance: `Meu amor, obrigado por escolher viver essa vida ao meu lado, dia após dia, "o cordão de três dobras não se rompe com facilidade", quero construir nossa história com Deus no centro, fortalecendo o nosso amor a cada passo. Eu escolho você. Hoje, amanhã e por toda a vida..`,
-    digitacaoSuspense: `Cada uma dessas fotos guarda um pedaço do casal, mas ainda falta a aliança comprada hoje.`,
+    digitacaoSuspense: `Cada uma dessas fotos guarda um pedaço do casal, mas ainda falta a aliança.`,
     assinaturaCartaFinal: `Com muito amor para Ana Júlia Poloni.`,
     polaroidFrasePadrao: `O dia em que tudo começou.`,
     brigamosMensagemFofa: `Que bom que não sua curiosa. Deixa essa carta guardadinha aí, pro dia em que a gente realmente precisar dela. Até lá, só saiba de uma coisa: eu te amo.`
