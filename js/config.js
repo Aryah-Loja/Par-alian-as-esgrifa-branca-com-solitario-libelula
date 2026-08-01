@@ -808,7 +808,7 @@ const TEXTO_CARTA_TESTE = `[CARTA_TESTE] Este é um texto provisório só para t
 /* ----------------------------------------------------------------------
    CÁPSULA DO TEMPO — carta que se abre sozinha 1 ano após o pedido
    ---------------------------------------------------------------------- */
-const CAPSULA_DIAS_PARA_DESBLOQUEIO = 1;
+const CAPSULA_DIAS_PARA_DESBLOQUEIO = 365;
 function textoCapsulaDoTempo() {
 return `28 de julho de 2026.
 
@@ -859,12 +859,12 @@ Do seu amor, Gabriel`;
  * antes da data. A trava por hora do servidor (ver obterHoraConfiavel em
  * js/sync.js) cobre o golpe mais comum, que é só adiantar a data do
  * celular. */
-const CAPSULA_YOUTUBE_ID = 'SaE2B-xA3qM';
+const CAPSULA_YOUTUBE_ID = '';
 
 /* Link do YouTube com o vídeo mostrando todo o processo até o pedido
  * (o "making of"). Cole a URL completa aqui quando publicar o vídeo — o
  * botão só aparece na página se este campo não estiver vazio. */
-const VIDEO_PROCESSO_YOUTUBE_URL = 'https://www.youtube.com/watch?v=SaE2B-xA3qM';
+const VIDEO_PROCESSO_YOUTUBE_URL = '';
 
 /* Deixe `true` se o vídeo acima foi gravado/exportado na VERTICAL
  * (retrato — o formato comum de Reels/Stories/vídeo direto do celular
