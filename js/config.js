@@ -864,7 +864,7 @@ const CAPSULA_YOUTUBE_ID = '';
 /* Link do YouTube com o vídeo mostrando todo o processo até o pedido
  * (o "making of"). Cole a URL completa aqui quando publicar o vídeo — o
  * botão só aparece na página se este campo não estiver vazio. */
-const VIDEO_PROCESSO_YOUTUBE_URL = '';
+const VIDEO_PROCESSO_YOUTUBE_URL = 'https://youtu.be/7Sx_eEfSKew';
 
 /* Deixe `true` se o vídeo acima foi gravado/exportado na VERTICAL
  * (retrato — o formato comum de Reels/Stories/vídeo direto do celular
