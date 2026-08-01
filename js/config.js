@@ -861,7 +861,7 @@ Do seu amor, Gabriel`;
  * antes da data. A trava por hora do servidor (ver obterHoraConfiavel em
  * js/sync.js) cobre o golpe mais comum, que é só adiantar a data do
  * celular. */
-const CAPSULA_YOUTUBE_ID = 'SaE2B-xA3qM';
+const CAPSULA_YOUTUBE_ID = '';
 
 /* Link do YouTube com o vídeo mostrando todo o processo até o pedido
  * (o "making of"). Cole a URL completa aqui quando publicar o vídeo — o
