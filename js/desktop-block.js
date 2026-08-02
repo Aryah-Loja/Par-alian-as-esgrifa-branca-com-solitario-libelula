@@ -1,9 +1,23 @@
 /**
  * DESKTOP-BLOCK.JS — Bloqueia o uso em computadores.
- * Detecta se o dispositivo é celular (sem hover, ponteiro grosso, tela
- * pequena) e, se não for, mostra uma tela com QR Code para abrir no celular.
+ * Detecta se o dispositivo é celular e, se não for, mostra uma tela com
+ * QR Code para abrir no celular.
+ *
+ * Dois sinais, e OU BASTA UM pra considerar celular:
+ * 1) O user agent contém o nome de um SO/navegador mobile conhecido —
+ *    funciona mesmo se o navegador estiver em "modo desktop" (o Chrome/
+ *    Samsung Internet tem essa opção, e ela muda a largura reportada pra
+ *    ~980px, o que engana o sinal 2 abaixo) ou for um navegador embutido
+ *    (como o do app do Google, do Instagram, etc.) que às vezes responde
+ *    diferente às media queries do sinal 2.
+ * 2) Sem hover + ponteiro grosso + tela pequena (o sinal original,
+ *    mantido como reforço pra SOs/navegadores futuros que não apareçam
+ *    no sinal 1).
  */
 function ehDispositivoMovel() {
+    const uaIndicaMobile = /android|iphone|ipod|ipad|windows phone|silk|mobile|opera mini|iemobile/i.test(navigator.userAgent || '');
+    if (uaIndicaMobile) return true;
+
     const semHover = window.matchMedia && window.matchMedia('(hover: none)').matches;
     const ponteiroGrosso = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
     const larguraRazoavel = Math.min(window.innerWidth, window.innerHeight) <= 600;

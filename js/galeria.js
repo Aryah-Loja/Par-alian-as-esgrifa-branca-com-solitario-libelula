@@ -365,6 +365,7 @@ function adicionarItemNaGrade(numero, src, tipo, masonry, aoCarregar) {
 
     const item = document.createElement('figure');
     item.className = (tipo === 'video') ? 'galeria-item galeria-item-video m-0' : 'galeria-item m-0';
+    const indice = __galeriaItens.length; // capturado já aqui para o onerror de recuperação HEIC (mais abaixo) conseguir atualizar a entrada certa
 
     if (tipo === 'video') {
         const video = document.createElement('video');
@@ -418,7 +419,24 @@ function adicionarItemNaGrade(numero, src, tipo, masonry, aoCarregar) {
         img.decoding = 'async';
         img.src = src;
         img.onload = () => { __galeriaFotosCarregadas++; observarRevelacao(item); if (aoCarregar) aoCarregar(); };
-        img.onerror = () => { item.remove(); verificarSeGaleriaFicouVazia(); if (aoCarregar) aoCarregar(); };
+        img.onerror = async () => {
+            // Antes de desistir da foto (removendo o item da grade), tenta
+            // recuperar o caso mais comum de "existe no servidor mas não
+            // carrega": uma foto do iPhone que ficou em HEIC por dentro,
+            // só com a extensão trocada pra .jpg por fora (ver
+            // tentarRecuperarComoHeic() em js/utils.js).
+            if (img.dataset.tentouRecuperarHeic) { item.remove(); verificarSeGaleriaFicouVazia(); if (aoCarregar) aoCarregar(); return; }
+            img.dataset.tentouRecuperarHeic = '1';
+            const urlRecuperada = await tentarRecuperarComoHeic(src);
+            if (urlRecuperada) {
+                img.src = urlRecuperada;
+                if (__galeriaItens[indice]) __galeriaItens[indice].src = urlRecuperada; // pro lightbox usar a versão já convertida
+                return;
+            }
+            item.remove();
+            verificarSeGaleriaFicouVazia();
+            if (aoCarregar) aoCarregar();
+        };
 
         item.appendChild(img);
     }
@@ -430,7 +448,6 @@ function adicionarItemNaGrade(numero, src, tipo, masonry, aoCarregar) {
         item.appendChild(cap);
     }
 
-    const indice = __galeriaItens.length;
     __galeriaItens.push({ src, legenda, tipo });
     item.dataset.ordem = indice; // usado só se a tela redimensionar e as colunas precisarem ser remontadas (ver resize em montarGaleria)
     item.addEventListener('click', () => abrirLightbox(indice));

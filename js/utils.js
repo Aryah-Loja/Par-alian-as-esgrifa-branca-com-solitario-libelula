@@ -141,12 +141,60 @@ const SVG_PLACEHOLDER_GENERICO = 'data:image/svg+xml;utf8,' + encodeURIComponent
     </svg>
 `);
 
+/**
+ * Tenta recuperar uma foto que "existe" no servidor (por isso não caiu no
+ * placeholder de "arquivo faltando") mas mesmo assim não carrega no
+ * navegador — o caso mais comum disso é uma foto do iPhone que ficou
+ * fisicamente em formato HEIC, só com a extensão trocada pra .jpg por
+ * fora. O Safari decodifica HEIC mesmo com a extensão errada, mas o
+ * Chrome (PC ou Android, sempre o mesmo motor) não — por isso o mesmo
+ * arquivo funciona num aparelho e quebra em outro.
+ *
+ * Faz isso: baixa o arquivo, olha os primeiros bytes (a "assinatura" do
+ * formato, independente da extensão do nome), e se realmente for HEIC,
+ * converte pra JPEG de verdade no próprio navegador usando a biblioteca
+ * heic2any (carregada via CDN, ver index.html/galeria.html). Devolve uma
+ * URL local já convertida, ou null se não for HEIC (aí é falta de
+ * arquivo mesmo, ou outro problema) ou se a conversão falhar.
+ */
+async function tentarRecuperarComoHeic(url) {
+    if (typeof heic2any !== 'function') return null; // biblioteca não carregou (ex.: sem internet no momento)
+    try {
+        const resposta = await fetch(url, { cache: 'no-store' });
+        if (!resposta.ok) return null;
+        const blobOriginal = await resposta.blob();
+
+        // Assinatura ISOBMFF: bytes 4-7 = "ftyp", bytes 8-11 = a "marca"
+        // do formato. HEIC/HEIF usam um punhado de marcas conhecidas.
+        const cabecalho = new Uint8Array(await blobOriginal.slice(0, 12).arrayBuffer());
+        const ehFtyp = cabecalho.length >= 12 && cabecalho[4] === 0x66 && cabecalho[5] === 0x74 && cabecalho[6] === 0x79 && cabecalho[7] === 0x70; // "ftyp"
+        if (!ehFtyp) return null;
+        const marca = String.fromCharCode(cabecalho[8], cabecalho[9], cabecalho[10], cabecalho[11]);
+        const marcasHeic = ['heic', 'heix', 'hevc', 'hevx', 'heim', 'heis', 'hevm', 'hevs', 'mif1', 'msf1'];
+        if (!marcasHeic.includes(marca)) return null; // ftyp existe mas não é HEIC (ex.: seria um vídeo .mp4, não se aplica aqui)
+
+        const convertido = await heic2any({ blob: blobOriginal, toType: 'image/jpeg', quality: 0.92 });
+        const blobFinal = Array.isArray(convertido) ? convertido[0] : convertido;
+        return URL.createObjectURL(blobFinal);
+    } catch (e) {
+        console.warn('Não foi possível recuperar imagem HEIC disfarçada:', url, e);
+        return null;
+    }
+}
+
 function iniciarFallbackImagensGlobais() {
-    document.addEventListener('error', (e) => {
+    document.addEventListener('error', async (e) => {
         const el = e.target;
         if (el && el.tagName === 'IMG' && !el.dataset.fallbackAplicado && el.src !== SVG_PLACEHOLDER_GENERICO) {
             el.dataset.fallbackAplicado = '1';
-            el.src = SVG_PLACEHOLDER_GENERICO;
+            const urlOriginal = el.src;
+            const urlRecuperada = await tentarRecuperarComoHeic(urlOriginal);
+            if (urlRecuperada) {
+                delete el.dataset.fallbackAplicado; // se a versão recuperada também falhar por algum motivo, deixa tentar de novo (vai cair no placeholder, já que não vai bater a assinatura HEIC de novo)
+                el.src = urlRecuperada;
+            } else {
+                el.src = SVG_PLACEHOLDER_GENERICO;
+            }
         }
     }, true);
 }
