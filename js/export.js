@@ -384,7 +384,7 @@ async function gerarBackupZipBlob() {
         checklistItensCustomizados: await obterConfigJSON('aurora_checklist_itens_customizados'),
         mapaLugaresExtra: await obterConfigJSON('aurora_mapa_lugares_extra'),
         // Campos novos e opcionais (quadro de previsões, termômetro do dia,
-        // cartas condicionais liberadas e vitrine de recados) — backups
+        // cartas condicionais liberadas e mural da Ana) — backups
         // antigos simplesmente não têm essas chaves (fica undefined) e
         // continuam restaurando normalmente; aplicarBackupDeZip só grava
         // cada uma se ela existir no manifesto (mesmo padrão dos campos acima).
@@ -394,7 +394,7 @@ async function gerarBackupZipBlob() {
         previsoesAnaSenhaHash: await obterConfiguracao('aurora_previsoes_ana_senha_hash') || null,
         termometroLista: await obterConfigJSON('aurora_termometro_lista'),
         cartasCondicionaisLiberadas: await obterConfigJSON('aurora_cartas_condicionais_liberadas'),
-        vitrineRecados: await obterConfigJSON('aurora_vitrine_recados'),
+        muralAna: await obterConfigJSON('aurora_mural_ana'),
         medias: []
     };
 
@@ -523,7 +523,7 @@ async function aplicarBackupDeZip(zipDados) {
     if (manifest.previsoesAnaSenhaHash) await salvarConfiguracao('aurora_previsoes_ana_senha_hash', manifest.previsoesAnaSenhaHash);
     if (manifest.termometroLista) await salvarConfiguracao('aurora_termometro_lista', JSON.stringify(manifest.termometroLista));
     if (manifest.cartasCondicionaisLiberadas) await salvarConfiguracao('aurora_cartas_condicionais_liberadas', JSON.stringify(manifest.cartasCondicionaisLiberadas));
-    if (manifest.vitrineRecados) await salvarConfiguracao('aurora_vitrine_recados', JSON.stringify(manifest.vitrineRecados));
+    if (manifest.muralAna) await salvarConfiguracao('aurora_mural_ana', JSON.stringify(manifest.muralAna));
 
     // O backup é a "fotografia completa": listas locais são substituídas
     // pelas do backup (não acrescentadas), para não duplicar em cada sincronização.

@@ -1013,7 +1013,7 @@ async function goToRomancePage(primeiraVez) {
     iniciarCartaDiscussao();
     iniciarAdjetivosParaEla();
     rodarIsolado(iniciarModoSilencioso, 'modo silencioso para brigas');
-    rodarIsolado(iniciarVitrineRecados, 'vitrine de recados');
+    rodarIsolado(iniciarMural, 'mural da Ana');
 
     if (typeof VIDEO_PROCESSO_YOUTUBE_URL !== 'undefined' && VIDEO_PROCESSO_YOUTUBE_URL) {
         const iframeProcesso = document.getElementById('videoProcessoIframe');
@@ -2179,60 +2179,100 @@ function iniciarModoSilencioso() {
 }
 
 /* ----------------------------------------------------------------------
-   VITRINE DE RECADOS PRA ELA
+   MURAL DA ANA
    ----------------------------------------------------------------------
-   De mão única: um espaço pra ela deixar recados (curtos ou longos) pra
-   ele ler depois, dentro da mesma área de "Nossa História" (já protegida
-   pela senha da área de memórias — ver solicitarSenhaMemorias acima).
+   Espaço livre pra ela escrever pensamentos, poemas e afins (sem
+   pergunta nem estrutura fixa) — abre num overlay em estilo "livro"
+   (mesmo "papel" claro já usado pela carta de discussão/previsões), com
+   um campo de texto pra escrever e uma lista dos textos já guardados
+   (mais recente primeiro), cada um com opção de apagar. Fica dentro da
+   mesma área já protegida pela senha de "Nossa História" (ver
+   solicitarSenhaMemorias acima).
    ---------------------------------------------------------------------- */
-async function obterVitrineRecados() {
-    const salvo = await obterConfiguracao('aurora_vitrine_recados');
+async function obterMural() {
+    const salvo = await obterConfiguracao('aurora_mural_ana');
     return salvo ? JSON.parse(salvo) : [];
 }
 
-async function salvarNovoRecadoVitrine() {
-    const input = document.getElementById('vitrineRecadoInput');
-    const status = document.getElementById('vitrineRecadoStatus');
+async function salvarNovoTextoMural() {
+    const input = document.getElementById('muralTextoInput');
+    const status = document.getElementById('muralStatus');
     const texto = input ? input.value.trim() : '';
     if (!texto) return;
 
-    const lista = await obterVitrineRecados();
-    lista.push({ data: new Date().toISOString(), texto });
-    await salvarConfiguracao('aurora_vitrine_recados', JSON.stringify(lista));
+    const lista = await obterMural();
+    lista.push({ id: `mural_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`, data: new Date().toISOString(), texto });
+    await salvarConfiguracao('aurora_mural_ana', JSON.stringify(lista));
 
     if (input) input.value = '';
     if (status) {
-        status.textContent = 'Recado guardado!';
+        status.textContent = 'Guardado!';
         status.className = 'save-status ok';
         setTimeout(() => { status.textContent = ''; }, 2500);
     }
-    await renderizarVitrineRecados();
+    await renderizarMural();
 }
 
-async function renderizarVitrineRecados() {
-    const wrap = document.getElementById('vitrineRecadosWrap');
-    if (!wrap) return;
+async function excluirTextoMural(id) {
+    if (!confirm('Apagar este texto? Essa ação não pode ser desfeita.')) return;
+    const lista = await obterMural();
+    const restante = lista.filter((item) => item.id !== id);
+    await salvarConfiguracao('aurora_mural_ana', JSON.stringify(restante));
+    await renderizarMural();
+}
 
-    const lista = document.getElementById('vitrineRecadosLista');
+async function renderizarMural() {
+    const lista = document.getElementById('muralLista');
     if (!lista) return;
-    const recados = await obterVitrineRecados();
+    const itens = await obterMural();
 
-    if (!recados.length) {
-        lista.innerHTML = '<p class="small text-white-50 mb-0">Nenhum recado por aqui ainda.</p>';
+    if (!itens.length) {
+        lista.innerHTML = '<p class="small" style="color: rgba(43,37,35,0.6);">Nada por aqui ainda. Escreva o que quiser acima.</p>';
         return;
     }
 
-    lista.innerHTML = recados.slice().reverse().map((item) => {
+    lista.innerHTML = itens.slice().reverse().map((item) => {
         const dataFormatada = new Date(item.data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-        return `<div class="vitrine-recado-item"><p class="vitrine-recado-data">${dataFormatada}</p><p class="vitrine-recado-texto">${item.texto.replace(/</g, '&lt;').replace(/\n/g, '<br>')}</p></div>`;
+        return `
+            <div class="mural-item">
+                <div class="mural-item-topo">
+                    <span class="mural-item-data">${dataFormatada}</span>
+                    <button type="button" class="mural-item-excluir" data-id="${item.id}" aria-label="Apagar este texto"><i class="bi bi-trash3"></i></button>
+                </div>
+                <p class="mural-item-texto">${item.texto.replace(/</g, '&lt;').replace(/\n/g, '<br>')}</p>
+            </div>
+        `;
     }).join('');
+
+    lista.querySelectorAll('.mural-item-excluir').forEach((btn) => {
+        btn.addEventListener('click', () => excluirTextoMural(btn.dataset.id));
+    });
 }
 
-function iniciarVitrineRecados() {
-    const botao = document.getElementById('btnSalvarVitrineRecado');
-    if (!botao) return;
-    const introEl = document.getElementById('vitrineRecadosIntro');
-    if (introEl) introEl.textContent = TEXTOS.vitrineRecadosIntro;
-    botao.addEventListener('click', salvarNovoRecadoVitrine);
-    renderizarVitrineRecados();
+function abrirMural() {
+    const overlay = document.getElementById('muralOverlay');
+    if (!overlay) return;
+    overlay.classList.remove('d-none');
+    overlay.scrollTop = 0;
+    bloquearScrollFundoLembranca();
+    renderizarMural();
+}
+
+function fecharMural() {
+    const overlay = document.getElementById('muralOverlay');
+    if (!overlay) return;
+    overlay.classList.add('d-none');
+    desbloquearScrollFundoLembranca();
+}
+
+function iniciarMural() {
+    const botaoAbrir = document.getElementById('btnAbrirMural');
+    if (!botaoAbrir) return;
+    const introEl = document.getElementById('muralIntro');
+    if (introEl) introEl.textContent = TEXTOS.muralIntro;
+    botaoAbrir.addEventListener('click', abrirMural);
+    const botaoFechar = document.getElementById('btnFecharMural');
+    if (botaoFechar) botaoFechar.addEventListener('click', fecharMural);
+    const botaoSalvar = document.getElementById('btnSalvarMural');
+    if (botaoSalvar) botaoSalvar.addEventListener('click', salvarNovoTextoMural);
 }

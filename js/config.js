@@ -1858,5 +1858,5 @@ Obrigado por ser você, por ter deixado eu entrar na sua vida e por transformar 
     brigamosMensagemFofa: `Que bom que não sua curiosa. Deixa essa carta guardadinha aí, pro dia em que a gente realmente precisar dela. Até lá, só saiba de uma coisa: eu te amo.`,
     modoSilenciosoTitulo: `Só um instante`,
     modoSilenciosoTexto: `Tá tudo bem a gente precisar de um tempo às vezes. Só não esquece: mesmo brava, mesmo em silêncio, eu continuo aqui e continuo te amando. Quando quiser conversar, eu vou estar pronto pra ouvir.`,
-    vitrineRecadosIntro: `Um espaço só seu, pra deixar recados pra mim ler quando eu abrir aqui. Escreve à vontade, sem compromisso de tamanho ou de frequência.`
+    muralIntro: `Escreva à vontade: pensamentos, poemas, o que vier na cabeça. Só você vê isso.`
 };
