@@ -706,43 +706,6 @@ img { max-width: 100%; }
 .capsula-texto { font-size: 0.88rem; color: #f0d9dd; line-height: 1.6; margin-bottom: 14px; }
 .capsula-contagem { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.05rem; font-weight: 600; color: var(--rosegold); margin: 0; }
 
-/* ---------------- Quadro de previsões ---------------- */
-.previsoes-card { background: rgba(255,255,255,0.06); border: 1px solid rgba(183,110,121,0.35); border-radius: 16px; padding: 18px 20px; }
-.previsoes-card-pergunta { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.1rem; font-weight: 600; color: #fff; margin-bottom: 10px; }
-.previsoes-card-respostas { display: flex; flex-direction: column; gap: 10px; }
-.previsoes-card-respostas > div { background: rgba(0,0,0,0.18); border-radius: 10px; padding: 10px 12px; }
-.previsoes-card-nome { display: block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--rosegold); margin-bottom: 4px; }
-.previsoes-card-respostas p { font-size: 0.9rem; color: #f0d9dd; margin: 0; white-space: pre-wrap; }
-.previsoes-pergunta { display: flex; flex-direction: column; gap: 6px; }
-.previsoes-pergunta label { font-size: 0.85rem; color: #f0d9dd; }
-.previsoes-pergunta textarea { border-radius: 10px; padding: 10px 12px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18); color: #fff; resize: vertical; }
-/* O formulário de previsões abre dentro do "papel" claro (.carta-discussao-papel,
-   reaproveitado da carta de discussão) — texto escuro pra manter contraste. */
-.carta-discussao-papel .senha-memorias-titulo { color: #2b2523; }
-.carta-discussao-papel .previsoes-pergunta label { color: #2b2523; }
-.carta-discussao-papel .previsoes-pergunta textarea { background: rgba(255,255,255,0.6); border: 1px solid rgba(43,37,35,0.25); color: #2b2523; }
-
-/* ---------------- Termômetro do dia ---------------- */
-.termometro-opcoes { display: flex; justify-content: center; gap: 8px; }
-.termometro-opcao { background: rgba(255,255,255,0.06); border: 1px solid rgba(183,110,121,0.35); border-radius: 12px; font-size: 1.5rem; padding: 8px 12px; line-height: 1; transition: transform 0.15s ease, background 0.15s ease; }
-.termometro-opcao:hover, .termometro-opcao:active { background: rgba(183,110,121,0.25); transform: scale(1.08); }
-.termometro-historico { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
-.termometro-media { text-align: center; font-size: 0.85rem; color: var(--rosegold); margin: 4px 0 0; }
-.termometro-item { display: flex; flex-direction: column; align-items: center; font-size: 1.1rem; background: rgba(255,255,255,0.05); border-radius: 10px; padding: 6px 8px; min-width: 44px; }
-.termometro-item small { font-size: 0.6rem; color: rgba(255,255,255,0.5); margin-top: 2px; }
-
-/* ---------------- Cartas condicionais ---------------- */
-.carta-condicional-card { display: flex; flex-direction: column; align-items: flex-start; text-align: left; background: rgba(255,255,255,0.06); border: 1px solid rgba(183,110,121,0.35); border-radius: 14px; padding: 14px 16px; width: 100%; color: #fff; }
-.carta-condicional-card.bloqueada { opacity: 0.6; }
-.carta-condicional-card.liberada { border-color: var(--rosegold); cursor: pointer; }
-.carta-condicional-titulo { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.05rem; font-weight: 600; }
-.carta-condicional-gatilho { font-size: 0.78rem; color: rgba(255,255,255,0.55); margin-top: 4px; }
-
-/* ---------------- Vitrine de recados pra ele ---------------- */
-.vitrine-recado-item { background: rgba(255,255,255,0.06); border: 1px solid rgba(183,110,121,0.25); border-radius: 12px; padding: 12px 16px; text-align: left; }
-.vitrine-recado-data { font-size: 0.72rem; color: var(--rosegold); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
-.vitrine-recado-texto { font-size: 0.92rem; color: #f0d9dd; margin: 0; white-space: pre-wrap; }
-
 /* ---------------- Playlist ---------------- */
 .playlist-card { background: rgba(255,255,255,0.06); border: 1px solid rgba(183,110,121,0.35); border-radius: 16px; padding: 20px 18px; max-width: 440px; margin: 0 auto; }
 .playlist-track-title { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.15rem; font-weight: 600; color: #fff; margin-bottom: 2px; }

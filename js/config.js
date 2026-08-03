@@ -1733,83 +1733,6 @@ const MENSAGEM_SECRETA_LUA = 'O sol ama tanto a lua que morre todas as noites pa
 const SENHA_AREA_MEMORIAS_HASH = '1326c6c44cc5e89cc510c9d2a17dd02c9105a377df60cf64d953c1eb4b06b00d'; // hash correto de "1406" (confirmado)
 
 /* ----------------------------------------------------------------------
-   QUADRO DE PREVISÕES
-   ----------------------------------------------------------------------
-   Cada um responde as mesmas perguntas separadamente, protegido pela sua
-   própria senha (assim um não vê a resposta do outro antes da hora). As
-   respostas de ambos só ficam visíveis lado a lado depois que passar
-   PREVISOES_DIAS_PARA_REVELACAO dias contados a partir da primeira vez
-   que esta seção é aberta no site (guardado em 'aurora_previsoes_criado_em'
-   — não da data do pedido, pra não revelar de cara caso o pedido já
-   tenha acontecido há mais de um ano). Usa a hora do servidor
-   (obterHoraConfiavel), mesma base da cápsula do tempo, pra não dar pra
-   trapacear adiantando o relógio do celular.
-
-   Senha do Gabriel: fixa, gerada por ele em secret/gerar-hash.html e
-   colada em SENHA_PREVISOES_GABRIEL_HASH abaixo.
-   Senha da Ana: NÃO é fixa aqui — na primeira vez que ela tocar em
-   "Ana", o site pede pra ela criar a própria senha (não dá pra saber
-   qual vai ser de antemão) e guarda só o hash, em
-   'aurora_previsoes_ana_senha_hash' (mesma tabela de configurações do
-   resto do site, sincroniza normalmente entre aparelhos).
-   Ver iniciarQuadroPrevisoes()/solicitarSenhaPrevisoes() em js/romance.js.
-   ---------------------------------------------------------------------- */
-const PREVISOES_DIAS_PARA_REVELACAO = 365; // 1 ano a partir da primeira vez que a seção for aberta
-const PREVISOES_PERGUNTAS = [
-    { id: 'previsao_1ano', pergunta: 'Onde a gente vai estar daqui 1 ano?' },
-    { id: 'previsao_5anos', pergunta: 'Onde a gente vai estar daqui 5 anos?' },
-    { id: 'previsao_10anos', pergunta: 'Onde a gente vai estar daqui 10 anos?' },
-    { id: 'previsao_viagem', pergunta: 'Qual vai ser a nossa próxima viagem?' },
-    { id: 'previsao_pendencia', pergunta: 'O que a gente ainda não fez e vai fazer até lá?' },
-];
-// Gere o hash em secret/gerar-hash.html e cole aqui — enquanto estiver
-// vazio, o botão do Gabriel fica visível mas avisa que ainda não foi
-// configurado (mesmo padrão do Client ID do Google Drive).
-const SENHA_PREVISOES_GABRIEL_HASH = '';
-
-/* ----------------------------------------------------------------------
-   TERMÔMETRO DO DIA
-   ----------------------------------------------------------------------
-   Check-in rápido e discreto: uma nota de 1 a 5 (com emoji) + um
-   comentário opcional, guardado num histórico simples. Não é nada
-   clínico, é só um jeito de acompanhar como os dias andaram, sem
-   precisar perguntar toda hora. Ver iniciarTermometroDoDia() em
-   js/romance.js.
-   ---------------------------------------------------------------------- */
-const TERMOMETRO_OPCOES = [
-    { valor: 1, emoji: '😞', rotulo: 'Difícil' },
-    { valor: 2, emoji: '😕', rotulo: 'Não tão bom' },
-    { valor: 3, emoji: '😐', rotulo: 'Normal' },
-    { valor: 4, emoji: '🙂', rotulo: 'Bom' },
-    { valor: 5, emoji: '🥰', rotulo: 'Ótimo' },
-];
-
-/* ----------------------------------------------------------------------
-   CARTAS CONDICIONAIS
-   ----------------------------------------------------------------------
-   Parecidas com a "mensagem pro futuro", mas em vez de abrir sozinha
-   numa data marcada, cada uma só é liberada manualmente quando o
-   momento/gatilho descrito realmente acontecer (ver a seção "Cartas
-   Condicionais" em diagnostico.html — protegida pela mesma senha de
-   reset). Edite/adicione itens à vontade: cada um vira automaticamente
-   um cartão na página e uma entrada no painel de liberação.
-   ---------------------------------------------------------------------- */
-const CARTAS_CONDICIONAIS = [
-    {
-        id: 'carta_morar_juntos',
-        titulo: 'Quando a gente morar junto',
-        gatilho: 'Só abre quando a gente morar junto de vez.',
-        texto: `Se você está lendo isso, é porque finalmente vamos dividir o mesmo teto de verdade — não só as visitas e as despedidas na porta. Espero que a gente ainda ria muito das mesmas bobagens, mesmo depois de dividir a pia do banheiro e descobrir os defeitos um do outro de perto. Obrigado por escolher construir isso comigo.`,
-    },
-    {
-        id: 'carta_bicho_juntos',
-        titulo: 'Quando adotarmos um bicho juntos',
-        gatilho: 'Só abre no dia em que a gente trouxer um bicho pra casa, dos dois.',
-        texto: `Se chegou até aqui, temos um bichinho novo em casa, nosso, de verdade. Espero que ele(a) bagunce tudo, exija atenção nas horas mais inconvenientes e vire, mesmo assim, mais um motivo pra gente voltar correndo pra casa. Bem-vindo(a) à família, pequeno(a).`,
-    },
-];
-
-/* ----------------------------------------------------------------------
    SENHA DA CARTA "SE UM DIA A GENTE DISCUTIR, LEIA ISSO"
    ----------------------------------------------------------------------
    Antes de chegar na pergunta "Brigamos?" e na carta em si, pede essa
@@ -1853,9 +1776,6 @@ Obrigado por ser você, por ter deixado eu entrar na sua vida e por transformar 
     encerramentoRomance: `Meu amor, obrigado por escolher viver essa vida ao meu lado, dia após dia, "o cordão de três dobras não se rompe com facilidade", quero construir nossa história com Deus no centro, fortalecendo o nosso amor a cada passo. Eu escolho você. Hoje, amanhã e por toda a vida..`,
     digitacaoSuspense: `Cada uma dessas fotos guarda um pedaço do casal, mas ainda falta a aliança.`,
     assinaturaCartaFinal: `Com muito amor para Ana Júlia Poloni.`,
-    polaroidFrasePadrao: `08/08/2026`,
-    brigamosMensagemFofa: `Que bom que não sua curiosa. Deixa essa carta guardadinha aí, pro dia em que a gente realmente precisar dela. Até lá, só saiba de uma coisa: eu te amo.`,
-    modoSilenciosoTitulo: `Só um instante`,
-    modoSilenciosoTexto: `Tá tudo bem a gente precisar de um tempo às vezes. Só não esquece: mesmo brava, mesmo em silêncio, eu continuo aqui e continuo te amando. Quando quiser conversar, eu vou estar pronto pra ouvir.`,
-    vitrineRecadosIntro: `Um espaço só seu, pra deixar recados pra mim ler quando eu abrir aqui. Escreve à vontade, sem compromisso de tamanho ou de frequência.`
+    polaroidFrasePadrao: `O dia em que tudo começou.`,
+    brigamosMensagemFofa: `Que bom que não sua curiosa. Deixa essa carta guardadinha aí, pro dia em que a gente realmente precisar dela. Até lá, só saiba de uma coisa: eu te amo.`
 };

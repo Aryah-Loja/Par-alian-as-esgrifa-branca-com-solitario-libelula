@@ -951,110 +951,10 @@
             </div>
         </div>
 
-        <!-- ===================== QUADRO DE PREVISÕES =====================
-             Cada um responde separado (senha própria); as respostas só
-             ficam visíveis juntas depois de PREVISOES_DIAS_PARA_REVELACAO
-             dias contados a partir da primeira vez que a seção é aberta.
-             Ver prepararQuadroPrevisoes() em js/romance.js e PREVISOES_*
-             em js/config.js. -->
-        <div id="previsoesWrap" class="mt-5 reveal-up d-none" style="max-width: 460px; margin: 0 auto;">
-            <p class="romance-section-title">Quadro de previsões</p>
-            <p class="small text-white-50 text-center mb-3">A gente responde separado, hoje. As respostas só se revelam depois de um tempo — daí a gente compara com o que realmente aconteceu.</p>
-
-            <div id="previsoesBloqueado" class="text-center d-none">
-                <p class="capsula-contagem" id="previsoesContagem">calculando...</p>
-                <p class="small text-white-50 mb-2 mt-3">Quem vai responder?</p>
-                <div class="d-flex gap-2 justify-content-center flex-wrap">
-                    <button id="btnResponderPrevisoesGabriel" class="btn btn-outline-light btn-sm rounded-pill"><i class="bi bi-person-fill me-1"></i>Gabriel</button>
-                    <button id="btnResponderPrevisoesAna" class="btn btn-outline-light btn-sm rounded-pill"><i class="bi bi-person-fill me-1"></i>Ana</button>
-                </div>
-            </div>
-
-            <div id="previsoesRevelado" class="d-none">
-                <div id="previsoesComparativo" class="d-flex flex-column gap-3"></div>
-            </div>
-        </div>
-
-        <!-- Senha do quadro de previsões. Pro Gabriel, sempre pede a senha
-             fixa (SENHA_PREVISOES_GABRIEL_HASH, js/config.js). Pra Ana, na
-             primeira vez mostra o modo "criar senha" em vez do "digitar
-             senha" — ver solicitarSenhaPrevisoes() em js/romance.js. -->
-        <div id="previsoesSenhaOverlay" class="senha-memorias-overlay d-none">
-            <div class="senha-memorias-box">
-                <i class="bi bi-shield-lock-fill" style="font-size: 1.8rem; color: var(--rosegold);"></i>
-                <h5 class="senha-memorias-titulo" id="previsoesSenhaTitulo">Respostas</h5>
-                <p class="senha-memorias-sub" id="previsoesSenhaSub">Só quem responde essa parte sabe a senha.</p>
-
-                <div id="previsoesSenhaModoDigitar">
-                    <input type="password" id="previsoesSenhaInput" class="senha-memorias-input" placeholder="sua senha" autocomplete="off">
-                    <p id="previsoesSenhaErro" class="save-status err d-none">Senha incorreta. Tente novamente.</p>
-                </div>
-
-                <div id="previsoesSenhaModoCriar" class="d-none">
-                    <input type="password" id="previsoesSenhaNovaInput" class="senha-memorias-input mt-2" placeholder="crie uma senha" autocomplete="off">
-                    <input type="password" id="previsoesSenhaConfirmarInput" class="senha-memorias-input mt-2" placeholder="confirme a senha" autocomplete="off">
-                    <p id="previsoesSenhaCriarErro" class="save-status err d-none">As senhas não coincidem (ou estão vazias).</p>
-                </div>
-
-                <div class="d-flex gap-2 mt-3">
-                    <button id="btnPrevisoesSenhaCancelar" class="btn btn-outline-light rounded-pill fw-bold flex-fill">Cancelar</button>
-                    <button id="btnPrevisoesSenhaEntrar" class="btn btn-rosegold rounded-pill fw-bold flex-fill">Confirmar</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Formulário de respostas do quadro de previsões (aberto só depois da senha certa). -->
-        <div id="previsoesFormOverlay" class="carta-discussao-overlay d-none">
-            <button id="btnFecharPrevisoesForm" class="modo-vela-fechar" aria-label="Fechar"><i class="bi bi-x-lg"></i></button>
-            <div class="carta-discussao-papel" style="max-width: 480px;">
-                <h5 class="senha-memorias-titulo" id="previsoesFormTitulo">Suas respostas</h5>
-                <div id="previsoesFormLista" class="d-flex flex-column gap-3 text-start mt-3"></div>
-                <p id="previsoesFormStatus" class="save-status mt-2"></p>
-                <button id="btnSalvarPrevisoes" class="btn btn-rosegold w-100 rounded-pill fw-bold mt-3">Salvar respostas</button>
-            </div>
-        </div>
-
-        <!-- ===================== TERMÔMETRO DO DIA =====================
-             Check-in rápido e discreto (nota + comentário opcional), com
-             um histórico curto. Ver TERMOMETRO_OPCOES em js/config.js. -->
-        <div id="termometroWrap" class="mt-5 reveal-up" style="max-width: 400px; margin: 0 auto;">
-            <p class="romance-section-title">Termômetro do dia</p>
-            <p class="small text-white-50 text-center mb-2">Como foi hoje?</p>
-            <div id="termometroOpcoes" class="termometro-opcoes"></div>
-            <input type="text" id="termometroNotaInput" class="polaroid-legenda-input mt-3" maxlength="140" placeholder="Um comentário rápido (opcional)">
-            <p id="termometroStatus" class="save-status mt-2"></p>
-            <p id="termometroMediaMes" class="termometro-media"></p>
-            <div id="termometroHistorico" class="termometro-historico mt-3"></div>
-        </div>
-
-        <!-- ===================== CARTAS CONDICIONAIS =====================
-             Liberadas manualmente (não por data) na área de diagnóstico.
-             Ver CARTAS_CONDICIONAIS em js/config.js. -->
-        <div id="cartasCondicionaisWrap" class="mt-5 reveal-up d-none" style="max-width: 460px; margin: 0 auto;">
-            <p class="romance-section-title">Cartas condicionais</p>
-            <p class="small text-white-50 text-center mb-3">Não abrem por data, só quando o momento certo realmente acontecer.</p>
-            <div id="cartasCondicionaisLista" class="d-flex flex-column gap-2"></div>
-        </div>
-
         <div class="text-center mt-5 reveal-up">
             <button id="btnMensagemFuturo" class="btn btn-share"><i class="bi bi-mic-fill me-2"></i>Deixe uma mensagem para nós do futuro</button>
             <div class="mensagens-futuro-lista" id="mensagensFuturoLista"></div>
             <p id="mensagensFuturoVazio" class="mensagens-futuro-vazio">Nenhuma mensagem guardada ainda.</p>
-        </div>
-
-        <!-- ===================== VITRINE DE RECADOS PRA ELA =====================
-             De mão única: espaço pra ela escrever recados pra ele ler
-             depois. Fica dentro da mesma área já protegida pela senha de
-             "Nossa História" (ver solicitarSenhaMemorias em js/romance.js). -->
-        <div id="vitrineRecadosWrap" class="mt-5 reveal-up" style="max-width: 460px; margin: 0 auto;">
-            <p class="romance-section-title">Vitrine de recados pra ele</p>
-            <p class="small text-white-50 text-center mb-3" id="vitrineRecadosIntro"></p>
-            <textarea id="vitrineRecadoInput" rows="3" maxlength="1000" class="w-100" style="border-radius: 14px; padding: 12px 16px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18); color: #fff;" placeholder="Escreva um recado..."></textarea>
-            <div class="text-center mt-2">
-                <button id="btnSalvarVitrineRecado" class="btn btn-outline-light btn-sm rounded-pill"><i class="bi bi-envelope-plus-fill me-1"></i>Guardar recado</button>
-                <p id="vitrineRecadoStatus" class="save-status mt-2"></p>
-            </div>
-            <div id="vitrineRecadosLista" class="d-flex flex-column gap-2 mt-3"></div>
         </div>
 
         <div class="text-center mt-5 reveal-up" style="max-width: 460px; margin-left: auto; margin-right: auto;">
@@ -1082,7 +982,7 @@ Se existe uma certeza que eu tenho, é esta: enquanto eu puder, vou continuar es
 
             <div id="polaroidSalvaWrap" class="polaroid-salva-wrap d-none">
                 <img src="" alt="Nossa polaroid">
-                <p class="polaroid-salva-legenda">Sua Polaroid de Aniversário, salva e sincronizada</p>
+                <p class="polaroid-salva-legenda">Sua polaroid, salva e sincronizada</p>
             </div>
 
             <div id="lembreteBackup" class="lembrete-backup-card d-none">
@@ -1103,8 +1003,6 @@ Se existe uma certeza que eu tenho, é esta: enquanto eu puder, vou continuar es
             </div>
 
             <button id="btnCartaDiscussao" class="btn-carta-discussao"><i class="bi bi-envelope-heart-fill me-2"></i>Se um dia a gente brigar, aperte aqui</button>
-            <br>
-            <button id="btnModoSilencioso" class="btn btn-outline-light btn-sm rounded-pill mt-2"><i class="bi bi-moon-stars-fill me-1"></i>Preciso de um tempo, mas te amo</button>
         </div>
     </div>
 
@@ -1118,7 +1016,7 @@ Se existe uma certeza que eu tenho, é esta: enquanto eu puder, vou continuar es
             <div class="d-flex gap-2 justify-content-center flex-wrap">
                 <button id="btnExportarConstelacao" class="btn btn-outline-dark btn-sm rounded-pill"><i class="bi bi-stars me-1"></i>Constelação</button>
                 <button id="btnExportarCartaFisica" class="btn btn-outline-dark btn-sm rounded-pill"><i class="bi bi-envelope-paper-fill me-1"></i>Carta física com QR</button>
-                <button id="btnExportarPolaroid" class="btn btn-outline-dark btn-sm rounded-pill"><i class="bi bi-camera me-1"></i>Polaroid de Aniversário</button>
+                <button id="btnExportarPolaroid" class="btn btn-outline-dark btn-sm rounded-pill"><i class="bi bi-camera me-1"></i>Polaroid do momento</button>
                 <button id="btnReverLoja" class="btn btn-outline-dark btn-sm rounded-pill"><i class="bi bi-shop me-1"></i>Rever a lojinha das alianças</button>
             </div>
             <p id="exportarStatus" class="save-status"></p>
@@ -1207,7 +1105,7 @@ Se existe uma certeza que eu tenho, é esta: enquanto eu puder, vou continuar es
     <div id="polaroidCameraModal" class="polaroid-camera-modal d-none">
         <div class="polaroid-camera-card">
             <button id="btnFecharCameraPolaroid" class="polaroid-camera-close" aria-label="Fechar">&times;</button>
-            <p class="polaroid-camera-titulo">Tire a foto para a sua Polaroid de Aniversário</p>
+            <p class="polaroid-camera-titulo">Tire a foto para a sua Polaroid</p>
 
             <div id="polaroidCameraPreviewWrap">
                 <video id="polaroidCameraVideo" autoplay playsinline muted></video>
