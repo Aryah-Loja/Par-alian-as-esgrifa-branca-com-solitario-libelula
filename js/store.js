@@ -21,11 +21,6 @@ function iniciarVinheta() {
     if (jaExibida) { tela.style.display = 'none'; return; }
     sessionStorage.setItem('aurora_vinheta_exibida', '1');
 
-    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        tela.style.display = 'none';
-        return;
-    }
-
     setTimeout(() => {
         tela.classList.add('vinheta-saida');
         setTimeout(() => { tela.style.display = 'none'; }, 750);

@@ -302,7 +302,6 @@ img { max-width: 100%; }
     50% { transform: scale(0.97) translate(-2px, 1px); opacity: 0.75; }
     75% { transform: scale(1.02) translate(1px, 2px); opacity: 0.9; }
 }
-@media (prefers-reduced-motion: reduce) { .modo-vela-chama, .modo-vela-chama-2 { animation: none; } }
 
 .modo-vela-fechar { position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.06); border: none; color: rgba(255,220,190,0.75); width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 2; }
 
@@ -562,7 +561,6 @@ img { max-width: 100%; }
 .ceu-fundo-estrelas { position: absolute; inset: 0; pointer-events: none; }
 .ceu-estrela-fundo { position: absolute; background: #fff; border-radius: 50%; opacity: 0.35; animation: ceuPiscar 3.5s ease-in-out infinite; }
 @keyframes ceuPiscar { 0%, 100% { opacity: 0.15; } 50% { opacity: 0.75; } }
-@media (prefers-reduced-motion: reduce) { .ceu-estrela-fundo { animation: none; opacity: 0.4; } }
 
 /* Nuvens de nebulosa e a lua — só pra dar mais profundidade e clima de
    céu de verdade, sem atrapalhar a leitura nem o toque nas estrelas. */
@@ -582,7 +580,6 @@ img { max-width: 100%; }
 .ceu-lua-cratera-2 { width: 6px; height: 6px; top: 55%; left: 55%; }
 .ceu-lua-cratera-3 { width: 5px; height: 5px; top: 32%; left: 62%; }
 @keyframes ceuLuaRespirar { 0%, 100% { box-shadow: 0 0 20px 6px rgba(255,233,194,0.3), 0 0 40px 14px rgba(255,233,194,0.12); } 50% { box-shadow: 0 0 26px 9px rgba(255,233,194,0.4), 0 0 48px 18px rgba(255,233,194,0.18); } }
-@media (prefers-reduced-motion: reduce) { .ceu-lua { animation: none; } }
 
 .ceu-estrelas-cadentes { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
 .ceu-estrela-cadente {
@@ -607,7 +604,6 @@ img { max-width: 100%; }
     22% { opacity: 0; transform: translate(var(--cadente-dx, -260px), var(--cadente-dy, 90px)); }
     100% { opacity: 0; transform: translate(var(--cadente-dx, -260px), var(--cadente-dy, 90px)); }
 }
-@media (prefers-reduced-motion: reduce) { .ceu-estrela-cadente { animation: none; opacity: 0; } }
 
 /* Navezinha alienígena — easter egg raro, cruza bem devagar uma vez a
    cada 5 minutos. Feita só com CSS: corpo elíptico, cúpula e luzinhas
@@ -627,7 +623,6 @@ img { max-width: 100%; }
     100% { opacity: 0; transform: translate(var(--nave-dx, 140%), 6px); }
 }
 @keyframes ceuNaveLuzPiscar { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { .ceu-nave-alienigena, .ceu-nave-luz { animation: none; display: none; } }
 
 .ceu-constelacao { position: relative; padding: 40px 0 60px; }
 .ceu-estrela { position: absolute; transform: translateX(-50%); background: none; border: none; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px; }
@@ -845,16 +840,6 @@ html.aurora-scroll-lock body { position: fixed; left: 0; right: 0; width: 100%; 
 .desktop-block-qr svg { width: 180px; height: 180px; display: block; }
 .desktop-block-hint { font-size: 0.78rem; color: rgba(255,255,255,0.5); }
 
-/* ---------------- Acessibilidade: respeita "prefers-reduced-motion" ---------------- */
-@media (prefers-reduced-motion: reduce) {
-    .glow-effect, .rotate-hint .phone-icon, .rec-dot, .cursor, .phone-icon-portrait { animation: none !important; }
-    .reveal-up { animation: none !important; opacity: 1 !important; }
-    .flashback-photo { transition: opacity 0.2s ease !important; filter: none !important; transform: none !important; }
-    .envelope, .envelope-flap, .letter-paper, .envelope-seal { transition: none !important; }
-    .vinheta-logo, .vinheta-particula { animation: none !important; }
-    .senha-shake { animation: none !important; }
-}
-
 /* ============================================================================
    GIRASSÓIS DECORATIVOS
    Discretos, atrás do conteúdo (z-index baixo) e sem capturar toque.
@@ -866,10 +851,6 @@ html.aurora-scroll-lock body { position: fixed; left: 0; right: 0; width: 100%; 
 .girassol-3 { width: 95px; height: 95px; bottom: -15px; left: 15px; opacity: 0.26; animation-delay: 4.8s; }
 @keyframes girassolBalanco { 0%, 100% { transform: rotate(-4deg) translateY(0); } 50% { transform: rotate(4deg) translateY(-6px); } }
 .romance-page > *:not(.girassois-decoracao) { position: relative; z-index: 1; }
-
-@media (prefers-reduced-motion: reduce) {
-    .girassol { animation: none !important; }
-}
 
 /* ============================================================================
    POLAROID — legenda de data + polaroid já salva (sincronizada entre aparelhos)
@@ -1001,7 +982,6 @@ html.galeria-html { background-color: #1c1014; }
 html.galeria-scroll-lock, html.galeria-scroll-lock body { overflow: hidden !important; height: 100% !important; overscroll-behavior: none; }
 html.galeria-scroll-lock body { position: fixed; left: 0; right: 0; width: 100%; touch-action: none; }
 
-@media (prefers-reduced-motion: reduce) { .galeria-item, .galeria-lightbox { transition: none !important; animation: none !important; } }
 
 /* ============================================================================
    AVISO DE SINCRONIZAÇÃO EM ANDAMENTO
@@ -1321,6 +1301,3 @@ html.checklist-html { background-color: #1c1014; }
 .checklist-form-adicionar input[type="text"]::placeholder { color: rgba(240,217,221,0.4); }
 .checklist-form-adicionar input[readonly] { opacity: 0.65; }
 
-@media (prefers-reduced-motion: reduce) {
-    .checklist-progresso-barra-preenchida, .checklist-resumo-barra-preenchida, .checklist-categorias, .checklist-item, .checklist-item-check { transition: none !important; }
-}

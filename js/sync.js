@@ -79,7 +79,7 @@ async function publicarBackupNaNuvem(codigo) {
 
     if (zipBlob.size > AVISO_QUOTA_TOTAL_BYTES) {
         const tamanhoMB = (zipBlob.size / (1024 * 1024)).toFixed(0);
-        throw new Error(`O backup ficou com ${tamanhoMB}MB — perto do espaço TOTAL de 1GB do plano gratuito da nuvem (dividir em partes não resolve isso, é um limite de espaço, não de tamanho por arquivo). Baixe uma cópia manual ("Backup da Nossa História", na página final) para não perder nada, e considere usar o YouTube para o vídeo do pedido (cole o link na seção "Vídeo do nosso pedido") em vez de depender do envio automático dele.`);
+        throw new Error(`O backup ficou com ${tamanhoMB}MB — perto do espaço TOTAL de 1GB do plano gratuito da nuvem (dividir em partes não resolve isso, é um limite de espaço, não de tamanho por arquivo). Baixe uma cópia manual ("Backup da Nossa História", na página final) para não perder nada.`);
     }
 
     const totalPartes = Math.max(1, Math.ceil(zipBlob.size / TAMANHO_MAXIMO_PARTE_BYTES));

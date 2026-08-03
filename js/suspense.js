@@ -515,8 +515,6 @@ function iniciarFlashback(aoTerminar) {
     const fotos = ['fbFoto1', 'fbFoto2', 'fbFoto3', 'fbFoto4', 'fbFoto5'];
     const legendas = ['A mais linda.', 'A mais amorosa', 'A mais incrível', 'A mais inteligente', 'e hoje a mais um passo de ser minha esposa'];
 
-    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) { aoTerminar(); return; }
-
     tela.style.display = 'flex';
     fotos.forEach(id => document.getElementById(id).classList.remove('fb-ativa'));
     label.classList.remove('fb-visivel');

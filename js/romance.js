@@ -1507,68 +1507,7 @@ function exibirEasterEggSobrenome() {
     if (el) el.textContent = TEXTO_EASTER_EGG_SOBRENOME;
 }
 
-/* ----------------------------------------------------------------------
-   VÍDEO DO PEDIDO NO YOUTUBE (alternativa ao vídeo local, que pode ficar
-   grande demais para o armazenamento do celular) — ver item do prompt.
-   Fica logo abaixo de "Nossas lembranças". Guardado como configuração
-   simples (só o ID do vídeo, texto pequeno) — sincroniza normalmente
-   entre aparelhos como qualquer outra configuração do site.
-   ---------------------------------------------------------------------- */
-async function iniciarVideoYoutubePedido() {
-    const idSalvo = await obterConfiguracao('aurora_video_pedido_youtube');
-    exibirVideoYoutubePedido(idSalvo);
-
-    document.getElementById('btnSalvarVideoYoutubePedido').addEventListener('click', salvarVideoYoutubePedido);
-    document.getElementById('inputVideoYoutubePedido').addEventListener('keydown', (evt) => { if (evt.key === 'Enter') salvarVideoYoutubePedido(); });
-    document.getElementById('btnEditarVideoYoutubePedido').addEventListener('click', () => {
-        document.getElementById('romanceVideoYoutubePreenchido').classList.add('d-none');
-        document.getElementById('romanceVideoYoutubeVazio').classList.remove('d-none');
-        document.getElementById('inputVideoYoutubePedido').value = '';
-    });
-}
-
-async function salvarVideoYoutubePedido() {
-    const input = document.getElementById('inputVideoYoutubePedido');
-    const status = document.getElementById('videoYoutubePedidoStatus');
-    const valor = (input.value || '').trim();
-
-    if (!valor) {
-        status.textContent = 'Cole o link do vídeo primeiro.';
-        status.className = 'save-status err';
-        return;
-    }
-
-    const id = extrairIdYoutube(valor);
-    if (!id) {
-        status.textContent = 'Não consegui reconhecer esse link do YouTube.';
-        status.className = 'save-status err';
-        return;
-    }
-
-    await salvarConfiguracao('aurora_video_pedido_youtube', id);
-    status.textContent = '';
-    status.className = 'save-status';
-    input.value = '';
-    exibirVideoYoutubePedido(id);
-}
-
-function exibirVideoYoutubePedido(id) {
-    const vazio = document.getElementById('romanceVideoYoutubeVazio');
-    const preenchido = document.getElementById('romanceVideoYoutubePreenchido');
-    if (id) {
-        document.getElementById('romanceVideoYoutubeIframe').src = `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1`;
-        vazio.classList.add('d-none');
-        preenchido.classList.remove('d-none');
-    } else {
-        document.getElementById('romanceVideoYoutubeIframe').src = '';
-        preenchido.classList.add('d-none');
-        vazio.classList.remove('d-none');
-    }
-}
-
 function iniciarModuloRomance() {
-    iniciarVideoYoutubePedido();
-
     const btnGerarContrato = document.getElementById('btnGerarContrato');
     if (btnGerarContrato) {
         btnGerarContrato.addEventListener('click', async () => {
