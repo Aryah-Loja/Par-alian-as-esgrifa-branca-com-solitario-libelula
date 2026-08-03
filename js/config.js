@@ -1730,7 +1730,7 @@ const MENSAGEM_SECRETA_LUA = 'O sol ama tanto a lua que morre todas as noites pa
 // js/utils.js. Não é segurança de verdade (site estático não tem como ter
 // isso, ver nota completa mais abaixo em SENHA_RESET_SITE_HASH), só evita que
 // a senha apareça em texto legível pra quem abrir este arquivo por curiosidade.
-const SENHA_AREA_MEMORIAS_HASH = '1326c6c44cc5e89cc510c9d2a17dd02c9105a377df60cf64d953c1eb4b06b00d';
+const SENHA_AREA_MEMORIAS_HASH = '1326c6c44cc5e89cc510c9d2a17dd02c9105a377df60cf64d953c1eb4b06b00d'; // hash correto de "1406" (confirmado)
 
 /* ----------------------------------------------------------------------
    SENHA DA CARTA "SE UM DIA A GENTE DISCUTIR, LEIA ISSO"
