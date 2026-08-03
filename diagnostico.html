@@ -139,6 +139,13 @@
         <p id="trocarVideoStatus" class="save-status mt-2"></p>
     </div>
 
+    <p class="diag-secao-titulo">Bancos de dados salvos neste navegador</p>
+    <div class="text-center mb-2">
+        <p class="small text-white-50 mb-3">Lista TODOS os bancos de dados locais que já existiram neste navegador para este site — não só o que o código atual está configurado para ler. Serve para achar dados "órfãos": se em algum momento o nome ou a versão do banco mudou, os dados antigos continuam aqui, intactos, só que escondidos do site normal. Não apaga nem altera nada, só lista.</p>
+        <button id="btnListarBancosIndexedDb" class="btn btn-outline-light rounded-pill fw-bold px-4"><i class="bi bi-database me-1"></i>Listar bancos de dados</button>
+    </div>
+    <div id="listaBancosIndexedDb" class="diag-estado-reset text-start mx-auto mb-2" style="max-width: 560px; display:none;"></div>
+
     <p class="diag-secao-titulo">Gerenciador de arquivos (mídias salvas)</p>
     <div class="text-center mb-2">
         <p class="small text-white-50 mb-3">Lista tudo que está guardado no armazenamento deste aparelho — vídeo do pedido, assinatura, polaroids, lembranças, mensagens pro futuro — com tipo, tamanho e data. Dá pra excluir um item com problema ou substituir o arquivo por outro (mantendo o mesmo lugar no site). Mexe em dados de verdade — use com cuidado, principalmente depois do pedido.</p>
