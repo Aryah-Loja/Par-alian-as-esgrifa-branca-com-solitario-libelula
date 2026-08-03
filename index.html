@@ -1004,19 +1004,14 @@
             <p id="mensagensFuturoVazio" class="mensagens-futuro-vazio">Nenhuma mensagem guardada ainda.</p>
         </div>
 
-        <!-- ===================== VITRINE DE RECADOS PRA ELA =====================
-             De mão única: espaço pra ela escrever recados pra ele ler
-             depois. Fica dentro da mesma área já protegida pela senha de
-             "Nossa História" (ver solicitarSenhaMemorias em js/romance.js). -->
-        <div id="vitrineRecadosWrap" class="mt-5 reveal-up" style="max-width: 460px; margin: 0 auto;">
-            <p class="romance-section-title">Vitrine de recados pra ele</p>
-            <p class="small text-white-50 text-center mb-3" id="vitrineRecadosIntro"></p>
-            <textarea id="vitrineRecadoInput" rows="3" maxlength="1000" class="w-100" style="border-radius: 14px; padding: 12px 16px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18); color: #fff;" placeholder="Escreva um recado..."></textarea>
-            <div class="text-center mt-2">
-                <button id="btnSalvarVitrineRecado" class="btn btn-outline-light btn-sm rounded-pill"><i class="bi bi-envelope-plus-fill me-1"></i>Guardar recado</button>
-                <p id="vitrineRecadoStatus" class="save-status mt-2"></p>
-            </div>
-            <div id="vitrineRecadosLista" class="d-flex flex-column gap-2 mt-3"></div>
+        <!-- ===================== MURAL DA ANA =====================
+             Botão que abre um overlay em estilo "livro" pra ela escrever
+             pensamentos/poemas à vontade, com lista dos textos guardados
+             e opção de apagar cada um. Ver #muralOverlay (fora de
+             #romancePage) mais abaixo, e iniciarMural() em js/romance.js. -->
+        <div class="text-center mt-5 reveal-up" style="max-width: 460px; margin-left: auto; margin-right: auto;">
+            <p class="romance-section-title">Seu mural</p>
+            <button id="btnAbrirMural" class="btn btn-share"><i class="bi bi-journal-richtext me-2"></i>Abrir meu mural</button>
         </div>
 
         <div class="text-center mt-5 reveal-up" style="max-width: 460px; margin-left: auto; margin-right: auto;">
@@ -1229,6 +1224,26 @@ Se existe uma certeza que eu tenho, é esta: enquanto eu puder, vou continuar es
             <div id="previsoesFormLista" class="d-flex flex-column gap-3 text-start mt-3"></div>
             <p id="previsoesFormStatus" class="save-status mt-2"></p>
             <button id="btnSalvarPrevisoes" class="btn btn-rosegold w-100 rounded-pill fw-bold mt-3">Salvar respostas</button>
+        </div>
+    </div>
+
+    <!-- Mural da Ana: espaço livre pra ela escrever pensamentos, poemas e
+         afins, com lista dos textos guardados e opção de apagar cada um.
+         Fica fora de #romancePage de propósito (que tem overflow:hidden
+         e quebra position:fixed no Safari do iPhone — ver bug #1 do
+         CONTEXTO-PROJETO.md). Ver iniciarMural()/abrirMural() em
+         js/romance.js. -->
+    <div id="muralOverlay" class="carta-discussao-overlay d-none">
+        <button id="btnFecharMural" class="modo-vela-fechar" aria-label="Fechar"><i class="bi bi-x-lg"></i></button>
+        <div class="carta-discussao-papel mural-papel">
+            <p class="letter-eyebrow visivel">Seu mural</p>
+            <p class="mural-intro" id="muralIntro"></p>
+            <textarea id="muralTextoInput" rows="6" maxlength="4000" class="mural-textarea" placeholder="Escreva aqui..."></textarea>
+            <div class="text-center mt-3">
+                <button id="btnSalvarMural" class="btn btn-rosegold rounded-pill fw-bold"><i class="bi bi-journal-plus me-1"></i>Guardar</button>
+                <p id="muralStatus" class="save-status mt-2"></p>
+            </div>
+            <div id="muralLista" class="mural-lista mt-4"></div>
         </div>
     </div>
 

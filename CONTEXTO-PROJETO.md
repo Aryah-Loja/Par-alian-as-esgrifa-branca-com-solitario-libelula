@@ -1068,3 +1068,51 @@ Pedido do Gabriel, 3 correções:
 
 Arquivos alterados nesta sessão: `js/config.js`, `index.html`,
 `js/romance.js`, `css/style.css`.
+
+## Mural da Ana substitui a "Vitrine de recados pra ele" (03/08/2026)
+
+Pedido do Gabriel: a "Vitrine de recados pra ele" (espaço de mão única
+pra ela deixar recados curtos) foi removida por duplicar o que "Deixe
+uma mensagem para nós do futuro" já fazia. No lugar, criado um **Mural
+da Ana**: espaço livre (sem pergunta nem estrutura) pra ela escrever
+pensamentos, poemas, o que quiser, guardando uma lista de textos com
+opção de apagar cada um.
+
+- **Botão na página principal** (`#btnAbrirMural`, dentro de "Nossa
+  História") abre um **overlay em estilo livro** (`#muralOverlay`),
+  reaproveitando o mesmo "papel" claro (`.carta-discussao-papel`) já
+  usado pela carta de discussão e pelo formulário de previsões — mesma
+  aparência de página de carta, mas com um campo de texto grande em vez
+  de pergunta fixa.
+- **Fica fora de `#romancePage`** de propósito, filho direto do `<body>`,
+  seguindo o mesmo padrão (e evitando o mesmo bug #1 do overflow:hidden
+  no Safari) já usado pelos outros overlays (`#estrelaModalOverlay`,
+  `#mapaModalOverlay`, `#previsoesFormOverlay`, etc).
+- **Armazenamento**: chave `aurora_mural_ana` (`obterConfiguracao`/
+  `salvarConfiguracao`, como qualquer config pequena), array de
+  `{ id, data, texto }` — `id` gerado na hora (`mural_<timestamp>_<random>`),
+  usado só para conseguir apagar um item específico sem depender de
+  posição na lista (mesmo raciocínio dos itens customizados do
+  checklist, ver seção própria acima).
+- **Apagar um texto**: botão de lixeira em cada item, com `confirm()`
+  nativo antes de remover (mesmo padrão já usado em `js/checklist.js`
+  pra remover item customizado) — não tem como desfazer depois de
+  confirmar.
+- **Entra no backup/sincronização** como qualquer config nova: campo
+  `muralAna` adicionado nos dois lados de `js/export.js`
+  (`gerarBackupZipBlob` e `aplicarBackupDeZip`), substituindo o campo
+  `vitrineRecados` que existia antes (removido junto com a
+  funcionalidade).
+- Lógica em `js/romance.js`: `obterMural()`, `salvarNovoTextoMural()`,
+  `excluirTextoMural(id)`, `renderizarMural()`, `abrirMural()`,
+  `fecharMural()`, `iniciarMural()` (chamada em `rodarIsolado`, mesmo
+  lugar onde `iniciarVitrineRecados` era chamado antes). Texto de
+  introdução em `TEXTOS.muralIntro` (`js/config.js`), seguindo a regra
+  de todo texto de conteúdo pessoal morar em `config.js`.
+- CSS novo: `.mural-papel`, `.mural-intro`, `.mural-textarea`,
+  `.mural-lista`, `.mural-item`, `.mural-item-topo`, `.mural-item-data`,
+  `.mural-item-texto`, `.mural-item-excluir` (`css/style.css`) — estilos
+  antigos `.vitrine-recado-*` removidos junto.
+
+Arquivos alterados nesta sessão: `js/config.js`, `index.html`,
+`js/romance.js`, `js/export.js`, `css/style.css`.
