@@ -730,10 +730,15 @@ async function gerenciadorMidiasCarregarLista() {
                 <p class="mb-0" style="opacity:0.6;">id: <code>${item.id}</code>${item.mimeType ? ' · ' + item.mimeType : ''}</p>
             </div>
             <div class="d-flex flex-column gap-1">
+                ${item.blob ? `<button type="button" class="btn btn-outline-light btn-sm rounded-pill" data-baixar="${item.id}" title="Baixar este arquivo"><i class="bi bi-download"></i></button>` : ''}
                 ${item.blob ? `<button type="button" class="btn btn-outline-light btn-sm rounded-pill" data-substituir="${item.id}"><i class="bi bi-upload"></i></button>` : ''}
                 <button type="button" class="btn btn-outline-danger btn-sm rounded-pill" data-excluir="${item.id}"><i class="bi bi-trash"></i></button>
             </div>`;
         container.appendChild(linha);
+    });
+
+    container.querySelectorAll('[data-baixar]').forEach(btn => {
+        btn.addEventListener('click', () => gerenciadorMidiasBaixar(btn.dataset.baixar));
     });
 
     container.querySelectorAll('[data-substituir]').forEach(btn => {
@@ -742,6 +747,150 @@ async function gerenciadorMidiasCarregarLista() {
     container.querySelectorAll('[data-excluir]').forEach(btn => {
         btn.addEventListener('click', () => gerenciadorMidiasExcluir(btn.dataset.excluir));
     });
+}
+
+async function gerenciadorMidiasBaixar(id) {
+    try {
+        const item = await obterMedia(id);
+        if (!item || !item.blob) { alert('Não achei esse arquivo — atualize a lista e tente de novo.'); return; }
+        const extensao = (item.mimeType && item.mimeType.split('/')[1]) ? item.mimeType.split('/')[1].replace('quicktime', 'mov') : 'bin';
+        const nomeArquivo = `${item.tipo || 'arquivo'}-${item.id}.${extensao}`;
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(item.blob);
+        a.download = nomeArquivo;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        // Não revoga a URL na hora — em alguns navegadores mobile o download
+        // começa de forma assíncrona; deixa o navegador liberar sozinho.
+    } catch (e) {
+        console.error('Falha ao baixar arquivo salvo:', e);
+        alert('Não consegui baixar esse arquivo agora. Tente de novo.');
+    }
+}
+
+/**
+ * FERRAMENTA DE RESGATE — lista TODOS os bancos IndexedDB que já
+ * existiram para este site neste navegador, usando a API nativa
+ * (indexedDB.databases()), sem depender do Dexie/db.js configurado no
+ * código atual. Isso importa porque, se o nome ou a versão do banco
+ * mudou em alguma modificação recente, o código atual passa a enxergar
+ * um banco NOVO (vazio) — mas o banco ANTIGO, com os dados de verdade,
+ * continua existindo no navegador, só "órfão" (nada mais lê ele). Esta
+ * ferramenta abre cada banco encontrado, lista suas tabelas e tenta
+ * localizar qualquer item com aparência de "vídeo do pedido" para
+ * permitir baixar direto, sem precisar do Dexie funcionando.
+ */
+function promisificarRequisicaoIdb(request) {
+    return new Promise((resolve, reject) => {
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
+}
+
+async function listarBancosIndexedDb() {
+    const container = document.getElementById('listaBancosIndexedDb');
+    if (!container) return;
+    container.style.display = 'block';
+    container.innerHTML = '<p class="small text-white-50 mb-0">Procurando bancos de dados...</p>';
+
+    if (!window.indexedDB || typeof indexedDB.databases !== 'function') {
+        container.innerHTML = '<p class="small text-white-50 mb-0">Este navegador não permite listar todos os bancos automaticamente (API indexedDB.databases() indisponível). Isso é mais comum no Safari/iPhone — no Chrome/Android costuma funcionar.</p>';
+        return;
+    }
+
+    let bancos = [];
+    try {
+        bancos = await indexedDB.databases();
+    } catch (e) {
+        container.innerHTML = `<p class="small text-white-50 mb-0">Não consegui listar os bancos: ${e.message}</p>`;
+        return;
+    }
+
+    if (!bancos.length) {
+        container.innerHTML = '<p class="small text-white-50 mb-0">Nenhum banco de dados encontrado neste navegador para este site.</p>';
+        return;
+    }
+
+    container.innerHTML = '';
+    for (const infoBanco of bancos) {
+        const bloco = document.createElement('div');
+        bloco.style.marginBottom = '14px';
+        bloco.innerHTML = `<h6>${infoBanco.name || '(sem nome)'} <span style="opacity:0.5; font-weight:400;">v${infoBanco.version || '?'}</span></h6>`;
+        container.appendChild(bloco);
+
+        let conexao;
+        try {
+            conexao = await promisificarRequisicaoIdb(indexedDB.open(infoBanco.name));
+        } catch (e) {
+            bloco.innerHTML += `<p class="small text-white-50 mb-0">Não consegui abrir: ${e.message}</p>`;
+            continue;
+        }
+
+        const nomesTabelas = Array.from(conexao.objectStoreNames || []);
+        if (!nomesTabelas.length) {
+            bloco.innerHTML += '<p class="small text-white-50 mb-0">(sem tabelas)</p>';
+            conexao.close();
+            continue;
+        }
+
+        for (const nomeTabela of nomesTabelas) {
+            let chaves = [];
+            try {
+                const tx = conexao.transaction(nomeTabela, 'readonly');
+                chaves = await promisificarRequisicaoIdb(tx.objectStore(nomeTabela).getAllKeys());
+            } catch (e) {
+                const linhaErro = document.createElement('p');
+                linhaErro.className = 'small text-white-50 mb-0';
+                linhaErro.textContent = `Tabela "${nomeTabela}": não consegui ler (${e.message})`;
+                bloco.appendChild(linhaErro);
+                continue;
+            }
+
+            const linha = document.createElement('div');
+            linha.className = 'linha';
+            linha.innerHTML = `<span>Tabela "${nomeTabela}"</span><span>${chaves.length} item(ns)</span>`;
+            bloco.appendChild(linha);
+
+            // Se alguma chave parecer ser o vídeo do pedido (ou qualquer
+            // item com um blob de vídeo), oferece um botão pra baixar
+            // direto dali, sem depender do Dexie/código atual.
+            for (const chave of chaves) {
+                let registro;
+                try {
+                    const tx2 = conexao.transaction(nomeTabela, 'readonly');
+                    registro = await promisificarRequisicaoIdb(tx2.objectStore(nomeTabela).get(chave));
+                } catch (e) { continue; }
+
+                const blobCandidato = registro && (registro.blob instanceof Blob ? registro.blob : (registro.data instanceof Blob ? registro.data : (registro instanceof Blob ? registro : null)));
+                if (!blobCandidato) continue;
+
+                const pareceVideoPedido = String(chave).toLowerCase().includes('video') || (registro.tipo && String(registro.tipo).toLowerCase().includes('video'));
+                const tamanhoMB = (blobCandidato.size / (1024 * 1024)).toFixed(1);
+
+                const linhaItem = document.createElement('div');
+                linhaItem.className = 'linha';
+                linhaItem.style.alignItems = 'center';
+                linhaItem.innerHTML = `<span>${pareceVideoPedido ? '🎥 ' : ''}chave "${chave}" — ${tamanhoMB}MB${registro.mimeType ? ' · ' + registro.mimeType : ''}</span>`;
+                const btnBaixarBruto = document.createElement('button');
+                btnBaixarBruto.className = 'btn btn-outline-light btn-sm rounded-pill';
+                btnBaixarBruto.innerHTML = '<i class="bi bi-download"></i>';
+                btnBaixarBruto.addEventListener('click', () => {
+                    const extensao = (registro.mimeType && registro.mimeType.split('/')[1]) ? registro.mimeType.split('/')[1].replace('quicktime', 'mov') : 'bin';
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blobCandidato);
+                    a.download = `resgate-${infoBanco.name}-${nomeTabela}-${chave}.${extensao}`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                });
+                linhaItem.appendChild(btnBaixarBruto);
+                bloco.appendChild(linhaItem);
+            }
+        }
+
+        conexao.close();
+    }
 }
 
 async function gerenciadorMidiasExcluir(id) {
@@ -784,6 +933,8 @@ async function gerenciadorMidiasSubstituirArquivo(arquivo) {
 function iniciarGerenciadorDeMidias() {
     const botaoAtualizar = document.getElementById('btnGerenciadorMidiasAtualizar');
     const input = document.getElementById('gerenciadorMidiasInputSubstituir');
+    const botaoListarBancos = document.getElementById('btnListarBancosIndexedDb');
+    if (botaoListarBancos) botaoListarBancos.addEventListener('click', listarBancosIndexedDb);
     if (!botaoAtualizar) return;
 
     botaoAtualizar.addEventListener('click', gerenciadorMidiasCarregarLista);
