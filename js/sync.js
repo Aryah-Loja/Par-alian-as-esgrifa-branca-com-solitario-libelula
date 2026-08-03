@@ -10,6 +10,19 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const SUPABASE_BUCKET = 'aurora-backups';
 
 function syncEstaConfigurado() {
+    // ============================================================
+    // INTERRUPTOR MESTRE — SINCRONIZAÇÃO DESLIGADA À FORÇA
+    // Recuperação de dados em andamento após perda de dados no Supabase.
+    // Toda função deste arquivo que fala com a nuvem checa esta função
+    // primeiro (agendarEnvioNuvem, sincronizarNaAbertura,
+    // verificarImportacaoPorLink, compartilharExperiencia) — retornando
+    // false aqui, NENHUMA delas consegue fazer qualquer chamada de rede
+    // pro Supabase, não importa de onde sejam chamadas (inclusive se um
+    // main.js antigo, em cache no navegador, ainda tentar ligar a
+    // sincronização). Para reativar no futuro, quando tiver certeza de
+    // que é seguro: apague a linha "return false;" logo abaixo.
+    return false;
+
     return Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 }
 
