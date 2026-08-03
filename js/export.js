@@ -172,6 +172,14 @@ async function abrirCameraPolaroid() {
     const jaEstavaAberto = !modal.classList.contains('d-none');
     modal.classList.remove('d-none');
     if (!jaEstavaAberto) bloquearScrollFundoLembranca(); // repetirFotoPolaroid() chama isto de novo com o modal já aberto — não trava duas vezes
+
+    // Pré-preenche a legenda com a data padrão (Polaroid de Aniversário),
+    // só na primeira abertura — assim não sobrescreve o que a pessoa já
+    // tiver digitado ao tirar a foto de novo (repetirFotoPolaroid).
+    if (!jaEstavaAberto) {
+        const legendaInput = document.getElementById('polaroidLegendaInput');
+        if (legendaInput && !legendaInput.value) legendaInput.value = TEXTOS.polaroidFrasePadrao;
+    }
     document.getElementById('polaroidCameraErro').classList.add('d-none');
     document.getElementById('polaroidCameraPreviewWrap').classList.remove('d-none');
     document.getElementById('polaroidCameraConfirmWrap').classList.add('d-none');
@@ -353,6 +361,18 @@ async function gerarBackupZipBlob() {
         checklistEncontros: JSON.parse(await obterConfiguracao('aurora_checklist_encontros') || 'null'),
         checklistItensCustomizados: JSON.parse(await obterConfiguracao('aurora_checklist_itens_customizados') || 'null'),
         mapaLugaresExtra: JSON.parse(await obterConfiguracao('aurora_mapa_lugares_extra') || 'null'),
+        // Campos novos e opcionais (quadro de previsões, termômetro do dia,
+        // cartas condicionais liberadas e vitrine de recados) — backups
+        // antigos simplesmente não têm essas chaves (fica undefined) e
+        // continuam restaurando normalmente; aplicarBackupDeZip só grava
+        // cada uma se ela existir no manifesto (mesmo padrão dos campos acima).
+        previsoesRespostasGabriel: JSON.parse(await obterConfiguracao('aurora_previsoes_gabriel') || 'null'),
+        previsoesRespostasAna: JSON.parse(await obterConfiguracao('aurora_previsoes_ana') || 'null'),
+        previsoesCriadoEm: await obterConfiguracao('aurora_previsoes_criado_em') || null,
+        previsoesAnaSenhaHash: await obterConfiguracao('aurora_previsoes_ana_senha_hash') || null,
+        termometroLista: JSON.parse(await obterConfiguracao('aurora_termometro_lista') || 'null'),
+        cartasCondicionaisLiberadas: JSON.parse(await obterConfiguracao('aurora_cartas_condicionais_liberadas') || 'null'),
+        vitrineRecados: JSON.parse(await obterConfiguracao('aurora_vitrine_recados') || 'null'),
         medias: []
     };
 
@@ -475,6 +495,13 @@ async function aplicarBackupDeZip(zipDados) {
     if (manifest.checklistEncontros) await salvarConfiguracao('aurora_checklist_encontros', JSON.stringify(manifest.checklistEncontros));
     if (manifest.checklistItensCustomizados) await salvarConfiguracao('aurora_checklist_itens_customizados', JSON.stringify(manifest.checklistItensCustomizados));
     if (manifest.mapaLugaresExtra) await salvarConfiguracao('aurora_mapa_lugares_extra', JSON.stringify(manifest.mapaLugaresExtra));
+    if (manifest.previsoesRespostasGabriel) await salvarConfiguracao('aurora_previsoes_gabriel', JSON.stringify(manifest.previsoesRespostasGabriel));
+    if (manifest.previsoesRespostasAna) await salvarConfiguracao('aurora_previsoes_ana', JSON.stringify(manifest.previsoesRespostasAna));
+    if (manifest.previsoesCriadoEm) await salvarConfiguracao('aurora_previsoes_criado_em', manifest.previsoesCriadoEm);
+    if (manifest.previsoesAnaSenhaHash) await salvarConfiguracao('aurora_previsoes_ana_senha_hash', manifest.previsoesAnaSenhaHash);
+    if (manifest.termometroLista) await salvarConfiguracao('aurora_termometro_lista', JSON.stringify(manifest.termometroLista));
+    if (manifest.cartasCondicionaisLiberadas) await salvarConfiguracao('aurora_cartas_condicionais_liberadas', JSON.stringify(manifest.cartasCondicionaisLiberadas));
+    if (manifest.vitrineRecados) await salvarConfiguracao('aurora_vitrine_recados', JSON.stringify(manifest.vitrineRecados));
 
     // O backup é a "fotografia completa": listas locais são substituídas
     // pelas do backup (não acrescentadas), para não duplicar em cada sincronização.
