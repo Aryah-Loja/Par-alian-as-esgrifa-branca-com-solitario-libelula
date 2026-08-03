@@ -1028,3 +1028,43 @@ explicação breve de como cada trecho funciona. O histórico de bugs,
 tentativas anteriores e o "porquê" das decisões que antes vivia espalhado
 em comentários grandes (marcados "CORREÇÃO"/"REFORMULAÇÃO"/"item X do
 prompt") foi movido pra este arquivo, nas seções acima.
+
+## Correções do "Quadro de previsões" e "Cartas condicionais" (03/08/2026)
+
+Pedido do Gabriel, 3 correções:
+
+1. **Senha do Gabriel no quadro de previsões configurada**: `SENHA_PREVISOES_GABRIEL_HASH`
+   (`js/config.js`) estava vazia (pendente desde a criação da
+   funcionalidade). Preenchida com o hash de `130456700`.
+2. **Bug do fundo roxo/travado ao tocar em "Ana" no quadro de previsões**:
+   `#previsoesSenhaOverlay` e `#previsoesFormOverlay` (`index.html`)
+   estavam dentro de `#romancePage`, que tem `overflow:hidden` — exatamente
+   o bug #1 já catalogado neste arquivo (`position:fixed` dentro de
+   ancestral com `overflow:hidden` quebra no Safari do iPhone). Corrigido
+   movendo os dois pra fora de `#romancePage`, filhos diretos do `<body>`,
+   junto aos outros overlays que já seguiam esse padrão
+   (`#estrelaModalOverlay`, `#mapaModalOverlay`, `#maisOpcoesOverlay`).
+   O comportamento de senha em si (primeira vez pede pra criar, das
+   próximas vezes pede a senha já criada e abre direto o formulário de
+   respostas) já estava certo em `solicitarSenhaPrevisoes()`
+   (`js/romance.js`) — só o overlay não aparecia certo por causa do bug
+   de posicionamento.
+3. **Cartas condicionais bloqueadas não abriam ao tocar**: antes, só as
+   cartas já liberadas (pelo painel de `diagnostico.html`) tinham
+   `addEventListener` — tocar numa carta ainda bloqueada não fazia nada.
+   Agora, `renderizarCartasCondicionais()` (`js/romance.js`) também
+   escuta toque nas cartas bloqueadas: abre uma caixinha de confirmação
+   inline ("Isso já aconteceu de verdade?" / "Ainda não" / "Sim, já
+   aconteceu!") embaixo do próprio cartão. Se a resposta for "Ainda não",
+   só fecha a caixinha. Se for "Sim, já aconteceu!", salva o id da carta
+   em `aurora_cartas_condicionais_liberadas` (mesma chave que o painel
+   administrativo usa, sincroniza normalmente) e abre a carta na hora,
+   em `abrirModoVela()`. O painel em `diagnostico.html` continua
+   funcionando do mesmo jeito (liberar/bloquear manualmente com a senha
+   de reset) — as duas formas de liberar convivem sem conflito, porque
+   as duas leem/escrevem a mesma chave de configuração. CSS novo:
+   `.carta-condicional-item`, `.carta-condicional-confirm`,
+   `.carta-condicional-confirm-texto` (`css/style.css`).
+
+Arquivos alterados nesta sessão: `js/config.js`, `index.html`,
+`js/romance.js`, `css/style.css`.
