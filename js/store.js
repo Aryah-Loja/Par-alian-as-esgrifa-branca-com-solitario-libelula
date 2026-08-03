@@ -44,8 +44,10 @@ function esconderVinhetaCarregamento() {
 let cupomFalsoTimeoutId = null;
 
 function iniciarCupomFalso() {
-    if (localStorage.getItem('aurora_stage') === 'final') return;
-    if (localStorage.getItem('aurora_data_pedido')) return;
+    try {
+        if (localStorage.getItem('aurora_stage') === 'final') return;
+        if (localStorage.getItem('aurora_data_pedido')) return;
+    } catch (e) { /* localStorage indisponível (ex.: navegador embutido restrito) — segue e mostra o cupom normalmente */ }
     cupomFalsoTimeoutId = setTimeout(() => {
         const loja = document.getElementById('lojaScreen');
         if (!loja || loja.style.display === 'none') return;

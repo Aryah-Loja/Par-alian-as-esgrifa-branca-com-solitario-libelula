@@ -52,12 +52,24 @@ function abrirModoVela(eyebrowTexto, textoHtml, assinaturaTexto, opcoes = {}) {
     overlay.scrollTop = 0;
     bloquearScrollFundoLembranca();
 
-    // Player embutido, só usado pela cápsula do tempo (ver
-    // iniciarEnvelopeCapsula em js/romance.js).
+    // Player embutido: usado pela cápsula do tempo (vídeo do YouTube, via
+    // opcoes.videoYoutubeId) e pela carta de discussão (vídeo do pedido
+    // já gravado no aparelho, via opcoes.videoLocalUrl — um blob local,
+    // sem precisar subir em lugar nenhum). opcoes.videoLegenda mostra uma
+    // mensagem pequena em cima do vídeo (ex.: "lembre-se que nos amamos").
     const videoWrap = document.getElementById('modoVelaVideoWrap');
+    const videoLegendaEl = document.getElementById('modoVelaVideoLegenda');
     if (videoWrap) {
         videoWrap.innerHTML = '';
-        if (opcoes.videoYoutubeId) {
+        if (opcoes.videoLocalUrl) {
+            const videoLocal = document.createElement('video');
+            videoLocal.controls = true;
+            videoLocal.playsInline = true;
+            videoLocal.preload = 'metadata';
+            videoLocal.src = opcoes.videoLocalUrl;
+            videoWrap.appendChild(videoLocal);
+            videoWrap.classList.remove('d-none');
+        } else if (opcoes.videoYoutubeId) {
             const iframeVideo = document.createElement('iframe');
             iframeVideo.src = `https://www.youtube.com/embed/${opcoes.videoYoutubeId}?rel=0&modestbranding=1`;
             iframeVideo.title = 'Vídeo da cápsula do tempo';
@@ -67,6 +79,15 @@ function abrirModoVela(eyebrowTexto, textoHtml, assinaturaTexto, opcoes = {}) {
             videoWrap.classList.remove('d-none');
         } else {
             videoWrap.classList.add('d-none');
+        }
+    }
+    if (videoLegendaEl) {
+        if (opcoes.videoLegenda && videoWrap && !videoWrap.classList.contains('d-none')) {
+            videoLegendaEl.textContent = opcoes.videoLegenda;
+            videoLegendaEl.classList.remove('d-none');
+        } else {
+            videoLegendaEl.textContent = '';
+            videoLegendaEl.classList.add('d-none');
         }
     }
 
@@ -96,6 +117,7 @@ function abrirModoVela(eyebrowTexto, textoHtml, assinaturaTexto, opcoes = {}) {
         const fechar = () => {
             overlay.classList.add('d-none');
             if (videoWrap) videoWrap.innerHTML = ''; // remove o player, não só esconde (evita YouTube tocando escondido)
+            if (videoLegendaEl) { videoLegendaEl.textContent = ''; videoLegendaEl.classList.add('d-none'); }
             desbloquearScrollFundoLembranca();
             if (typeof opcoes.aoFechar === 'function') opcoes.aoFechar();
         };

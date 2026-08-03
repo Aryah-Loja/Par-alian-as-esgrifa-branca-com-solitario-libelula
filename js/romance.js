@@ -51,6 +51,104 @@ async function iniciarContadorVivo() {
     contadorVivoIntervalo = setInterval(atualizar, 1000);
 }
 
+/* ---------------- Marcos do tempo juntos (1 semana, 1 mês, 3 meses... 10 anos) ----------------
+ * Além do contador vivo (que atualiza segundo a segundo), a página também
+ * comemora "datas redondas": 1 semana, cada mês até completar 1 ano, e
+ * depois os anos (2, 3, 4, 5... até 10). Cada marco tem sua própria
+ * mensagem — é só editar o texto de cada item de MARCOS_RELACIONAMENTO
+ * abaixo, ou adicionar/remover marcos à vontade.
+ *
+ * Usa a mesma data do pedido de verdade (aurora_data_pedido, a mesma que
+ * já é usada na cápsula do tempo e no "counterText") como ponto de
+ * partida, e a hora do servidor (obterHoraConfiavel) — assim como no
+ * especial de aniversário, evita que adiantar a data do celular destrave
+ * a mensagem antes da hora.
+ */
+const MARCOS_RELACIONAMENTO = [
+    { dias: 7,   texto: '1 semana juntos! 💛 Só o começo de tudo.' },
+    { meses: 1,  texto: '1 mês juntos! 💕' },
+    { meses: 2,  texto: '2 meses juntos! 💞' },
+    { meses: 3,  texto: '3 meses juntos! 🥰' },
+    { meses: 4,  texto: '4 meses juntos!' },
+    { meses: 5,  texto: '5 meses juntos!' },
+    { meses: 6,  texto: '6 meses juntos! Meio ano de nós dois. 💍' },
+    { meses: 7,  texto: '7 meses juntos!' },
+    { meses: 8,  texto: '8 meses juntos!' },
+    { meses: 9,  texto: '9 meses juntos!' },
+    { meses: 10, texto: '10 meses juntos!' },
+    { meses: 11, texto: '11 meses juntos! Quase 1 ano...' },
+    { anos: 1,   texto: '1 ano juntos! 🎂 Um ano inteiro de nós.' },
+    { anos: 2,   texto: '2 anos juntos!' },
+    { anos: 3,   texto: '3 anos juntos!' },
+    { anos: 4,   texto: '4 anos juntos!' },
+    { anos: 5,   texto: '5 anos juntos! 🥂' },
+    { anos: 6,   texto: '6 anos juntos!' },
+    { anos: 7,   texto: '7 anos juntos!' },
+    { anos: 8,   texto: '8 anos juntos!' },
+    { anos: 9,   texto: '9 anos juntos!' },
+    { anos: 10,  texto: '10 anos juntos! 👑 Uma década.' },
+];
+
+// Soma o marco (dias, meses ou anos) na data base e devolve a data alvo
+// em que ele deve "cair".
+function calcularDataMarco(dataBaseIso, marco) {
+    const data = new Date(dataBaseIso);
+    if (marco.dias) data.setDate(data.getDate() + marco.dias);
+    if (marco.meses) data.setMonth(data.getMonth() + marco.meses);
+    if (marco.anos) data.setFullYear(data.getFullYear() + marco.anos);
+    return data;
+}
+
+// Compara só o dia (ano/mês/dia), ignorando a hora — o marco vale o dia
+// inteiro, não só o segundo exato em que ele completa.
+function mesmoDia(a, b) {
+    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+async function verificarMarcoRelacionamento() {
+    // Preferimos a data do pedido de verdade; se por algum motivo ela
+    // ainda não existir, cai pra data do primeiro acesso (mesma base do
+    // contador vivo), só pra função não travar por falta de dado.
+    const dataBaseIso = (await obterConfiguracao('aurora_data_pedido')) || (await obterConfiguracao('aurora_primeiro_acesso'));
+    if (!dataBaseIso) return;
+
+    const agora = await obterHoraConfiavel();
+    const marcoDeHoje = MARCOS_RELACIONAMENTO.find(marco => mesmoDia(calcularDataMarco(dataBaseIso, marco), agora));
+    if (!marcoDeHoje) return;
+
+    exibirMarcoRelacionamento(marcoDeHoje.texto);
+}
+
+/* Mostra a mensagem do marco. Se já existir um bloco #marcoRelacionamentoBloco
+ * no HTML (com um elemento #marcoRelacionamentoTexto dentro), usa ele —
+ * assim dá pra estilizar do jeito que quiser no CSS. Se ainda não existir,
+ * cria um bloco simples sozinho logo abaixo do contador vivo, pra
+ * funcionar mesmo sem mexer no HTML. */
+function exibirMarcoRelacionamento(texto) {
+    let bloco = document.getElementById('marcoRelacionamentoBloco');
+    let textoEl;
+
+    if (bloco) {
+        textoEl = document.getElementById('marcoRelacionamentoTexto') || bloco;
+    } else {
+        bloco = document.createElement('div');
+        bloco.id = 'marcoRelacionamentoBloco';
+        bloco.style.cssText = 'margin:24px auto;padding:16px 22px;max-width:440px;text-align:center;border-radius:14px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);color:#fff;font-size:1.15rem;line-height:1.4;';
+        textoEl = document.createElement('span');
+        bloco.appendChild(textoEl);
+
+        const grid = document.getElementById('liveCounterGrid');
+        if (grid && grid.parentElement) {
+            grid.parentElement.insertBefore(bloco, grid.nextSibling);
+        } else {
+            document.body.prepend(bloco);
+        }
+    }
+
+    textoEl.textContent = texto;
+    bloco.classList.remove('d-none');
+}
+
 /* ---------------- Timeline ---------------- */
 /* ---------------- "Nosso céu" (timeline em forma de constelação) ----------------
  * Mesma fonte de dados de sempre (TIMELINE_MARCOS, em js/config.js) — só
@@ -940,12 +1038,13 @@ async function goToRomancePage(primeiraVez) {
         renderizarMensagensFuturo(),
         prepararCapsulaDoTempo(),
         verificarEspecialAniversario(),
+        verificarMarcoRelacionamento(),
         iniciarMomentoLento(),
         iniciarGaleriaMomentos(), // agora varre a galeria de verdade pra sortear fotos, então entra aqui e não mais na lista "rápida" abaixo
 
         obterConfiguracao('aurora_data_pedido').then(dataPedidoIso => {
             if (!dataPedidoIso) return;
-            document.getElementById('dataPedidoTexto').textContent = `Nosso pedido: ${formatarDataPedidoComHora(dataPedidoIso)}`;
+            document.getElementById('dataPedidoTexto').textContent = `Nosso pedido: ${formatarDataPedidoComHora(dataPedidoIso)} - Brooks Franca`;
             const elTimeline = document.getElementById('dataPedidoTimeline');
             if (elTimeline) elTimeline.textContent = formatarDataPedido(dataPedidoIso);
 
@@ -953,7 +1052,7 @@ async function goToRomancePage(primeiraVez) {
             document.getElementById('counterText').textContent = dias === 0 ? 'hoje é o nosso primeiro dia' : `${dias} dia${dias === 1 ? '' : 's'} desde que topamos essa juntos`;
 
             const localData = document.getElementById('contratoLocalData');
-            if (localData) localData.textContent = `Nuporanga - SP, ${formatarDataPedido(dataPedidoIso)}.`;
+            if (localData) localData.textContent = `Sales Oliveira - SP, ${formatarDataPedido(dataPedidoIso)}.`;
         }),
 
         obterMedia('video_pedido').then(video => {
@@ -1260,8 +1359,22 @@ function iniciarCartaDiscussao() {
         if (await verificarSenhaHash(digitada, SENHA_CARTA_DISCUSSAO_HASH)) {
             overlay.classList.add('d-none');
             desbloquearScrollFundoLembranca();
+
+            // Embute o próprio vídeo do pedido (já gravado no aparelho,
+            // sem precisar de YouTube) como lembrete visual, junto com a
+            // carta — só se ele existir (pode ser que ainda não tenha
+            // sido gravado, ex.: alguém abrindo essa página antes disso).
+            let videoLocalUrl = null;
+            try {
+                const video = await obterMedia('video_pedido');
+                if (video && video.blob) videoLocalUrl = URL.createObjectURL(video.blob);
+            } catch (e) { console.error('Falha ao carregar o vídeo do pedido para a carta de discussão:', e); }
+
             // Já abre direto no modo "luz de vela" (pedido explícito).
-            abrirModoVela('Se um dia a gente discutir', textoCartaDiscussao(), NOME_DELE + '.');
+            abrirModoVela('Se um dia a gente discutir', textoCartaDiscussao(), NOME_DELE + '.', {
+                videoLocalUrl,
+                videoLegenda: videoLocalUrl ? 'Lembre-se que nos amamos.' : undefined
+            });
         } else {
             senhaErro.classList.remove('d-none');
             senhaInput.value = '';
