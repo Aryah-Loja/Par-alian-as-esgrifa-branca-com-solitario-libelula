@@ -157,8 +157,34 @@ const SVG_PLACEHOLDER_GENERICO = 'data:image/svg+xml;utf8,' + encodeURIComponent
  * URL local já convertida, ou null se não for HEIC (aí é falta de
  * arquivo mesmo, ou outro problema) ou se a conversão falhar.
  */
+// Espera a biblioteca heic2any (carregada via <script defer> no
+// index.html/galeria.html) ficar pronta, em vez de desistir na primeira
+// checada. Em teoria "defer" garante que ela já rodou antes do
+// DOMContentLoaded, mas na prática (CDN lento, bloqueador de conteúdo do
+// Samsung Internet, rede ruim) o script pode ainda não ter terminado —
+// ou até ter falhado — no exato instante em que uma foto quebra. Sem
+// essa espera, a tentativa de recuperação desistia pra sempre (nunca
+// tentava de novo), fazendo a foto HEIC parecer "quebrada" fora do
+// Safari mesmo quando a biblioteca acabava carregando um instante depois.
+function aguardarHeic2Any(timeoutMs = 12000) {
+    if (typeof heic2any === 'function') return Promise.resolve(true);
+    return new Promise((resolve) => {
+        const inicio = Date.now();
+        const intervalo = setInterval(() => {
+            if (typeof heic2any === 'function') {
+                clearInterval(intervalo);
+                resolve(true);
+            } else if (Date.now() - inicio > timeoutMs) {
+                clearInterval(intervalo);
+                resolve(false); // esgotou o tempo: provavelmente falhou/CDN bloqueado mesmo
+            }
+        }, 200);
+    });
+}
+
 async function tentarRecuperarComoHeic(url) {
-    if (typeof heic2any !== 'function') return null; // biblioteca não carregou (ex.: sem internet no momento)
+    const bibliotecaPronta = await aguardarHeic2Any();
+    if (!bibliotecaPronta || typeof heic2any !== 'function') return null; // esgotou a espera: biblioteca realmente não carregou (ex.: sem internet)
     try {
         const resposta = await fetch(url, { cache: 'no-store' });
         if (!resposta.ok) return null;

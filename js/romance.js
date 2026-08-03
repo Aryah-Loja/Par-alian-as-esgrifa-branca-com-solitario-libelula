@@ -890,19 +890,27 @@ async function goToRomancePage(primeiraVez) {
 
     // Só corta a música de fundo se não for a primeira vez (na primeira,
     // vindo direto do pedido, ela continua tocando naturalmente).
-    if (!primeiraVez) pausarMusicaFundoImediatamente();
-    iniciarPlaylistDaGente();
+    try { if (!primeiraVez) pausarMusicaFundoImediatamente(); } catch (e) { console.error('Falha ao pausar música de fundo:', e); }
+    try { iniciarPlaylistDaGente(); } catch (e) { console.error('Falha ao iniciar playlist (não deve afetar o resto da página):', e); }
 
-    ativarContadorEasterEggsFaseFinal(); // só a partir daqui o contador de girassóis pode aparecer
+    try { ativarContadorEasterEggsFaseFinal(); } catch (e) { console.error('Falha ao ativar contador de easter eggs:', e); } // só a partir daqui o contador de girassóis pode aparecer
 
     // Rápidas e sem leitura pesada no banco — chamadas direto, sem entrar na barra de progresso.
-    iniciarQuiz();
-    renderizarTimeline();
-    iniciarFechamentoEstrelaModal();
-    exibirEasterEggSobrenome();
-    renderizarCoisasQueElaAma();
-    renderizarSeusBichos();
-    renderizarMapaDaRelacao();
+    // Cada uma é independente das outras (timeline/estrelas, bichos, mapa
+    // etc.), então cada chamada roda isolada em try/catch: se uma falhar
+    // por causa de alguma diferença de navegador (ex.: algo que só o
+    // Safari aceita e o Chrome rejeita), as seguintes continuam rodando
+    // normalmente em vez de tudo parar silenciosamente no meio — foi
+    // exatamente esse tipo de trava em cadeia que fazia seções inteiras
+    // (como a animação das estrelas) sumirem só fora do iPhone.
+    const rodarIsolado = (fn, nome) => { try { fn(); } catch (e) { console.error(`Falha ao iniciar "${nome}" (não deve afetar o resto da página):`, e); } };
+    rodarIsolado(iniciarQuiz, 'quiz');
+    rodarIsolado(renderizarTimeline, 'timeline/estrelas');
+    rodarIsolado(iniciarFechamentoEstrelaModal, 'fechamento do modal da estrela');
+    rodarIsolado(exibirEasterEggSobrenome, 'easter egg do sobrenome');
+    rodarIsolado(renderizarCoisasQueElaAma, 'coisas que ela ama');
+    rodarIsolado(renderizarSeusBichos, 'seus bichos');
+    rodarIsolado(renderizarMapaDaRelacao, 'mapa da relação');
     iniciarMapaModal();
     iniciarCartaDiscussao();
     iniciarAdjetivosParaEla();

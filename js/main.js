@@ -22,12 +22,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     await obterOuCriarDataPrimeiroAcesso();
     solicitarArmazenamentoPersistente();
 
-    iniciarLoja();
-    iniciarSuspense();
-    iniciarModuloFuturo();
-    iniciarModuloRomance();
-    iniciarModuloExport();
-    iniciarModuloSync();
+    // Cada módulo é independente dos outros — roda isolado em try/catch
+    // pra uma falha num deles (ex.: por causa de alguma diferença de
+    // navegador) não impedir os seguintes de rodar.
+    const rodarModuloIsolado = (fn, nome) => { try { fn(); } catch (e) { console.error(`Falha ao iniciar módulo "${nome}" (não deve afetar os demais):`, e); } };
+    rodarModuloIsolado(iniciarLoja, 'loja');
+    rodarModuloIsolado(iniciarSuspense, 'suspense');
+    rodarModuloIsolado(iniciarModuloFuturo, 'futuro');
+    rodarModuloIsolado(iniciarModuloRomance, 'romance');
+    rodarModuloIsolado(iniciarModuloExport, 'export');
+    rodarModuloIsolado(iniciarModuloSync, 'sync');
 
     // Estágio da experiência: 'final' = já viu tudo; data de pedido definida
     // = pedido feito mas jornada interrompida (retoma de onde parou); nenhum
