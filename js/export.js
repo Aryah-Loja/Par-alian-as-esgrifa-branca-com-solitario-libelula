@@ -172,6 +172,14 @@ async function abrirCameraPolaroid() {
     const jaEstavaAberto = !modal.classList.contains('d-none');
     modal.classList.remove('d-none');
     if (!jaEstavaAberto) bloquearScrollFundoLembranca(); // repetirFotoPolaroid() chama isto de novo com o modal já aberto — não trava duas vezes
+
+    // Pré-preenche a legenda com a data padrão (Polaroid de Aniversário),
+    // só na primeira abertura — assim não sobrescreve o que a pessoa já
+    // tiver digitado ao tirar a foto de novo (repetirFotoPolaroid).
+    if (!jaEstavaAberto) {
+        const legendaInput = document.getElementById('polaroidLegendaInput');
+        if (legendaInput && !legendaInput.value) legendaInput.value = TEXTOS.polaroidFrasePadrao;
+    }
     document.getElementById('polaroidCameraErro').classList.add('d-none');
     document.getElementById('polaroidCameraPreviewWrap').classList.remove('d-none');
     document.getElementById('polaroidCameraConfirmWrap').classList.add('d-none');
@@ -330,6 +338,28 @@ function extensaoParaMime(mimeType) {
     return partes[1] || 'bin';
 }
 
+/**
+ * Lê uma configuração e tenta interpretar como JSON, sem derrubar o
+ * backup inteiro se um valor individual estiver corrompido ou num
+ * formato antigo incompatível (ex.: dado salvo por uma versão bem
+ * anterior do site, antes de virar JSON.stringify). Antes, um único
+ * JSON.parse() malformado dentro do manifesto abortava a função inteira
+ * — e como tanto o botão "Backup" quanto a sincronização automática
+ * chamam a mesma função, isso fazia parecer que "o backup parou de
+ * funcionar" (a real causa era só um campo específico, não o backup
+ * como um todo).
+ */
+async function obterConfigJSON(chave) {
+    const bruto = await obterConfiguracao(chave);
+    if (!bruto) return null;
+    try {
+        return JSON.parse(bruto);
+    } catch (e) {
+        console.error(`Backup: o valor salvo em "${chave}" não é um JSON válido — ignorando só esse campo neste backup (o resto continua normalmente).`, e);
+        return null;
+    }
+}
+
 /** Gera o backup completo como um Blob .zip (usado tanto pelo botão "Backup" quanto pela sincronização — ver sync.js). */
 async function gerarBackupZipBlob() {
     if (typeof JSZip === 'undefined') throw new Error('Não foi possível carregar o gerador de backup (JSZip). Verifique sua conexão.');
@@ -347,12 +377,24 @@ async function gerarBackupZipBlob() {
         dataInicioRelacionamento: await obterOuCriarDataPrimeiroAcesso(),
         dataPedido: await obterConfiguracao('aurora_data_pedido'),
         stage: await obterConfiguracao('aurora_stage'),
-        regrasContrato: JSON.parse(await obterConfiguracao('aurora_regras_contrato') || 'null'),
-        quizRespostas: JSON.parse(await obterConfiguracao('aurora_quiz_respostas') || 'null'),
+        regrasContrato: await obterConfigJSON('aurora_regras_contrato'),
+        quizRespostas: await obterConfigJSON('aurora_quiz_respostas'),
         videoPedidoYoutube: await obterConfiguracao('aurora_video_pedido_youtube'),
-        checklistEncontros: JSON.parse(await obterConfiguracao('aurora_checklist_encontros') || 'null'),
-        checklistItensCustomizados: JSON.parse(await obterConfiguracao('aurora_checklist_itens_customizados') || 'null'),
-        mapaLugaresExtra: JSON.parse(await obterConfiguracao('aurora_mapa_lugares_extra') || 'null'),
+        checklistEncontros: await obterConfigJSON('aurora_checklist_encontros'),
+        checklistItensCustomizados: await obterConfigJSON('aurora_checklist_itens_customizados'),
+        mapaLugaresExtra: await obterConfigJSON('aurora_mapa_lugares_extra'),
+        // Campos novos e opcionais (quadro de previsões, termômetro do dia,
+        // cartas condicionais liberadas e vitrine de recados) — backups
+        // antigos simplesmente não têm essas chaves (fica undefined) e
+        // continuam restaurando normalmente; aplicarBackupDeZip só grava
+        // cada uma se ela existir no manifesto (mesmo padrão dos campos acima).
+        previsoesRespostasGabriel: await obterConfigJSON('aurora_previsoes_gabriel'),
+        previsoesRespostasAna: await obterConfigJSON('aurora_previsoes_ana'),
+        previsoesCriadoEm: await obterConfiguracao('aurora_previsoes_criado_em') || null,
+        previsoesAnaSenhaHash: await obterConfiguracao('aurora_previsoes_ana_senha_hash') || null,
+        termometroLista: await obterConfigJSON('aurora_termometro_lista'),
+        cartasCondicionaisLiberadas: await obterConfigJSON('aurora_cartas_condicionais_liberadas'),
+        vitrineRecados: await obterConfigJSON('aurora_vitrine_recados'),
         medias: []
     };
 
@@ -475,6 +517,13 @@ async function aplicarBackupDeZip(zipDados) {
     if (manifest.checklistEncontros) await salvarConfiguracao('aurora_checklist_encontros', JSON.stringify(manifest.checklistEncontros));
     if (manifest.checklistItensCustomizados) await salvarConfiguracao('aurora_checklist_itens_customizados', JSON.stringify(manifest.checklistItensCustomizados));
     if (manifest.mapaLugaresExtra) await salvarConfiguracao('aurora_mapa_lugares_extra', JSON.stringify(manifest.mapaLugaresExtra));
+    if (manifest.previsoesRespostasGabriel) await salvarConfiguracao('aurora_previsoes_gabriel', JSON.stringify(manifest.previsoesRespostasGabriel));
+    if (manifest.previsoesRespostasAna) await salvarConfiguracao('aurora_previsoes_ana', JSON.stringify(manifest.previsoesRespostasAna));
+    if (manifest.previsoesCriadoEm) await salvarConfiguracao('aurora_previsoes_criado_em', manifest.previsoesCriadoEm);
+    if (manifest.previsoesAnaSenhaHash) await salvarConfiguracao('aurora_previsoes_ana_senha_hash', manifest.previsoesAnaSenhaHash);
+    if (manifest.termometroLista) await salvarConfiguracao('aurora_termometro_lista', JSON.stringify(manifest.termometroLista));
+    if (manifest.cartasCondicionaisLiberadas) await salvarConfiguracao('aurora_cartas_condicionais_liberadas', JSON.stringify(manifest.cartasCondicionaisLiberadas));
+    if (manifest.vitrineRecados) await salvarConfiguracao('aurora_vitrine_recados', JSON.stringify(manifest.vitrineRecados));
 
     // O backup é a "fotografia completa": listas locais são substituídas
     // pelas do backup (não acrescentadas), para não duplicar em cada sincronização.

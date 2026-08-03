@@ -1184,3 +1184,132 @@ async function salvarOuCompartilharArquivo(blob, nomeArquivo, mimeType) {
         }
     }
 }
+
+/* ----------------------------------------------------------------------
+   VERIFICAÇÃO / CONVERSÃO DE VÍDEO
+   ----------------------------------------------------------------------
+   É comum um arquivo ter extensão/nome de mp4 (ou o iPhone/app de origem
+   entregar assim) sem ser, de fato, um mp4 que o navegador consegue abrir
+   (ex.: é na verdade um .mov com um codec que o Chrome não decodifica, um
+   .avi só renomeado, um mp4 com um codec de vídeo não suportado etc.).
+   Extensão nenhuma garante o CONTEÚDO — só testando de verdade é que dá
+   pra saber.
+
+   1. testarVideoReproduzivel(): tenta carregar os metadados num <video>
+      escondido. Se falhar, o arquivo não é reproduzível como está.
+   2. converterVideoSeNecessario(): se o teste falhar, converte de
+      verdade pra um mp4 H.264/AAC usando ffmpeg.wasm — carregado sob
+      demanda (não pesa no site pra quem nunca precisar disso; é uma
+      biblioteca de ~25MB, então só baixa quando realmente vai converter
+      algo).
+   ---------------------------------------------------------------------- */
+
+// Testa se o navegador consegue mesmo carregar os metadados do vídeo —
+// não basta a extensão dizer .mp4, o CONTEÚDO precisa ser algo que o
+// navegador entenda de verdade.
+function testarVideoReproduzivel(blob) {
+    return new Promise((resolve) => {
+        let resolvido = false;
+        let url;
+        try {
+            url = URL.createObjectURL(blob);
+        } catch (e) {
+            resolve(false);
+            return;
+        }
+
+        const video = document.createElement('video');
+        video.preload = 'metadata';
+        video.muted = true;
+
+        const finalizar = (ok) => {
+            if (resolvido) return;
+            resolvido = true;
+            URL.revokeObjectURL(url);
+            video.removeAttribute('src');
+            resolve(ok);
+        };
+
+        video.onloadedmetadata = () => finalizar(Number.isFinite(video.duration) && video.duration > 0);
+        video.onerror = () => finalizar(false);
+        // Alguns navegadores não disparam nenhum dos dois eventos com um
+        // arquivo realmente incompatível — depois de 6s, assume que não deu certo.
+        setTimeout(() => finalizar(false), 6000);
+
+        video.src = url;
+    });
+}
+
+let __ffmpegInstancia = null;
+
+// Carrega o ffmpeg.wasm (versão single-thread, que funciona em qualquer
+// hospedagem estática comum, sem precisar de cabeçalhos especiais de
+// servidor) só na primeira vez que uma conversão de verdade for precisa.
+async function carregarFFmpegSobDemanda(aoProgredir) {
+    if (__ffmpegInstancia) return __ffmpegInstancia;
+
+    if (typeof FFmpeg === 'undefined') {
+        await new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://unpkg.com/@ffmpeg/[email protected]/dist/ffmpeg.min.js';
+            script.onload = resolve;
+            script.onerror = () => reject(new Error('Não consegui carregar o conversor de vídeo (verifique sua internet e tente de novo).'));
+            document.head.appendChild(script);
+        });
+    }
+
+    const { createFFmpeg } = FFmpeg;
+    const instancia = createFFmpeg({
+        log: false,
+        corePath: 'https://unpkg.com/@ffmpeg/[email protected]/dist/ffmpeg-core.js',
+        progress: ({ ratio }) => {
+            if (aoProgredir && Number.isFinite(ratio) && ratio >= 0) aoProgredir(Math.min(99, Math.round(ratio * 100)));
+        }
+    });
+    await instancia.load();
+    __ffmpegInstancia = instancia;
+    return instancia;
+}
+
+/**
+ * Recebe um File/Blob de vídeo. Se o navegador não conseguir mesmo tocá-lo
+ * (apesar da extensão/nome dizer mp4), converte de verdade pra um mp4
+ * H.264/AAC compatível, usando ffmpeg.wasm. Devolve sempre um Blob pronto
+ * pra salvar — o original, se já estiver tudo certo, ou o convertido, se
+ * precisou. `aoProgredir(percentual, etapa)` é opcional, pra mostrar
+ * status na tela durante a conversão (que pode levar alguns minutos num
+ * celular, dependendo do tamanho do vídeo).
+ */
+async function converterVideoSeNecessario(arquivo, aoProgredir) {
+    if (!arquivo || !(arquivo.type || '').startsWith('video/')) return arquivo;
+
+    if (aoProgredir) aoProgredir(0, 'verificando');
+    const reproduzivel = await testarVideoReproduzivel(arquivo);
+    if (reproduzivel) return arquivo;
+
+    if (aoProgredir) aoProgredir(0, 'preparando-conversor');
+    const ffmpeg = await carregarFFmpegSobDemanda((p) => aoProgredir && aoProgredir(p, 'convertendo'));
+    const { fetchFile } = FFmpeg;
+
+    const nomeOriginal = arquivo.name || '';
+    const extensaoOriginal = nomeOriginal.includes('.') ? nomeOriginal.slice(nomeOriginal.lastIndexOf('.')) : '.mp4';
+    const nomeEntrada = `entrada${extensaoOriginal}`;
+
+    try {
+        ffmpeg.FS('writeFile', nomeEntrada, await fetchFile(arquivo));
+        await ffmpeg.run(
+            '-i', nomeEntrada,
+            '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '23',
+            '-c:a', 'aac', '-b:a', '128k',
+            '-pix_fmt', 'yuv420p',
+            '-movflags', '+faststart',
+            'saida.mp4'
+        );
+        const dados = ffmpeg.FS('readFile', 'saida.mp4');
+        if (aoProgredir) aoProgredir(100, 'concluido');
+        return new Blob([dados.buffer], { type: 'video/mp4' });
+    } finally {
+        try { ffmpeg.FS('unlink', nomeEntrada); } catch (e) { /* pode nem ter chegado a escrever */ }
+        try { ffmpeg.FS('unlink', 'saida.mp4'); } catch (e) { /* pode ter falhado antes de gerar */ }
+    }
+}

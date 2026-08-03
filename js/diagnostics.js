@@ -541,13 +541,24 @@ function iniciarTrocaDeVideo() {
         }
 
         botao.disabled = true;
-        status.textContent = 'Salvando o novo vídeo (isso pode levar um instante, dependendo do tamanho)...';
+        status.textContent = 'Verificando se o vídeo abre direito neste navegador...';
         status.className = 'save-status';
 
         try {
-            const ok = await salvarMedia({ id: 'video_pedido', tipo: 'video_pedido', blob: arquivo, mimeType: arquivo.type || 'video/mp4' });
+            const arquivoFinal = await converterVideoSeNecessario(arquivo, (percentual, etapa) => {
+                if (etapa === 'convertendo') {
+                    status.textContent = `O arquivo tem extensão de vídeo mas não abriu — convertendo pra um formato compatível... ${percentual}%`;
+                } else if (etapa === 'preparando-conversor') {
+                    status.textContent = 'O arquivo tem extensão de vídeo mas não abriu — preparando o conversor (primeira vez pode demorar um pouco)...';
+                }
+            });
+
+            status.textContent = 'Salvando o novo vídeo (isso pode levar um instante, dependendo do tamanho)...';
+            const ok = await salvarMedia({ id: 'video_pedido', tipo: 'video_pedido', blob: arquivoFinal, mimeType: arquivoFinal.type || 'video/mp4' });
             if (ok) {
-                status.textContent = 'Vídeo trocado com sucesso! Já foi salvo e vai sincronizar com o outro aparelho.';
+                status.textContent = arquivoFinal === arquivo
+                    ? 'Vídeo trocado com sucesso! Já foi salvo e vai sincronizar com o outro aparelho.'
+                    : 'O vídeo original não abria direito, então convertemos pra mp4 de verdade antes de salvar. Trocado com sucesso!';
                 status.className = 'save-status ok';
             } else {
                 status.textContent = 'Não consegui confirmar que o vídeo foi salvo direito. Tente de novo.';
@@ -769,14 +780,27 @@ async function gerenciadorMidiasSubstituirArquivo(arquivo) {
     const original = await obterMedia(id);
     if (!original) { alert('Não achei o item original — atualize a lista e tente de novo.'); return; }
 
+    const status = document.getElementById('gerenciadorMidiasResumo');
+    let arquivoFinal = arquivo;
+
+    if ((arquivo.type || '').startsWith('video/')) {
+        if (status) status.textContent = 'Verificando se o vídeo abre direito neste navegador...';
+        arquivoFinal = await converterVideoSeNecessario(arquivo, (percentual, etapa) => {
+            if (!status) return;
+            if (etapa === 'convertendo') status.textContent = `O arquivo tem extensão de vídeo mas não abriu — convertendo pra um formato compatível... ${percentual}%`;
+            else if (etapa === 'preparando-conversor') status.textContent = 'O arquivo tem extensão de vídeo mas não abriu — preparando o conversor...';
+        });
+    }
+
     const ok = await salvarMedia({
         ...original,
-        blob: arquivo,
-        mimeType: arquivo.type || original.mimeType,
+        blob: arquivoFinal,
+        mimeType: arquivoFinal.type || original.mimeType,
         criadoEm: Date.now()
     });
 
     if (!ok) alert('Não consegui salvar o arquivo novo. Tente de novo.');
+    else if (arquivoFinal !== arquivo) alert('O vídeo original não abria direito neste navegador, então convertemos pra mp4 de verdade antes de salvar.');
     __gerenciadorMidiasIdSelecionado = null;
     await gerenciadorMidiasCarregarLista();
 }
@@ -797,6 +821,188 @@ function iniciarGerenciadorDeMidias() {
     gerenciadorMidiasCarregarLista();
 }
 
+/* ----------------------------------------------------------------------
+   CARTAS CONDICIONAIS — liberação manual
+   ----------------------------------------------------------------------
+   Lista as cartas de CARTAS_CONDICIONAIS (js/config.js) com o estado
+   atual (liberada/bloqueada) e um botão pra alternar, sempre pedindo a
+   senha de reset antes (mesmo padrão do resto desta página).
+   ---------------------------------------------------------------------- */
+async function carregarCartasCondicionaisAdmin() {
+    const container = document.getElementById('diagCartasCondicionaisLista');
+    if (!container) return;
+
+    if (typeof CARTAS_CONDICIONAIS === 'undefined' || !Array.isArray(CARTAS_CONDICIONAIS) || !CARTAS_CONDICIONAIS.length) {
+        container.innerHTML = '<p class="small text-white-50 mb-0">Nenhuma carta condicional cadastrada em js/config.js.</p>';
+        return;
+    }
+
+    const salvo = await obterConfiguracao('aurora_cartas_condicionais_liberadas');
+    const liberadas = salvo ? JSON.parse(salvo) : [];
+
+    container.innerHTML = CARTAS_CONDICIONAIS.map((carta) => {
+        const liberada = liberadas.includes(carta.id);
+        return `
+            <div class="diag-estado-reset d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <strong>${carta.titulo}</strong>
+                    <p class="small text-white-50 mb-0">${carta.gatilho} — estado atual: <b>${liberada ? 'liberada' : 'bloqueada'}</b></p>
+                </div>
+                <button type="button" class="btn ${liberada ? 'btn-outline-warning' : 'btn-outline-light'} btn-sm rounded-pill btn-toggle-carta-condicional" data-id="${carta.id}">
+                    ${liberada ? 'Bloquear de novo' : 'Liberar agora'}
+                </button>
+            </div>
+        `;
+    }).join('');
+
+    container.querySelectorAll('.btn-toggle-carta-condicional').forEach((btn) => {
+        btn.addEventListener('click', () => alternarCartaCondicional(btn.dataset.id));
+    });
+}
+
+async function alternarCartaCondicional(id) {
+    const carta = CARTAS_CONDICIONAIS.find(c => c.id === id);
+    if (!carta) return;
+
+    const senhaOk = await solicitarSenhaReset({
+        titulo: 'Liberar carta condicional',
+        subtitulo: `Confirma que "${carta.gatilho}" já aconteceu de verdade?`
+    });
+    if (!senhaOk) return;
+
+    const salvo = await obterConfiguracao('aurora_cartas_condicionais_liberadas');
+    const liberadas = salvo ? JSON.parse(salvo) : [];
+    const indice = liberadas.indexOf(id);
+    if (indice >= 0) liberadas.splice(indice, 1); else liberadas.push(id);
+
+    await salvarConfiguracao('aurora_cartas_condicionais_liberadas', JSON.stringify(liberadas), true);
+    await carregarCartasCondicionaisAdmin();
+}
+
+/* ----------------------------------------------------------------------
+   VERIFICAÇÃO DE VÍDEOS DO SITE
+   ----------------------------------------------------------------------
+   Confere, um por um, se cada vídeo estático do site (galeria, câmera
+   lenta, especial de aniversário, vídeo secreto) realmente ABRE no
+   navegador — não basta o nome/extensão dizer .mp4. Pra qualquer um que
+   não abrir, oferece "Converter e baixar" (usa converterVideoSeNecessario,
+   js/utils.js) pra gerar uma cópia compatível — como o site não tem
+   como escrever direto na pasta assets/ (é hospedagem estática), quem
+   estiver vendo esta página baixa o arquivo convertido e troca manualmente
+   no repositório.
+   ---------------------------------------------------------------------- */
+async function listarVideosEstaticosParaVerificar() {
+    const lista = [];
+
+    try {
+        await galeriaEscanearVideos(null, (item) => {
+            lista.push({ rotulo: `Galeria — item ${item.numero}`, caminho: item.caminho });
+        });
+    } catch (e) { console.error('Falha ao varrer vídeos da galeria para verificação:', e); }
+
+    const momentoLento = await resolverVideoPorBase(MOMENTO_LENTO_ARQUIVO_BASE);
+    if (momentoLento) lista.push({ rotulo: 'Câmera lenta (momento)', caminho: momentoLento });
+
+    const aniversario = await resolverVideoPorBase(ANIVERSARIO_VIDEO_ARQUIVO_BASE);
+    if (aniversario) lista.push({ rotulo: 'Vídeo do especial de aniversário', caminho: aniversario });
+
+    if (await arquivoExisteNoServidor('secret/assets/video-secreto.mp4')) {
+        lista.push({ rotulo: 'Vídeo secreto (secret/video.html)', caminho: 'secret/assets/video-secreto.mp4' });
+    }
+
+    return lista;
+}
+
+async function converterEBaixarVideoEstatico(item, botao) {
+    botao.disabled = true;
+    try {
+        const resposta = await fetch(item.caminho);
+        if (!resposta.ok) throw new Error('arquivo não encontrado');
+        const blobOriginal = await resposta.blob();
+        const nomeArquivo = item.caminho.split('/').pop();
+        const arquivo = new File([blobOriginal], nomeArquivo, { type: blobOriginal.type || 'video/mp4' });
+
+        const convertido = await converterVideoSeNecessario(arquivo, (p) => { botao.textContent = `Convertendo... ${p}%`; });
+        const nomeSaida = nomeArquivo.replace(/\.[^.]+$/, '') + '-convertido.mp4';
+        await salvarOuCompartilharArquivo(convertido, nomeSaida, 'video/mp4');
+        botao.textContent = 'Baixado — troque o arquivo no repositório';
+    } catch (e) {
+        console.error('Falha ao converter vídeo estático:', e);
+        botao.textContent = 'Falhou, tente de novo';
+        botao.disabled = false;
+    }
+}
+
+async function verificarVideosDoSite() {
+    const botao = document.getElementById('btnVerificarVideosSite');
+    const container = document.getElementById('diagVideosLista');
+    if (!botao || !container) return;
+
+    const textoOriginal = botao.innerHTML;
+    botao.disabled = true;
+    botao.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Procurando vídeos...';
+    container.innerHTML = '';
+
+    const lista = await listarVideosEstaticosParaVerificar();
+    if (!lista.length) {
+        container.innerHTML = '<p class="small text-white-50 mb-0">Nenhum vídeo encontrado pra verificar ainda.</p>';
+        botao.disabled = false;
+        botao.innerHTML = textoOriginal;
+        return;
+    }
+
+    container.innerHTML = lista.map((item, indice) => `
+        <div class="diag-item diag-neutro" data-indice="${indice}">
+            <i class="bi bi-hourglass-split"></i>
+            <div class="flex-grow-1">
+                <strong>${item.rotulo}</strong>
+                <p style="opacity:0.6;">${item.caminho}</p>
+                <p data-status>Verificando...</p>
+            </div>
+        </div>
+    `).join('');
+
+    for (let i = 0; i < lista.length; i++) {
+        const item = lista[i];
+        const linha = container.querySelector(`[data-indice="${i}"]`);
+        const icone = linha ? linha.querySelector('i') : null;
+        const statusEl = linha ? linha.querySelector('[data-status]') : null;
+
+        try {
+            const resposta = await fetch(item.caminho);
+            if (!resposta.ok) throw new Error('não encontrado');
+            const blob = await resposta.blob();
+            const ok = await testarVideoReproduzivel(blob);
+
+            if (linha) linha.classList.remove('diag-neutro');
+            if (ok) {
+                if (linha) linha.classList.add('diag-ok');
+                if (icone) icone.className = 'bi bi-check-circle-fill';
+                if (statusEl) statusEl.textContent = 'Abre normalmente neste navegador.';
+            } else {
+                if (linha) linha.classList.add('diag-erro');
+                if (icone) icone.className = 'bi bi-exclamation-triangle-fill';
+                if (statusEl) statusEl.textContent = 'Tem extensão/nome de vídeo, mas o conteúdo não abriu neste navegador.';
+                if (linha) {
+                    const botaoConverter = document.createElement('button');
+                    botaoConverter.type = 'button';
+                    botaoConverter.className = 'btn btn-outline-warning btn-sm rounded-pill mt-2';
+                    botaoConverter.textContent = 'Converter e baixar';
+                    botaoConverter.addEventListener('click', () => converterEBaixarVideoEstatico(item, botaoConverter));
+                    linha.querySelector('.flex-grow-1').appendChild(botaoConverter);
+                }
+            }
+        } catch (e) {
+            if (linha) { linha.classList.remove('diag-neutro'); linha.classList.add('diag-erro'); }
+            if (icone) icone.className = 'bi bi-question-circle-fill';
+            if (statusEl) statusEl.textContent = 'Não consegui verificar (arquivo pode não existir, ou falha de rede).';
+        }
+    }
+
+    botao.disabled = false;
+    botao.innerHTML = textoOriginal;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btnRodarDiagnostico').addEventListener('click', executarDiagnosticoCompleto);
     document.getElementById('btnTestarNuvem').addEventListener('click', executarTesteNuvem);
@@ -811,5 +1017,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btnTestarCapsula').addEventListener('click', executarTesteCapsula);
     iniciarTrocaDeVideo();
     iniciarGerenciadorDeMidias();
+    carregarCartasCondicionaisAdmin();
+    const botaoVerificarVideos = document.getElementById('btnVerificarVideosSite');
+    if (botaoVerificarVideos) botaoVerificarVideos.addEventListener('click', verificarVideosDoSite);
     executarDiagnosticoCompleto();
 });
