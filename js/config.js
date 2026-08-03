@@ -1765,7 +1765,8 @@ const PREVISOES_PERGUNTAS = [
 // Gere o hash em secret/gerar-hash.html e cole aqui — enquanto estiver
 // vazio, o botão do Gabriel fica visível mas avisa que ainda não foi
 // configurado (mesmo padrão do Client ID do Google Drive).
-const SENHA_PREVISOES_GABRIEL_HASH = '';
+// Hash correto de "130456700" (confirmado).
+const SENHA_PREVISOES_GABRIEL_HASH = 'b927233d4cc11fd36021de2692a4bc16e6fc0a34f22dbe431cac89288b900333';
 
 /* ----------------------------------------------------------------------
    TERMÔMETRO DO DIA

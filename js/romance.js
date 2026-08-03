@@ -2075,10 +2075,14 @@ async function renderizarTermometroDoDia() {
 /* ----------------------------------------------------------------------
    CARTAS CONDICIONAIS
    ----------------------------------------------------------------------
-   Cartas (CARTAS_CONDICIONAIS, js/config.js) liberadas manualmente pela
-   área administrativa (diagnostico.html, protegida pela senha de reset)
-   quando o gatilho descrito realmente acontecer — nunca sozinhas, nunca
-   por data. Aqui só lemos a lista de liberadas e exibimos.
+   Cartas (CARTAS_CONDICIONAIS, js/config.js) liberadas quando o gatilho
+   descrito realmente acontecer — nunca sozinhas, nunca por data. Dá pra
+   liberar de duas formas: (1) pelo painel administrativo em
+   diagnostico.html, protegido pela senha de reset (ver
+   alternarCartaCondicional() em js/diagnostics.js); ou (2) tocando
+   direto no cartão ainda bloqueado, que pergunta "isso já aconteceu de
+   verdade?" e libera na hora se a resposta for sim — sem precisar da
+   senha nem da área de diagnóstico (ela também pode confirmar assim).
    ---------------------------------------------------------------------- */
 async function renderizarCartasCondicionais() {
     const wrap = document.getElementById('cartasCondicionaisWrap');
@@ -2094,11 +2098,21 @@ async function renderizarCartasCondicionais() {
     lista.innerHTML = CARTAS_CONDICIONAIS.map((carta) => {
         const liberada = liberadas.includes(carta.id);
         return `
-            <button type="button" class="carta-condicional-card ${liberada ? 'liberada' : 'bloqueada'}" data-id="${carta.id}">
-                <i class="bi ${liberada ? 'bi-envelope-heart-fill' : 'bi-lock-fill'} me-2"></i>
-                <span class="carta-condicional-titulo">${carta.titulo}</span>
-                <span class="carta-condicional-gatilho">${liberada ? 'Toque para ler' : carta.gatilho}</span>
-            </button>
+            <div class="carta-condicional-item">
+                <button type="button" class="carta-condicional-card ${liberada ? 'liberada' : 'bloqueada'}" data-id="${carta.id}">
+                    <i class="bi ${liberada ? 'bi-envelope-heart-fill' : 'bi-lock-fill'} me-2"></i>
+                    <span class="carta-condicional-titulo">${carta.titulo}</span>
+                    <span class="carta-condicional-gatilho">${liberada ? 'Toque para ler' : carta.gatilho}</span>
+                </button>
+                ${liberada ? '' : `
+                <div class="carta-condicional-confirm d-none" id="cartaCondicionalConfirm_${carta.id}">
+                    <p class="carta-condicional-confirm-texto">Isso já aconteceu de verdade?</p>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-light btn-sm rounded-pill flex-fill btn-carta-condicional-nao" data-id="${carta.id}">Ainda não</button>
+                        <button type="button" class="btn btn-rosegold btn-sm rounded-pill flex-fill btn-carta-condicional-sim" data-id="${carta.id}">Sim, já aconteceu!</button>
+                    </div>
+                </div>`}
+            </div>
         `;
     }).join('');
 
@@ -2106,6 +2120,43 @@ async function renderizarCartasCondicionais() {
         btn.addEventListener('click', () => {
             const carta = CARTAS_CONDICIONAIS.find(c => c.id === btn.dataset.id);
             if (!carta) return;
+            abrirModoVela(carta.titulo, carta.texto.replace(/\n/g, '<br>'), `Com amor, ${NOME_DELE}.`);
+        });
+    });
+
+    // Cartas ainda bloqueadas: ao tocar, mostra a pergunta de confirmação
+    // (em vez de não fazer nada, como antes). Cada cartão tem sua própria
+    // caixinha de confirmação, escondida por padrão.
+    lista.querySelectorAll('.carta-condicional-card.bloqueada').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const idAtual = btn.dataset.id;
+            lista.querySelectorAll('.carta-condicional-confirm').forEach((caixa) => {
+                if (caixa.id !== `cartaCondicionalConfirm_${idAtual}`) caixa.classList.add('d-none');
+            });
+            const caixaAtual = document.getElementById(`cartaCondicionalConfirm_${idAtual}`);
+            if (caixaAtual) caixaAtual.classList.toggle('d-none');
+        });
+    });
+
+    lista.querySelectorAll('.btn-carta-condicional-nao').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const caixa = document.getElementById(`cartaCondicionalConfirm_${btn.dataset.id}`);
+            if (caixa) caixa.classList.add('d-none');
+        });
+    });
+
+    lista.querySelectorAll('.btn-carta-condicional-sim').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+            const id = btn.dataset.id;
+            const carta = CARTAS_CONDICIONAIS.find(c => c.id === id);
+            if (!carta) return;
+
+            const salvoAgora = await obterConfiguracao('aurora_cartas_condicionais_liberadas');
+            const liberadasAgora = salvoAgora ? JSON.parse(salvoAgora) : [];
+            if (!liberadasAgora.includes(id)) liberadasAgora.push(id);
+            await salvarConfiguracao('aurora_cartas_condicionais_liberadas', JSON.stringify(liberadasAgora), true);
+
+            await renderizarCartasCondicionais(); // reconstrói a lista já com o cartão liberado
             abrirModoVela(carta.titulo, carta.texto.replace(/\n/g, '<br>'), `Com amor, ${NOME_DELE}.`);
         });
     });
