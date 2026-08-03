@@ -732,11 +732,14 @@ img { max-width: 100%; }
 .termometro-item small { font-size: 0.6rem; color: rgba(255,255,255,0.5); margin-top: 2px; }
 
 /* ---------------- Cartas condicionais ---------------- */
-.carta-condicional-card { display: flex; flex-direction: column; align-items: flex-start; text-align: left; background: rgba(255,255,255,0.06); border: 1px solid rgba(183,110,121,0.35); border-radius: 14px; padding: 14px 16px; width: 100%; color: #fff; }
-.carta-condicional-card.bloqueada { opacity: 0.6; }
-.carta-condicional-card.liberada { border-color: var(--rosegold); cursor: pointer; }
+.carta-condicional-item { width: 100%; }
+.carta-condicional-card { display: flex; flex-direction: column; align-items: flex-start; text-align: left; background: rgba(255,255,255,0.06); border: 1px solid rgba(183,110,121,0.35); border-radius: 14px; padding: 14px 16px; width: 100%; color: #fff; cursor: pointer; }
+.carta-condicional-card.bloqueada { opacity: 0.75; }
+.carta-condicional-card.liberada { border-color: var(--rosegold); }
 .carta-condicional-titulo { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.05rem; font-weight: 600; }
 .carta-condicional-gatilho { font-size: 0.78rem; color: rgba(255,255,255,0.55); margin-top: 4px; }
+.carta-condicional-confirm { margin-top: 8px; padding: 12px 14px; background: rgba(255,255,255,0.05); border: 1px dashed rgba(183,110,121,0.5); border-radius: 12px; }
+.carta-condicional-confirm-texto { font-size: 0.85rem; color: rgba(255,255,255,0.85); margin-bottom: 10px; }
 
 /* ---------------- Vitrine de recados pra ele ---------------- */
 .vitrine-recado-item { background: rgba(255,255,255,0.06); border: 1px solid rgba(183,110,121,0.25); border-radius: 12px; padding: 12px 16px; text-align: left; }
