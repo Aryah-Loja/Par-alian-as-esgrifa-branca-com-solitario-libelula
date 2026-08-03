@@ -11,11 +11,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return; // tela de bloqueio já exibida, para o resto da inicialização
     }
 
-    // SINCRONIZAÇÃO COM A NUVEM DESLIGADA TEMPORARIAMENTE — recuperação de
-    // dados em andamento após perda de dados no Supabase. NÃO reative
-    // (não tire os comentários abaixo) até ter certeza de que é seguro,
-    // ou risco de sobrescrever/perder dados de novo.
-    // await sincronizarNaAbertura();
+    await sincronizarNaAbertura();
 
     document.querySelectorAll('.js-nome').forEach(el => { el.textContent = NOME_DELA; });
     document.querySelectorAll('.js-nome-apelido').forEach(el => { el.textContent = NOME_DELA_APELIDO; });
@@ -35,7 +31,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     rodarModuloIsolado(iniciarModuloFuturo, 'futuro');
     rodarModuloIsolado(iniciarModuloRomance, 'romance');
     rodarModuloIsolado(iniciarModuloExport, 'export');
-    // rodarModuloIsolado(iniciarModuloSync, 'sync'); // SINCRONIZAÇÃO DESLIGADA TEMPORARIAMENTE — ver nota acima
+    rodarModuloIsolado(iniciarModuloSync, 'sync');
 
     // Estágio da experiência: 'final' = já viu tudo; data de pedido definida
     // = pedido feito mas jornada interrompida (retoma de onde parou); nenhum
