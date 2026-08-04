@@ -70,4 +70,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     verificarOrientacao();
     esconderVinhetaCarregamento();
+
+    // Reforço: garante o topo mesmo se fontes/imagens ainda estiverem
+    // terminando de carregar e empurrando o layout depois deste ponto.
+    window.scrollTo(0, 0);
+    window.addEventListener('load', () => window.scrollTo(0, 0), { once: true });
 });
