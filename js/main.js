@@ -13,6 +13,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     await sincronizarNaAbertura();
 
+    // Regrava os 3 valores fixos do pedido (data/horário/local — ver
+    // js/config.js e js/preservacao.js) a cada abertura, garantindo que
+    // nunca fiquem vazios ou desatualizados, independentemente do que
+    // aconteceu antes (reset, sincronização, limpeza parcial de dados).
+    if (typeof garantirDadosPermanentesDoPedido === 'function') await garantirDadosPermanentesDoPedido();
+
     document.querySelectorAll('.js-nome').forEach(el => { el.textContent = NOME_DELA; });
     document.querySelectorAll('.js-nome-apelido').forEach(el => { el.textContent = NOME_DELA_APELIDO; });
     document.querySelectorAll('.js-nome-dele').forEach(el => { el.textContent = NOME_DELE; });

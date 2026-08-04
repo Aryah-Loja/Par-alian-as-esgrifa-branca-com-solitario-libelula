@@ -143,8 +143,21 @@ async function salvarConfiguracao(chave, valor, imediato = false, afetaSincroniz
 }
 
 // Remove uma configuração (localStorage + IndexedDB) e sincroniza a
-// remoção. Usado para resets parciais (diferente do reset total do site).
+// remoção. Usado para resets parciais (termômetro, contrato — ver
+// js/preservacao.js). Proteção permanente: só deixa apagar chaves que
+// estão explicitamente na lista branca de js/preservacao.js — qualquer
+// outra chave (dado do pedido, vídeo, fotos, cartas, mensagens, easter
+// eggs, etc.) é recusada, mesmo que alguma função tente no futuro.
 async function excluirConfiguracao(chave, imediato = true) {
+    // Só permite apagar se js/preservacao.js confirmar explicitamente que a
+    // chave está na lista branca de chaves resetáveis. Se preservacao.js não
+    // tiver sido carregado nesta página por algum motivo, o padrão é RECUSAR
+    // (nunca permitir por omissão) — protege mesmo que essa checagem falhe.
+    const podeApagar = typeof chaveConfigPodeSerApagada === 'function' && chaveConfigPodeSerApagada(chave);
+    if (!podeApagar) {
+        console.error(`excluirConfiguracao bloqueada: "${chave}" é um dado permanente (ou a proteção de js/preservacao.js não está carregada) e não pode ser apagado por nenhum reset.`);
+        return false;
+    }
     try { localStorage.removeItem(chave); } catch (e) { console.error('Falha ao remover do localStorage:', chave, e); }
     try { await db.configuracoes.delete(chave); } catch (e) { console.error('Falha ao remover configuração do IndexedDB:', chave, e); }
     await marcarAtualizacaoLocal(imediato);

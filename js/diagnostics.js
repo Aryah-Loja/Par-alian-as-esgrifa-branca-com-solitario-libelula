@@ -234,7 +234,7 @@ async function executarVerEstadoReset() {
         const resetPendente = nuvemFoiResetada && timestampNuvem > timestampLocal;
         let decisao;
         if (!syncEstaConfigurado()) decisao = 'Sincronização não configurada — nada acontece.';
-        else if (resetPendente) decisao = 'RESETARIA este aparelho agora (a nuvem tem um reset mais novo que este aparelho ainda não viu).';
+        else if (resetPendente) decisao = 'REINICIARIA só o termômetro do dia (e cache técnico) neste aparelho agora — a nuvem tem uma marca de reset mais nova que este aparelho ainda não viu. Nenhum dado permanente é afetado (ver js/preservacao.js).';
         else if (meta && !nuvemFoiResetada && timestampNuvem > timestampLocal) decisao = 'PUXARIA da nuvem agora (a nuvem tem dados mais novos).';
         else if (timestampLocal > 0 && timestampLocal >= timestampNuvem) decisao = 'EMPURRARIA os dados deste aparelho para a nuvem agora (este aparelho está "à frente" ou empatado).';
         else decisao = 'Não faria nada (nada em nenhum dos dois lados).';
@@ -340,8 +340,8 @@ function solicitarSenhaReset(opcoes = {}) {
         // por várias ações sensíveis (reset total, reset do contrato, troca de vídeo).
         const titulo = overlay.querySelector('.senha-memorias-titulo');
         const subtitulo = overlay.querySelector('.senha-memorias-sub');
-        if (titulo) titulo.textContent = opcoes.titulo || 'Resetar o site';
-        if (subtitulo) subtitulo.textContent = opcoes.subtitulo || 'Essa ação apaga tudo (neste aparelho e no outro). Digite a senha para confirmar.';
+        if (titulo) titulo.textContent = opcoes.titulo || 'Confirmar ação';
+        if (subtitulo) subtitulo.textContent = opcoes.subtitulo || 'Digite a senha para confirmar.';
 
         overlay.classList.remove('d-none');
         erro.classList.add('d-none');
@@ -378,39 +378,42 @@ function solicitarSenhaReset(opcoes = {}) {
     });
 }
 
-async function executarReset() {
-    const senhaOk = await solicitarSenhaReset();
+// Reset do termômetro do dia (único dado temporário do projeto — ver
+// js/preservacao.js). Botão discreto, dentro da página de diagnóstico
+// (ela nunca vê esta página); apaga só 'aurora_termometro_lista', sem
+// tocar em nenhum outro dado do site. Continua publicando na nuvem antes
+// de limpar localmente, do mesmo jeito que o reset total fazia, para que
+// o outro aparelho também reinicie o termômetro na próxima sincronização.
+async function executarResetTermometro() {
+    const senhaOk = await solicitarSenhaReset({
+        titulo: 'Resetar o termômetro do dia',
+        subtitulo: 'Isso apaga só o histórico do termômetro do dia (neste aparelho e no outro, na próxima sincronização) — nenhum outro dado do site (vídeo, assinatura, fotos, cartas, mensagens, contrato) é afetado. Digite a senha para confirmar.'
+    });
     if (!senhaOk) return;
 
-    if (!confirm('Isso vai apagar TUDO o que foi salvo — neste aparelho e no outro (vídeo, assinatura, mensagens, fotos, polaroid e progresso). Essa ação não pode ser desfeita. Continuar?')) return;
+    if (!confirm('Isso apaga todo o histórico do termômetro do dia (neste aparelho e no outro). Essa ação não pode ser desfeita. Nenhuma outra informação do site é afetada. Continuar?')) return;
 
-    const botao = document.getElementById('btnResetar');
-    const status = document.getElementById('resetarStatus');
+    const botao = document.getElementById('btnResetarTermometro');
+    const status = document.getElementById('resetarTermometroStatus');
     if (botao) { botao.disabled = true; botao.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Resetando...'; }
-    if (status) { status.textContent = 'Publicando o reset na nuvem (pode levar alguns segundos — tenta de novo automaticamente se a rede falhar)...'; status.className = 'save-status'; }
-
-    // 1) Nuvem: a parte crítica é publicarResetNaNuvem (js/sync.js), que
-    //    sobrescreve o meta.json com a marca de reset e confirma lendo de
-    //    volta. Apagar o .zip antigo é só limpeza, roda em paralelo.
-    try { await apagarZipDaNuvem(); } catch (e) { console.error('Falha ao apagar o zip antigo na nuvem (não crítico)', e); }
+    if (status) { status.textContent = ''; status.className = 'save-status'; }
 
     try {
-        await publicarResetNaNuvem();
-        if (status) { status.textContent = 'Reset confirmado na nuvem. Limpando este aparelho...'; status.className = 'save-status ok'; }
-    } catch (e) {
-        console.error('Falha ao publicar o reset na nuvem', e);
+        await resetarTermometroDoDia();
+        await limparCacheTecnico();
         if (status) {
-            status.textContent = 'Não consegui confirmar o reset na nuvem depois de várias tentativas (sem internet agora?). NADA foi apagado ainda — verifique a conexão e toque em "Resetar site" de novo. Resetar só localmente, sem a nuvem confirmar, é o que fazia o outro aparelho continuar com os dados antigos.';
+            status.textContent = 'Termômetro reiniciado com sucesso. Vai sincronizar com o outro aparelho normalmente. Nenhum outro dado do site foi afetado.';
+            status.className = 'save-status ok';
+        }
+    } catch (e) {
+        console.error('Falha ao resetar o termômetro:', e);
+        if (status) {
+            status.textContent = 'Deu erro tentando resetar o termômetro: ' + e.message;
             status.className = 'save-status err';
         }
-        if (botao) { botao.disabled = false; botao.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i>Resetar site'; }
-        return; // não limpa local nem recarrega — evita a experiência "resetou aqui mas não na nuvem"
+    } finally {
+        if (botao) { botao.disabled = false; botao.innerHTML = '<i class="bi bi-thermometer-half me-1"></i>Resetar termômetro'; }
     }
-
-    // 2) Só chega aqui se a nuvem confirmou o reset — limpa o armazenamento local.
-    await limparArmazenamentoLocal();
-
-    location.reload();
 }
 
 // Reset parcial: apaga só as regras do contrato de namoro escolhidas
@@ -1004,6 +1007,7 @@ async function verificarVideosDoSite() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    if (typeof garantirDadosPermanentesDoPedido === 'function') garantirDadosPermanentesDoPedido();
     document.getElementById('btnRodarDiagnostico').addEventListener('click', executarDiagnosticoCompleto);
     document.getElementById('btnTestarNuvem').addEventListener('click', executarTesteNuvem);
     document.getElementById('btnTestarMediaReal').addEventListener('click', executarTesteMediaReal);
@@ -1012,7 +1016,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btnLimparCacheGaleria').addEventListener('click', executarLimparCacheGaleria);
     document.getElementById('btnVerificarMidiasSite').addEventListener('click', executarVerificarMidiasSite);
     document.getElementById('btnForcarSincronizacao').addEventListener('click', executarForcarSincronizacao);
-    document.getElementById('btnResetar').addEventListener('click', executarReset);
+    document.getElementById('btnResetarTermometro').addEventListener('click', executarResetTermometro);
     document.getElementById('btnResetarContrato').addEventListener('click', executarResetContrato);
     document.getElementById('btnTestarCapsula').addEventListener('click', executarTesteCapsula);
     iniciarTrocaDeVideo();

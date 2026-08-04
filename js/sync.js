@@ -247,17 +247,24 @@ async function publicarResetNaNuvem() {
     throw ultimoErro || new Error('Falha desconhecida ao publicar o reset na nuvem.');
 }
 
-/** Limpeza local completa (IndexedDB + localStorage + sessionStorage + cache) — usada pelo reset manual e pelo reset remoto detectado. */
+/**
+ * Limpeza local SEGURA — usada pelo botão de reset do termômetro (ver
+ * js/diagnostics.js) e pela detecção de reset remoto em
+ * sincronizarNaAbertura() logo abaixo. Desde a preservação permanente do
+ * projeto (ver js/preservacao.js e CONTEXTO-PROJETO.md), esta função NÃO
+ * apaga mais o IndexedDB nem o localStorage inteiros — só o termômetro do
+ * dia e cache técnico. Nenhum dado permanente (data/horário/local do
+ * pedido, vídeo, assinatura, fotos, "momentos", cartas, mensagens, mural,
+ * códigos especiais, easter eggs, contrato, checklist) é afetado, aqui ou
+ * em qualquer outro caminho de reset do site.
+ */
 async function limparArmazenamentoLocal() {
-    try { await db.media.clear(); await db.configuracoes.clear(); } catch (e) { console.error('Falha ao limpar IndexedDB:', e); }
-    try { localStorage.clear(); } catch (e) { /* ignora */ }
-    try { sessionStorage.clear(); } catch (e) { /* ignora */ }
-    try {
-        if (window.caches && caches.keys) {
-            const nomes = await caches.keys();
-            await Promise.all(nomes.map(nome => caches.delete(nome)));
-        }
-    } catch (e) { /* ignora */ }
+    if (typeof resetarTermometroDoDia === 'function') {
+        try { await resetarTermometroDoDia(); } catch (e) { console.error('Falha ao reiniciar o termômetro durante a limpeza local:', e); }
+    }
+    if (typeof limparCacheTecnico === 'function') {
+        try { await limparCacheTecnico(); } catch (e) { console.error('Falha na limpeza de cache técnico durante a limpeza local:', e); }
+    }
 }
 
 /* ----------------------------------------------------------------------

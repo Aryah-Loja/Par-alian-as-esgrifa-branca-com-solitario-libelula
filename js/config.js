@@ -873,6 +873,32 @@ const VIDEO_PROCESSO_YOUTUBE_URL = 'https://youtu.be/7Sx_eEfSKew';
  * horizontal. `false` para vídeo horizontal (paisagem) normal. */
 const VIDEO_PROCESSO_VERTICAL = true;
 
+/* Backup do vídeo do momento (o vídeo gravado do pedido, mostrado em
+ * "O momento em que você descobriu"), via YouTube. Cole a URL completa
+ * aqui: se o vídeo gravado localmente (IndexedDB) for perdido, corrompido
+ * ou não existir neste aparelho, o site troca automaticamente para este
+ * vídeo do YouTube no lugar (mesmo tamanho/posição na tela, sem o usuário
+ * perceber diferença). Ver garantirBackupDeVideoDisponivel(), js/romance.js.
+ * Deixe em branco ('') enquanto não tiver o vídeo publicado. */
+const VIDEO_MOMENTO_YOUTUBE_BACKUP_URL = '';
+
+/* Igual a VIDEO_PROCESSO_VERTICAL, mas pro backup acima: `true` se o vídeo
+ * do momento foi gravado na VERTICAL (o comum, celular na mão) — controla
+ * a proporção da moldura quando o backup do YouTube entra no lugar. */
+const VIDEO_MOMENTO_YOUTUBE_BACKUP_VERTICAL = true;
+
+/* ----------------------------------------------------------------------
+   DADOS PERMANENTES DO PEDIDO (fixos — o pedido já aconteceu de verdade)
+   ----------------------------------------------------------------------
+   O pedido já aconteceu, então estes 3 valores são o registro histórico
+   oficial e NUNCA devem mudar. js/preservacao.js grava estes valores em
+   toda abertura da página, então nenhum reset, limpeza de dados ou
+   ferramenta de diagnóstico consegue apagá-los ou deixá-los desatualizados.
+   Não editar (o pedido já é passado). */
+const DATA_PEDIDO_OFICIAL = '2026-08-01T22:16:00';
+const HORARIO_PEDIDO_OFICIAL = '22:16';
+const LOCAL_PEDIDO_OFICIAL = 'Brooks Franca';
+
 /* ----------------------------------------------------------------------
    EASTER EGG — brincadeira do sobrenome
    ---------------------------------------------------------------------- */

@@ -973,6 +973,53 @@ async function executarComBarraDeProgresso(tarefas) {
     ));
 }
 
+/**
+ * Mostra o vídeo do momento (gravação do pedido, "O momento em que você
+ * descobriu"): usa o vídeo local salvo no IndexedDB se ele existir e abrir
+ * de verdade neste navegador; senão, cai automaticamente para o backup no
+ * YouTube (VIDEO_MOMENTO_YOUTUBE_BACKUP_URL, js/config.js), trocando o
+ * <video> por um player embutido discreto, na mesma moldura/tamanho, sem
+ * chamar atenção pra troca. Se não houver nem vídeo local nem backup
+ * configurado, a seção simplesmente continua escondida, como sempre foi.
+ */
+async function garantirBackupDeVideoDisponivel() {
+    const wrap = document.getElementById('romanceVideoWrap');
+    const elVideo = document.getElementById('romanceVideo');
+    const btnBaixar = document.getElementById('btnBaixarVideoPedido');
+    if (!wrap || !elVideo) return;
+
+    let video = null;
+    try { video = await obterMedia('video_pedido'); } catch (e) { console.error('Falha ao ler o vídeo do pedido salvo:', e); }
+
+    let localUtilizavel = false;
+    if (video && video.blob && video.blob.size > 0) {
+        try { localUtilizavel = await testarVideoReproduzivel(video.blob); } catch (e) { localUtilizavel = false; }
+    }
+
+    if (localUtilizavel) {
+        const url = URL.createObjectURL(video.blob);
+        elVideo.src = url;
+        wrap.classList.remove('d-none');
+        if (btnBaixar) { btnBaixar.href = url; btnBaixar.classList.remove('d-none'); } // mesmo blob já carregado — download não refaz nenhuma leitura
+        return;
+    }
+
+    // Vídeo local ausente, corrompido ou perdido — cai pro backup do
+    // YouTube, se estiver configurado.
+    const urlBackup = (typeof VIDEO_MOMENTO_YOUTUBE_BACKUP_URL !== 'undefined') ? VIDEO_MOMENTO_YOUTUBE_BACKUP_URL : '';
+    const idBackup = urlBackup ? extrairIdYoutube(urlBackup) : '';
+    if (!idBackup) return; // nada disponível — mantém a seção escondida, sem quebrar nada
+
+    const vertical = typeof VIDEO_MOMENTO_YOUTUBE_BACKUP_VERTICAL === 'undefined' || !!VIDEO_MOMENTO_YOUTUBE_BACKUP_VERTICAL;
+    const aspecto = vertical ? '9 / 16' : '16 / 9';
+    // Substitui o <video> por um <div>/<iframe> com o mesmo id, mesma
+    // moldura (borda rosegold, cantos arredondados) e mesma proporção —
+    // pra ela ver praticamente a mesma coisa, só que vindo do YouTube.
+    elVideo.outerHTML = `<div id="romanceVideo" style="position:relative;width:100%;aspect-ratio:${aspecto};border-radius:12px;border:3px solid var(--rosegold);overflow:hidden;background:#000;"><iframe src="https://www.youtube.com/embed/${idBackup}?rel=0&modestbranding=1&playsinline=1" title="O momento em que você descobriu" style="position:absolute;inset:0;width:100%;height:100%;border:0;" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`;
+    if (btnBaixar) btnBaixar.classList.add('d-none'); // baixar não se aplica ao player embutido do YouTube
+    wrap.classList.remove('d-none');
+}
+
 async function goToRomancePage(primeiraVez) {
     document.getElementById('lojaScreen').style.display = 'none';
     document.getElementById('checkoutScreen').style.display = 'none';
@@ -1049,7 +1096,8 @@ async function goToRomancePage(primeiraVez) {
 
         obterConfiguracao('aurora_data_pedido').then(dataPedidoIso => {
             if (!dataPedidoIso) return;
-            document.getElementById('dataPedidoTexto').textContent = `Nosso pedido: ${formatarDataPedidoComHora(dataPedidoIso)} - Brooks Franca`;
+            const local = (typeof LOCAL_PEDIDO_OFICIAL !== 'undefined' && LOCAL_PEDIDO_OFICIAL) ? LOCAL_PEDIDO_OFICIAL : 'Brooks Franca';
+            document.getElementById('dataPedidoTexto').textContent = `Nosso pedido: ${formatarDataPedidoComHora(dataPedidoIso)} - ${local}`;
             const elTimeline = document.getElementById('dataPedidoTimeline');
             if (elTimeline) elTimeline.textContent = formatarDataPedido(dataPedidoIso);
 
@@ -1060,15 +1108,7 @@ async function goToRomancePage(primeiraVez) {
             if (localData) localData.textContent = `Sales Oliveira - SP, ${formatarDataPedido(dataPedidoIso)}.`;
         }),
 
-        obterMedia('video_pedido').then(video => {
-            if (video && video.blob) {
-                const url = URL.createObjectURL(video.blob);
-                document.getElementById('romanceVideo').src = url;
-                document.getElementById('romanceVideoWrap').classList.remove('d-none');
-                const btnBaixar = document.getElementById('btnBaixarVideoPedido');
-                if (btnBaixar) btnBaixar.href = url; // mesmo blob já carregado — download não refaz nenhuma leitura
-            }
-        }),
+        garantirBackupDeVideoDisponivel(),
 
         obterMedia('assinatura').then(assinatura => {
             if (assinatura && assinatura.texto) {
