@@ -7,6 +7,23 @@
     <meta name="theme-color" content="#FAF9F6">
     <title>Aryah Joias | Aliança Esgrifa Branca+ Solitário Libélula</title>
 
+    <script>
+        // ---- Corrige "sempre sobra um pouco de página pra rolar no topo" ----
+        // O navegador tenta restaurar sozinho a posição de rolagem da última
+        // vez que a página foi aberta — mas isso acontece ANTES da app
+        // terminar de montar a tela (sincronizar com a nuvem, ler o banco
+        // local, etc.), quando o documento ainda está mais baixo/curto do
+        // que vai ficar. O navegador "prende" a rolagem naquele ponto vindo
+        // do passado, e conforme o conteúdo real termina de carregar (mais
+        // alto do que o esperado), sobra aquele pedaço de topo escondido —
+        // um pouco mais a cada vez, porque cada carregamento "lembra" da
+        // rolagem do anterior. Isto desliga essa restauração automática:
+        // a página sempre abre exatamente no topo de verdade.
+        if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+        window.scrollTo(0, 0);
+        window.addEventListener('pageshow', () => window.scrollTo(0, 0));
+    </script>
+
     <!-- Abre a conexão com os domínios externos em paralelo enquanto o HTML
          ainda está sendo lido, adiantando o handshake de rede. -->
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
@@ -83,36 +100,6 @@
         <p class="vinheta-sub" id="vinhetaSubTexto">JOIAS</p>
     </div>
     <script>
-        // Desliga a restauração automática de scroll do navegador. Sem isso,
-        // ao dar refresh o navegador tenta voltar pro MESMO pixel de scroll
-        // de antes de atualizar a página — mas como o conteúdo aqui é
-        // montado aos poucos (sincronização com a nuvem, banco local, várias
-        // seções que só aparecem depois de carregar), esse pixel salvo quase
-        // nunca corresponde ao mesmo lugar depois do refresh: a página
-        // recarrega já "pulada" pra algum ponto no meio, escondendo o topo
-        // (onde fica o contador e o restante do cabeçalho) e mudando de
-        // lugar a cada atualização, sem relação com o tamanho real do
-        // conteúdo carregado. Precisa ser a primeira coisa a rodar, antes de
-        // qualquer outro script.
-        try { if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; } catch (e) { /* navegador sem suporte — ignora */ }
-
-        // Reforço do reset acima: em alguns navegadores/webviews (ex.: o
-        // navegador embutido do Instagram/WhatsApp, ou versões antigas do
-        // Chrome Android) o "scrollRestoration = manual" não é suficiente
-        // sozinho — o próprio navegador ainda empurra a página pro último
-        // pixel de scroll DEPOIS que tudo já carregou, por fora do controle
-        // do history API. Por isso força a rolagem de volta pro topo mais
-        // de uma vez: assim que o HTML inicial existe, quando a página
-        // termina de carregar (imagens, fontes, tudo) e mais uma vez logo
-        // depois — inclusive quando a página volta do cache do navegador ao
-        // apertar "voltar" (evento pageshow), que é outro momento clássico
-        // desse pulo indesejado. Não atrapalha nada: assim que a pessoa
-        // rolar a tela com o dedo, esses forçamentos já passaram e o site
-        // some no gerenciamento normal do restante do código.
-        window.scrollTo(0, 0);
-        window.addEventListener('load', function () { window.scrollTo(0, 0); setTimeout(function () { window.scrollTo(0, 0); }, 300); });
-        window.addEventListener('pageshow', function () { window.scrollTo(0, 0); });
-
         // Roda IMEDIATAMENTE ao interpretar o HTML — antes de qualquer script
         // externo (inclusive antes da sincronização com a nuvem, que pode
         // levar alguns segundos). Se o pedido já aconteceu, troca o texto
