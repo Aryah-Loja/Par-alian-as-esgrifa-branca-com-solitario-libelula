@@ -95,11 +95,11 @@
         <div id="diagMidiasSiteResultado" class="diag-estado-reset d-none"></div>
     </div>
 
-    <p class="diag-secao-titulo">Resetar o site</p>
+    <p class="diag-secao-titulo">Resetar o termômetro do dia</p>
     <div class="text-center">
-        <p class="small text-white-50 mb-3">Apaga tudo — neste aparelho e no outro (vídeo, assinatura, mensagens, fotos, polaroid e progresso). Pede a senha de reset antes de qualquer coisa. Movido para cá (fora do site principal) para evitar toques acidentais.</p>
-        <button id="btnResetar" class="btn btn-outline-danger rounded-pill fw-bold px-4"><i class="bi bi-exclamation-triangle me-1"></i>Resetar site</button>
-        <p id="resetarStatus" class="save-status mt-2"></p>
+        <p class="small text-white-50 mb-3">O pedido já aconteceu — este site agora é um registro permanente, então só o histórico do termômetro do dia pode ser reiniciado (nenhum outro dado, como vídeo, assinatura, fotos, cartas, mensagens ou contrato, pode ser apagado por aqui ou por nenhuma outra ferramenta de diagnóstico). Apaga neste aparelho e no outro, na próxima sincronização. Pede a senha de reset antes de qualquer coisa.</p>
+        <button id="btnResetarTermometro" class="btn btn-outline-danger rounded-pill fw-bold px-4"><i class="bi bi-thermometer-half me-1"></i>Resetar termômetro</button>
+        <p id="resetarTermometroStatus" class="save-status mt-2"></p>
     </div>
 
     <p class="diag-secao-titulo">Resetar só o contrato de namoro</p>
@@ -109,12 +109,14 @@
         <p id="resetarContratoStatus" class="save-status mt-2"></p>
     </div>
 
-    <!-- ===================== SENHA DO BOTÃO "RESETAR SITE" ===================== -->
+    <!-- ===================== SENHA DE AÇÕES SENSÍVEIS (reaproveitada por vários botões) =====================
+         Título/subtítulo são preenchidos dinamicamente por solicitarSenhaReset()
+         (js/diagnostics.js) antes de abrir, de acordo com a ação em questão. -->
     <div id="senhaResetOverlay" class="senha-memorias-overlay d-none">
         <div class="senha-memorias-box">
             <i class="bi bi-shield-lock-fill" style="font-size: 1.8rem; color: var(--rosegold);"></i>
-            <h5 class="senha-memorias-titulo">Resetar o site</h5>
-            <p class="senha-memorias-sub">Essa ação apaga tudo (neste aparelho e no outro). Digite a senha para confirmar.</p>
+            <h5 class="senha-memorias-titulo">Confirmar ação</h5>
+            <p class="senha-memorias-sub">Digite a senha para confirmar.</p>
             <input type="password" inputmode="numeric" id="senhaResetInput" class="senha-memorias-input" placeholder="••••••••" maxlength="20" autocomplete="off">
             <p id="senhaResetErro" class="save-status err d-none">Senha incorreta. Tente novamente.</p>
             <div class="d-flex gap-2 mt-3">
@@ -177,6 +179,7 @@
 
     <script src="js/config.js"></script>
     <script src="js/db.js"></script>
+    <script src="js/preservacao.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/sync.js"></script>
     <script src="js/diagnostics.js"></script>
