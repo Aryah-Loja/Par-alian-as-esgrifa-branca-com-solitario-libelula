@@ -307,6 +307,7 @@ body {
 .flashback-label { position: absolute; bottom: 12%; left: 0; right: 0; text-align: center; color: rgba(255,255,255,0.55); font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; font-size: 1rem; letter-spacing: 1px; opacity: 0; transition: opacity 0.6s ease; }
 .flashback-label.fb-visivel { opacity: 1; }
 .flashback-continuar { position: absolute; bottom: 5%; left: 50%; transform: translateX(-50%); z-index: 3; animation: fadeUp 0.6s ease forwards; }
+.flashback-continuar:active { transform: translateX(-50%) scale(0.96); }
 
 /* ---------------- Carta final (envelope + carta manuscrita) ---------------- */
 .letter-stage { perspective: 1400px; width: 100%; max-width: 320px; margin: 22px auto 6px; min-height: 300px; position: relative; }
@@ -798,6 +799,14 @@ body {
 
 .ceu-constelacao { position: relative; padding: 40px 0 60px; }
 .ceu-estrela { position: absolute; transform: translateX(-50%); background: none; border: none; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px; }
+/* O :active genérico (transform: scale(0.96), definido lá em cima pra
+   qualquer botão) sobrescrevia esse translateX(-50%) que centraliza a
+   estrela — resultado: ela "pulava" pro lado ao tocar, porque perdia o
+   deslocamento de centralização. Aqui a gente soma os dois transforms
+   em vez de deixar um apagar o outro, e troca o encolher por um leve
+   aumentar (o pedido era não ter *nenhum* deslocamento, só um destaque
+   sutil). */
+.ceu-estrela:active { transform: translateX(-50%) scale(1.12); }
 .ceu-estrela-brilho { width: 14px; height: 14px; border-radius: 50%; background: radial-gradient(circle, #fff8e8 0%, rgba(255,220,160,0.6) 45%, rgba(255,220,160,0) 75%); box-shadow: 0 0 10px 3px rgba(255,220,160,0.35); animation: ceuEstrelaPulsar 2.4s ease-in-out infinite; }
 @keyframes ceuEstrelaPulsar { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.25); } }
 .ceu-estrela-label { font-size: 0.68rem; letter-spacing: 0.4px; color: rgba(255,240,220,0.8); white-space: nowrap; }
@@ -983,7 +992,7 @@ body {
 .lembranca-lightbox-legenda { color: rgba(255,255,255,0.75); font-family: 'Jost', sans-serif; font-size: 0.8rem; letter-spacing: 1px; text-align: center; margin: 0; }
 .lembranca-lightbox-close { position: absolute; top: 18px; right: 20px; background: none; border: none; color: #fff; font-size: 2rem; line-height: 1; z-index: 2; }
 .lightbox-nav-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.14); border: none; color: #fff; width: 44px; height: 44px; border-radius: 50%; font-size: 1.3rem; display: flex; align-items: center; justify-content: center; z-index: 2; }
-.lightbox-nav-btn:active { background: rgba(255,255,255,0.28); }
+.lightbox-nav-btn:active { background: rgba(255,255,255,0.28); transform: translateY(-50%) scale(1.08); }
 
 /* Bloqueio de scroll genérico (reaproveitado pelo lightbox de lembranças e
    por qualquer outro overlay de tela cheia do site principal) — mesma
@@ -1215,6 +1224,7 @@ html.galeria-html { background-color: #1c1014; }
 /* Botões de navegação (anterior/próxima) do lightbox da galeria */
 .galeria-lightbox-nav { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.08); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); border: none; color: rgba(255,255,255,0.85); width: 44px; height: 44px; border-radius: 50%; font-size: 1.4rem; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s ease, color 0.2s ease; z-index: 5001; }
 .galeria-lightbox-nav:hover { background: rgba(255,255,255,0.18); color: #fff; }
+.galeria-lightbox-nav:active { transform: translateY(-50%) scale(1.08); }
 .galeria-lightbox-prev { left: 12px; }
 .galeria-lightbox-next { right: 12px; }
 @media (max-width: 560px) { .galeria-lightbox-prev { left: 6px; } .galeria-lightbox-next { right: 6px; } .galeria-lightbox-nav { width: 38px; height: 38px; font-size: 1.2rem; } }
