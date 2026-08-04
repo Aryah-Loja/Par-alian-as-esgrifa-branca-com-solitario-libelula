@@ -61,7 +61,20 @@ async function iniciarContadorVivo() {
     const grid = document.getElementById('liveCounterGrid');
     if (!grid) return;
     if (contadorVivoIntervalo) clearInterval(contadorVivoIntervalo);
-    contadorVivoDataInicio = await obterOuCriarDataPrimeiroAcesso();
+
+    // "Juntos há" agora conta a partir do pedido de verdade
+    // (aurora_data_pedido — o mesmo valor fixo de "Nosso pedido: 01 de
+    // agosto..." logo acima e do contrato), e não mais da primeira vez que
+    // o site foi aberto neste aparelho. Antes, se o site fosse aberto pela
+    // primeira vez bem depois do pedido de verdade (outro aparelho,
+    // storage limpo, etc.), o contador ficava "atrasado" — contando a
+    // partir da abertura, não do pedido — igual ao que aconteceu aqui.
+    // aurora_data_pedido é regravado a cada abertura por
+    // garantirDadosPermanentesDoPedido() (js/preservacao.js), então nunca
+    // deveria faltar — mas se por algum motivo faltar mesmo assim, cai de
+    // volta pro primeiro acesso, só pra não travar o contador.
+    const dataPedido = await obterConfiguracao('aurora_data_pedido');
+    contadorVivoDataInicio = dataPedido || await obterOuCriarDataPrimeiroAcesso();
 
     atualizarContadorVivo();
     contadorVivoIntervalo = setInterval(atualizarContadorVivo, 1000);
@@ -2060,12 +2073,62 @@ async function obterTermometroLista() {
     return salvo ? JSON.parse(salvo) : [];
 }
 
+// Quantos segundos ainda faltam até poder registrar de novo (0 = já pode).
+// Baseado só no último item da lista — não precisa da hora do servidor,
+// é só pra evitar cliques repetidos sem querer, não uma trava de segurança.
+function segundosRestantesCooldownTermometro(lista) {
+    if (!lista.length) return 0;
+    const ultimo = lista[lista.length - 1];
+    const passados = (Date.now() - new Date(ultimo.data).getTime()) / 1000;
+    return Math.max(0, Math.ceil(TERMOMETRO_COOLDOWN_SEGUNDOS - passados));
+}
+
+let termometroCooldownIntervalo = null;
+
+function aplicarEstadoCooldownTermometro(segundosRestantes) {
+    const opcoesWrap = document.getElementById('termometroOpcoes');
+    const cooldownEl = document.getElementById('termometroCooldown');
+    if (opcoesWrap) {
+        opcoesWrap.querySelectorAll('.termometro-opcao').forEach((btn) => { btn.disabled = segundosRestantes > 0; });
+    }
+    if (!cooldownEl) return;
+    if (segundosRestantes > 0) {
+        cooldownEl.textContent = `Você poderá registrar de novo em ${segundosRestantes}s`;
+        cooldownEl.classList.remove('d-none');
+    } else {
+        cooldownEl.textContent = '';
+        cooldownEl.classList.add('d-none');
+    }
+}
+
+// Roda a cada segundo enquanto o cooldown estiver ativo, atualizando a
+// contagem regressiva; para sozinho assim que ela chega a zero.
+function iniciarRelogioCooldownTermometro(segundosRestantes) {
+    if (termometroCooldownIntervalo) clearInterval(termometroCooldownIntervalo);
+    aplicarEstadoCooldownTermometro(segundosRestantes);
+    if (segundosRestantes <= 0) return;
+    let restante = segundosRestantes;
+    termometroCooldownIntervalo = setInterval(() => {
+        restante--;
+        aplicarEstadoCooldownTermometro(restante);
+        if (restante <= 0) { clearInterval(termometroCooldownIntervalo); termometroCooldownIntervalo = null; }
+    }, 1000);
+}
+
 async function registrarTermometroDoDia(valor) {
     const notaInput = document.getElementById('termometroNotaInput');
     const status = document.getElementById('termometroStatus');
-    const texto = notaInput ? notaInput.value.trim() : '';
 
     const lista = await obterTermometroLista();
+
+    // Ainda dentro do intervalo mínimo (TERMOMETRO_COOLDOWN_SEGUNDOS, js/config.js) — não registra de novo, só atualiza a contagem regressiva.
+    const restante = segundosRestantesCooldownTermometro(lista);
+    if (restante > 0) {
+        iniciarRelogioCooldownTermometro(restante);
+        return;
+    }
+
+    const texto = notaInput ? notaInput.value.trim() : '';
     lista.push({ data: new Date().toISOString(), valor, texto });
     while (lista.length > 60) lista.shift(); // guarda só os últimos 60 — suficiente pro histórico visual
     await salvarConfiguracao('aurora_termometro_lista', JSON.stringify(lista));
@@ -2077,6 +2140,7 @@ async function registrarTermometroDoDia(valor) {
         setTimeout(() => { status.textContent = ''; }, 2500);
     }
     await renderizarTermometroDoDia();
+    iniciarRelogioCooldownTermometro(TERMOMETRO_COOLDOWN_SEGUNDOS);
 }
 
 // Média simples dos registros feitos no mês corrente (ano+mês local do
@@ -2106,6 +2170,7 @@ async function renderizarTermometroDoDia() {
     }
 
     const lista = await obterTermometroLista();
+    iniciarRelogioCooldownTermometro(segundosRestantesCooldownTermometro(lista));
 
     const mediaEl = document.getElementById('termometroMediaMes');
     if (mediaEl) {

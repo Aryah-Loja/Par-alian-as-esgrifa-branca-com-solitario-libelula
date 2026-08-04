@@ -1812,6 +1812,11 @@ const TERMOMETRO_OPCOES = [
     { valor: 6, emoji: '🥰', rotulo: 'Muito feliz' },
 ];
 
+// Intervalo mínimo entre dois registros do termômetro do dia — evita
+// ficar "martelando" reações seguidas sem sentido (a média do mês fica
+// mais honesta assim). Pra mudar, só editar o número de segundos abaixo.
+const TERMOMETRO_COOLDOWN_SEGUNDOS = 60;
+
 /* ----------------------------------------------------------------------
    CARTAS CONDICIONAIS
    ----------------------------------------------------------------------
