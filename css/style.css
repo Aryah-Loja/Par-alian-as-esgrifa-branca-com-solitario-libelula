@@ -52,6 +52,17 @@ html {
     /* iOS ignora "user-scalable=no"; touch-action:manipulation desliga o
        zoom por toque duplo/repetido nativamente, sem atrapalhar a rolagem. */
     touch-action: manipulation;
+    /* CORREÇÃO: em telas pequenas, o Safari/Chrome do celular "aumenta"
+       sozinho o tamanho de texto pra melhorar legibilidade (font boosting/
+       text inflation) — sem isso, qualquer emoji (que é TEXTO, não imagem)
+       dentro de uma caixinha de tamanho fixo (badge do termômetro, cartão
+       dos bichos, dica de easter egg, emoji da categoria do checklist etc.)
+       renderiza maior do que a caixa foi desenhada pra conter, "vazando"
+       pra fora dela — só em telas menores, nunca no desktop/tablet, onde
+       esse boosting não é acionado. Travando em 100% aqui, o tamanho do
+       emoji passa a ser sempre o que o rem/px do CSS já define. */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
 }
 
 body {
