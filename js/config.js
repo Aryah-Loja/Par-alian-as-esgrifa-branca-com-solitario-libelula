@@ -880,7 +880,7 @@ const VIDEO_PROCESSO_VERTICAL = true;
  * vídeo do YouTube no lugar (mesmo tamanho/posição na tela, sem o usuário
  * perceber diferença). Ver garantirBackupDeVideoDisponivel(), js/romance.js.
  * Deixe em branco ('') enquanto não tiver o vídeo publicado. */
-const VIDEO_MOMENTO_YOUTUBE_BACKUP_URL = '';
+const VIDEO_MOMENTO_YOUTUBE_BACKUP_URL = 'https://youtu.be/wVpkkkuqmf8';
 
 /* Igual a VIDEO_PROCESSO_VERTICAL, mas pro backup acima: `true` se o vídeo
  * do momento foi gravado na VERTICAL (o comum, celular na mão) — controla
@@ -1756,7 +1756,7 @@ const MENSAGEM_SECRETA_LUA = 'O sol ama tanto a lua que morre todas as noites pa
 // js/utils.js. Não é segurança de verdade (site estático não tem como ter
 // isso, ver nota completa mais abaixo em SENHA_RESET_SITE_HASH), só evita que
 // a senha apareça em texto legível pra quem abrir este arquivo por curiosidade.
-const SENHA_AREA_MEMORIAS_HASH = '1326c6c44cc5e89cc510c9d2a17dd02c9105a377df60cf64d953c1eb4b06b00d'; // hash correto de "1406" (confirmado)
+const SENHA_AREA_MEMORIAS_HASH = '1326c6c44cc5e89cc510c9d2a17dd02c9105a377df60cf64d953c1eb4b06b00d'; 
 
 /* ----------------------------------------------------------------------
    QUADRO DE PREVISÕES
@@ -1782,11 +1782,17 @@ const SENHA_AREA_MEMORIAS_HASH = '1326c6c44cc5e89cc510c9d2a17dd02c9105a377df60cf
    ---------------------------------------------------------------------- */
 const PREVISOES_DIAS_PARA_REVELACAO = 365; // 1 ano a partir da primeira vez que a seção for aberta
 const PREVISOES_PERGUNTAS = [
-    { id: 'previsao_1ano', pergunta: 'Onde a gente vai estar daqui 1 ano?' },
-    { id: 'previsao_5anos', pergunta: 'Onde a gente vai estar daqui 5 anos?' },
-    { id: 'previsao_10anos', pergunta: 'Onde a gente vai estar daqui 10 anos?' },
-    { id: 'previsao_viagem', pergunta: 'Qual vai ser a nossa próxima viagem?' },
-    { id: 'previsao_pendencia', pergunta: 'O que a gente ainda não fez e vai fazer até lá?' },
+   { id: 'previsao_1ano', pergunta: 'Como será a nossa vida exatamente 1 ano depois deste dia?' },
+   { id: 'previsao_moradia', pergunta: 'Onde estaremos morando daqui a 1 ano?' },
+   { id: 'previsao_trabalho', pergunta: 'Como estará a nossa vida profissional daqui a 1 ano?' },
+   { id: 'previsao_viagem', pergunta: 'Qual terá sido a viagem mais especial que fizemos nesse primeiro ano?' },
+   { id: 'previsao_conquistas', pergunta: 'Qual será a maior conquista que teremos alcançado juntos até lá?' },
+   { id: 'previsao_habitos', pergunta: 'O que teremos criado como rotina que hoje ainda nem imaginamos?' },
+   { id: 'previsao_fotos', pergunta: 'Qual foto desse primeiro ano vai ser a nossa favorita?' },
+   { id: 'previsao_desafios', pergunta: 'Qual desafio teremos superado juntos nesse primeiro ano?' },
+   { id: 'previsao_sonho', pergunta: 'Qual sonho nosso já terá deixado de ser apenas um plano?' },
+   { id: 'previsao_amor', pergunta: 'O nosso amor vai estar diferente? Em que sentido?' },
+   { id: 'previsao_frase', pergunta: 'Deixe uma mensagem para nós dois.' },
 ];
 // Gere o hash em secret/gerar-hash.html e cole aqui — enquanto estiver
 // vazio, o botão do Gabriel fica visível mas avisa que ainda não foi
@@ -1832,14 +1838,62 @@ const CARTAS_CONDICIONAIS = [
         id: 'carta_morar_juntos',
         titulo: 'Quando a gente morar junto',
         gatilho: 'Só abre quando a gente morar junto de vez.',
-        texto: `Se você está lendo isso, é porque finalmente vamos dividir o mesmo teto de verdade — não só as visitas e as despedidas na porta. Espero que a gente ainda ria muito das mesmas bobagens, mesmo depois de dividir a pia do banheiro e descobrir os defeitos um do outro de perto. Obrigado por escolher construir isso comigo.`,
+        texto:  ``,
     },
     {
         id: 'carta_bicho_juntos',
         titulo: 'Quando adotarmos um bicho juntos',
         gatilho: 'Só abre no dia em que a gente trouxer um bicho pra casa, dos dois.',
-        texto: `Se chegou até aqui, temos um bichinho novo em casa, nosso, de verdade. Espero que ele(a) bagunce tudo, exija atenção nas horas mais inconvenientes e vire, mesmo assim, mais um motivo pra gente voltar correndo pra casa. Bem-vindo(a) à família, pequeno(a).`,
+        texto: ``,
     },
+   {
+       id: 'carta_primeiro_natal',
+       titulo: 'Nosso primeiro Natal',
+       gatilho: 'Só abre no nosso primeiro Natal juntos.',
+       texto: ``,
+   },
+   {
+       id: 'carta_primeiro_ano',
+       titulo: 'Um ano de nós',
+       gatilho: 'Só abre exatamente 1 ano depois do pedido.',
+       texto:  ``,
+   },
+   {
+       id: 'carta_viagem',
+       titulo: 'Nossa primeira grande viagem',
+       gatilho: 'Só abre durante nossa primeira viagem longa.',
+       texto:  ``,
+   },
+   {
+       id: 'carta_primeira_casa',
+       titulo: 'A chave da nossa casa',
+       gatilho: 'Só abre quando tivermos nossa casa.',
+       texto:  ``,
+   },
+   {
+       id: 'carta_primeira_briga',
+       titulo: 'Depois da primeira grande briga',
+       gatilho: 'Só abre depois da nossa primeira briga realmente séria.',
+       texto:  ``,
+   },
+   {
+       id: 'carta_dez_anos',
+       titulo: 'Dez anos depois',
+       gatilho: 'Só abre 10 anos após o pedido.',
+       texto:  ``,
+   },
+   {
+       id: 'carta_filho',
+       titulo: 'Quando nossa família crescer',
+       gatilho: 'Só abre quando descobrirmos que vamos ter um filho.',
+       texto:  ``,
+   },
+   {
+       id: 'carta_cabelo_branco',
+       titulo: 'Quando aparecerem os primeiros cabelos brancos',
+       gatilho: 'Só abre quando a idade começar a aparecer.',
+       texto:  ``,
+   },
 ];
 
 /* ----------------------------------------------------------------------
