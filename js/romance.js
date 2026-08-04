@@ -1077,6 +1077,10 @@ async function goToRomancePage(primeiraVez) {
     document.getElementById('processingOverlay').style.display = 'none';
     document.getElementById('romancePage').style.display = 'block';
     definirFundoBody(CORES_FUNDO.escuro);
+    
+    const romancePage = document.getElementById('romancePage');
+    romancePage.scrollTop = 0;      // <-- adicione aqui
+    
     window.scrollTo(0, 0);
     mostrarLoadingRomance();
 
