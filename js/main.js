@@ -38,6 +38,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     rodarModuloIsolado(iniciarModuloRomance, 'romance');
     rodarModuloIsolado(iniciarModuloExport, 'export');
     rodarModuloIsolado(iniciarModuloSync, 'sync');
+    rodarModuloIsolado(iniciarPresenca, 'presenca');
 
     // Estágio da experiência: 'final' = já viu tudo; data de pedido definida
     // = pedido feito mas jornada interrompida (retoma de onde parou); nenhum

@@ -15,6 +15,7 @@ let futuroTimerIntervalo = null;
 let futuroTimerSegundos = 0;
 let futuroTimeoutMaximo = null;
 const FUTURO_VIDEO_DURACAO_MAXIMA_SEGUNDOS = 30; // limite pra não encher o banco de dados com vídeos longos (ver prompt de correções)
+const FUTURO_AUDIO_DURACAO_MAXIMA_SEGUNDOS = 60; // idem, só que pro áudio (mais leve, por isso o limite é maior)
 
 function pararStreamFuturo() {
     if (futuroStream) { futuroStream.getTracks().forEach(t => t.stop()); futuroStream = null; }
@@ -169,14 +170,15 @@ function iniciarGravacaoFuturo() {
     document.getElementById('btnFuturoIniciar').classList.add('d-none');
     document.getElementById('btnFuturoParar').classList.remove('d-none');
 
-    // Limite de 1 minuto só para vídeo (áudio é bem mais leve).
-    if (futuroModo === 'video') {
-        futuroTimeoutMaximo = setTimeout(() => {
-            statusEl.textContent = 'Chegou no limite de 1 minuto, parando a gravação automaticamente.';
-            statusEl.className = 'save-status pending';
-            pararGravacaoFuturo();
-        }, FUTURO_VIDEO_DURACAO_MAXIMA_SEGUNDOS * 1000);
-    }
+    // Limite de duração automático: 30s pro vídeo, 1 minuto pro áudio
+    // (áudio é bem mais leve, por isso aguenta mais tempo).
+    const limiteSegundos = futuroModo === 'video' ? FUTURO_VIDEO_DURACAO_MAXIMA_SEGUNDOS : FUTURO_AUDIO_DURACAO_MAXIMA_SEGUNDOS;
+    const limiteTexto = futuroModo === 'video' ? '30 segundos' : '1 minuto';
+    futuroTimeoutMaximo = setTimeout(() => {
+        statusEl.textContent = `Chegou no limite de ${limiteTexto}, parando a gravação automaticamente.`;
+        statusEl.className = 'save-status pending';
+        pararGravacaoFuturo();
+    }, limiteSegundos * 1000);
 }
 
 function pararGravacaoFuturo() {

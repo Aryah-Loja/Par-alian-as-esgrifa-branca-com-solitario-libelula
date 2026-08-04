@@ -44,6 +44,22 @@
     </style>
 </head>
 <body>
+    <!-- ===================== SENHA DE ACESSO AO DIAGNÓSTICO =====================
+         Cobre a tela inteira já no primeiro frame (sem classe "d-none" aqui
+         no HTML, pra não piscar o conteúdo antes do JS rodar). Escondida só
+         depois que iniciarGateDiagnostico() (js/diagnostics.js) confirmar a
+         senha certa. -->
+    <div id="senhaDiagnosticoOverlay" class="senha-memorias-overlay">
+        <div class="senha-memorias-box">
+            <i class="bi bi-shield-lock-fill" style="font-size: 1.8rem; color: var(--rosegold);"></i>
+            <h5 class="senha-memorias-titulo">Área restrita</h5>
+            <p class="senha-memorias-sub">Digite a senha para acessar o diagnóstico.</p>
+            <input type="password" inputmode="numeric" id="senhaDiagnosticoInput" class="senha-memorias-input" placeholder="••••••••" maxlength="20" autocomplete="off">
+            <p id="senhaDiagnosticoErro" class="save-status err d-none">Senha incorreta. Tente novamente.</p>
+            <button id="btnSenhaDiagnosticoEntrar" class="btn btn-rosegold w-100 rounded-pill fw-bold mt-3">Entrar</button>
+        </div>
+    </div>
+
     <div class="diag-header">
         <p class="text-rosegold small text-uppercase tracking-wide mb-1">Uso interno — não linkado no site principal</p>
         <h1>Painel de Diagnóstico</h1>

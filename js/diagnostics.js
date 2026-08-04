@@ -434,6 +434,11 @@ async function executarResetContrato() {
 
     try {
         await excluirConfiguracao('aurora_regras_contrato', true);
+        // Também desfaz o "fechar contrato" (papel enrolado/selado — ver
+        // btnFecharContrato em js/romance.js): sem isso, ao escolher as
+        // regras de novo o site pularia direto pro selo antigo, sem
+        // mostrar o contrato novo.
+        await excluirConfiguracao('aurora_contrato_fechado', true);
         if (status) {
             status.textContent = 'Contrato resetado com sucesso. Vai sincronizar com o outro aparelho normalmente.';
             status.className = 'save-status ok';
@@ -876,7 +881,23 @@ async function alternarCartaCondicional(id) {
     const salvo = await obterConfiguracao('aurora_cartas_condicionais_liberadas');
     const liberadas = salvo ? JSON.parse(salvo) : [];
     const indice = liberadas.indexOf(id);
-    if (indice >= 0) liberadas.splice(indice, 1); else liberadas.push(id);
+    if (indice >= 0) {
+        // Estava liberada e o admin está bloqueando de novo: limpa também as
+        // confirmações de Ana/Gabriel guardadas em
+        // 'aurora_cartas_condicionais_confirmacoes' — senão, na próxima vez
+        // que alguém tocar no cartão (agora bloqueado de novo), os dois
+        // botões já apareceriam marcados como "confirmado" (de antes) e
+        // desabilitados, sem jeito de liberar de novo pelo cartão em si.
+        liberadas.splice(indice, 1);
+        const salvoConfirmacoes = await obterConfiguracao('aurora_cartas_condicionais_confirmacoes');
+        const confirmacoes = salvoConfirmacoes ? JSON.parse(salvoConfirmacoes) : {};
+        if (confirmacoes[id]) {
+            delete confirmacoes[id];
+            await salvarConfiguracao('aurora_cartas_condicionais_confirmacoes', JSON.stringify(confirmacoes), true);
+        }
+    } else {
+        liberadas.push(id);
+    }
 
     await salvarConfiguracao('aurora_cartas_condicionais_liberadas', JSON.stringify(liberadas), true);
     await carregarCartasCondicionaisAdmin();
@@ -1006,7 +1027,54 @@ async function verificarVideosDoSite() {
     botao.innerHTML = textoOriginal;
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+// Senha de acesso ao painel inteiro (ver SENHA_DIAGNOSTICO_HASH em
+// js/config.js). Mesmo padrão de solicitarSenhaMemorias() (js/romance.js):
+// desbloqueado só nesta sessão/aba (sessionStorage) — fechar o navegador
+// ou abrir em outra aba pede a senha de novo.
+function diagnosticoJaDesbloqueadoNestaSessao() {
+    try { return sessionStorage.getItem('aurora_diagnostico_desbloqueado') === '1'; } catch (e) { return false; }
+}
+
+function iniciarGateDiagnostico() {
+    return new Promise((resolve) => {
+        const overlay = document.getElementById('senhaDiagnosticoOverlay');
+        const input = document.getElementById('senhaDiagnosticoInput');
+        const erro = document.getElementById('senhaDiagnosticoErro');
+        if (!overlay || !input) { resolve(); return; } // defensivo: se o HTML não existir, não bloqueia a página
+
+        if (diagnosticoJaDesbloqueadoNestaSessao()) {
+            overlay.classList.add('d-none');
+            resolve();
+            return;
+        }
+
+        input.value = '';
+        setTimeout(() => input.focus(), 300);
+
+        async function tentarDesbloquear() {
+            const senhaDigitada = (input.value || '').trim();
+            if (await verificarSenhaHash(senhaDigitada, SENHA_DIAGNOSTICO_HASH)) {
+                try { sessionStorage.setItem('aurora_diagnostico_desbloqueado', '1'); } catch (e) { /* ignora */ }
+                overlay.classList.add('d-none');
+                resolve();
+            } else {
+                erro.classList.remove('d-none');
+                input.value = '';
+                input.focus();
+                overlay.querySelector('.senha-memorias-box').classList.remove('senha-shake');
+                void overlay.offsetWidth; // força reflow para reiniciar a animação de "errado"
+                overlay.querySelector('.senha-memorias-box').classList.add('senha-shake');
+            }
+        }
+
+        document.getElementById('btnSenhaDiagnosticoEntrar').onclick = tentarDesbloquear;
+        input.onkeydown = (evt) => { if (evt.key === 'Enter') tentarDesbloquear(); };
+    });
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+    await iniciarGateDiagnostico();
+
     if (typeof garantirDadosPermanentesDoPedido === 'function') garantirDadosPermanentesDoPedido();
     document.getElementById('btnRodarDiagnostico').addEventListener('click', executarDiagnosticoCompleto);
     document.getElementById('btnTestarNuvem').addEventListener('click', executarTesteNuvem);

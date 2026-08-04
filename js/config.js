@@ -1827,11 +1827,14 @@ const TERMOMETRO_COOLDOWN_SEGUNDOS = 60;
    CARTAS CONDICIONAIS
    ----------------------------------------------------------------------
    Parecidas com a "mensagem pro futuro", mas em vez de abrir sozinha
-   numa data marcada, cada uma só é liberada manualmente quando o
-   momento/gatilho descrito realmente acontecer (ver a seção "Cartas
-   Condicionais" em diagnostico.html — protegida pela mesma senha de
-   reset). Edite/adicione itens à vontade: cada um vira automaticamente
-   um cartão na página e uma entrada no painel de liberação.
+   numa data marcada, cada uma só é liberada quando o momento/gatilho
+   descrito realmente acontecer — e só quando os DOIS confirmarem, cada
+   um com a própria senha do Quadro de Previsões (ver
+   renderizarCartasCondicionais() em js/romance.js). Também dá pra
+   liberar pelo painel administrativo em diagnostico.html, protegido
+   pela senha de reset (uso de emergência, sem precisar dos dois). Edite/
+   adicione itens à vontade: cada um vira automaticamente um cartão na
+   página e uma entrada no painel de liberação.
    ---------------------------------------------------------------------- */
 const CARTAS_CONDICIONAIS = [
     {
@@ -1924,6 +1927,18 @@ const DICA_SENHA_CARTA_DISCUSSAO = 'A dica são duas palavras que a gente nunca 
    resistir a um ataque.
    ---------------------------------------------------------------------- */
 const SENHA_RESET_SITE_HASH = '0d6f8587a3f511e9082c6781a072e2f65978918fa0c606a0de3633730a51b13d';
+
+/* ----------------------------------------------------------------------
+   SENHA DE ACESSO AO PAINEL DE DIAGNÓSTICO
+   ----------------------------------------------------------------------
+   Bloqueia diagnostico.html inteiro atrás de uma senha (gerada em
+   secret/gerar-hash.html, mesmo padrão de hash SHA-256 das outras senhas
+   acima — ver verificarSenhaHash() em js/utils.js e o gate em
+   iniciarGateDiagnostico(), js/diagnostics.js). Fica desbloqueado só
+   durante a sessão/aba atual (sessionStorage); fechar o navegador ou
+   abrir em outra aba pede a senha de novo.
+   ---------------------------------------------------------------------- */
+const SENHA_DIAGNOSTICO_HASH = '660ca7f0fd9d75fe9c2c9abef9476c4c1f7c24ad6517d9b8190e034a4b378016';
 
 /* ----------------------------------------------------------------------
    TEXTOS-CHAVE (fáceis de localizar e editar)

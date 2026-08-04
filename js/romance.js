@@ -35,26 +35,49 @@ let contadorVivoIntervalo = null;
 let contadorVivoDataInicio = null;
 let contadorVivoOuvintesRegistrados = false;
 
-// Recalcula e escreve os 6 números na tela. É "burra" de propósito (sempre
-// lê a hora atual de verdade) — nunca soma "+1" em cima do valor anterior,
-// então não existe como ela "travar" num número e ficar presa lá: se essa
-// função rodar, o valor mostrado está sempre certo para o instante em que
-// rodou.
+// Recalcula os 6 números. É "burra" de propósito (sempre lê a hora atual de
+// verdade) — nunca soma "+1" em cima do valor anterior, então não existe
+// como ela "travar" num número e ficar presa lá: se essa função rodar, o
+// valor mostrado está sempre certo para o instante em que rodou.
+//
+// Cada número só é escrito no DOM (e só pisca, via atualizarNumeroContador)
+// quando muda de verdade — antes ela reescrevia todos os 6 a cada segundo,
+// então mesmo "dias" (que só muda uma vez por dia) recebia um innerText
+// novo a cada tick do relógio, e isso é o que fazia o quadrado inteiro
+// parecer "piscando a cada segundo" sem nunca ter mudado de valor.
 function atualizarContadorVivo() {
     if (!contadorVivoDataInicio) return;
     try {
         const grid = document.getElementById('liveCounterGrid');
         if (!grid) return; // página trocou de tela, sem erro no console à toa
         const d = calcularDuracaoRelacionamento(contadorVivoDataInicio);
-        document.getElementById('lcAnos').textContent = d.anos;
-        document.getElementById('lcMeses').textContent = d.meses;
-        document.getElementById('lcDias').textContent = d.dias;
-        document.getElementById('lcHoras').textContent = String(d.horas).padStart(2, '0');
-        document.getElementById('lcMinutos').textContent = String(d.minutos).padStart(2, '0');
-        document.getElementById('lcSegundos').textContent = String(d.segundos).padStart(2, '0');
+        atualizarNumeroContador('lcAnos', d.anos);
+        atualizarNumeroContador('lcMeses', d.meses);
+        atualizarNumeroContador('lcDias', d.dias);
+        atualizarNumeroContador('lcHoras', String(d.horas).padStart(2, '0'));
+        atualizarNumeroContador('lcMinutos', String(d.minutos).padStart(2, '0'));
+        atualizarNumeroContador('lcSegundos', String(d.segundos).padStart(2, '0'));
     } catch (e) {
         console.error('Falha ao atualizar o contador "Juntos há" (não deve travar o resto do site):', e);
     }
+}
+
+// Escreve um número no DOM (e dispara o "pisca" do quadrado, via classe
+// lc-atualizado — ver @keyframes lcFlash, css/style.css) só quando o texto
+// realmente mudou. Se o valor for igual ao que já estava na tela, não mexe
+// em nada — nem reescreve o texto, nem pisca.
+function atualizarNumeroContador(idElemento, valorNovo) {
+    const el = document.getElementById(idElemento);
+    if (!el) return;
+    const textoNovo = String(valorNovo);
+    if (el.textContent === textoNovo) return;
+    el.textContent = textoNovo;
+
+    const unidade = el.closest('.lc-unit');
+    if (!unidade) return;
+    unidade.classList.remove('lc-atualizado');
+    void unidade.offsetWidth; // força reflow, pra poder reiniciar a animação mesmo se ela piscou há pouquíssimo tempo
+    unidade.classList.add('lc-atualizado');
 }
 
 async function iniciarContadorVivo() {
@@ -322,35 +345,65 @@ function iniciarEstrelasCadentes() {
     iniciarNaveAlienigena(camada);
 }
 
-// Easter egg raro: uma navezinha alienígena cruza o céu bem devagar, uma
-// vez a cada 3 minutos (tempo real). A distância do trajeto é calculada em
-// pixels a partir da largura real do céu (percentagem não funciona aqui,
-// pois translate() em % é relativo ao próprio elemento, não ao contêiner).
+// Easter egg raro: uma navezinha alienígena cruza o céu bem devagar, em
+// intervalos variáveis (não mais um relógio fixo de 3 em 3 minutos) — cada
+// travessia sorteia direção, posição vertical, distância, curva do arco,
+// tamanho, brilho e duração, pra nunca parecer a mesma navezinha repetindo
+// sempre o mesmo trajeto. A distância do trajeto é calculada em pixels a
+// partir da largura real do céu (percentagem não funciona aqui, pois
+// translate() em % é relativo ao próprio elemento, não ao contêiner).
 function iniciarNaveAlienigena(camada) {
-    const TRES_MINUTOS_MS = 3 * 60 * 1000;
-
     function cruzarUmaVez() {
-        if (!document.body.contains(camada)) return; // saiu de "Nossa História" — não continua gerando em segundo plano
+        if (!document.body.contains(camada)) return; // saiu de "Nossa História" — não continua gerando em segundo plano nem agenda a próxima
         const nave = document.createElement('div');
         nave.className = 'ceu-nave-alienigena';
         nave.innerHTML = '<span class="ceu-nave-cupula"></span><span class="ceu-nave-corpo"></span><span class="ceu-nave-luz ceu-nave-luz-1"></span><span class="ceu-nave-luz ceu-nave-luz-2"></span><span class="ceu-nave-luz ceu-nave-luz-3"></span>';
         const indoDireita = Math.random() < 0.5;
-        nave.style.top = `${10 + Math.random() * 50}%`;
-        nave.style.left = indoDireita ? '-20%' : '120%';
 
-        // Largura real da camada (ou da janela, como fallback) + folga extra.
+        // Faixa vertical de partida bem mais ampla que antes (era só
+        // 10%-60%), e a folga fora da tela também varia, pra não sair
+        // sempre do mesmo pontinho de cada lado.
+        nave.style.top = `${4 + Math.random() * 68}%`;
+        nave.style.left = indoDireita ? `${-28 - Math.random() * 14}%` : `${114 + Math.random() * 14}%`;
+
+        // Largura real da camada (ou da janela, como fallback), com uma
+        // folga que também varia — nem toda navezinha atravessa a tela
+        // inteira do mesmo jeito.
         const largura = camada.getBoundingClientRect().width || window.innerWidth;
-        const distancia = largura + 120;
+        const distancia = largura * (0.82 + Math.random() * 0.5) + 90;
         nave.style.setProperty('--nave-dx', `${indoDireita ? distancia : -distancia}px`);
 
-        nave.style.animationDuration = '16s';
+        // Arco de voo: às vezes sobe no meio do caminho, às vezes desce, com
+        // intensidades diferentes, e termina em alturas diferentes — antes
+        // esse arco era sempre fixo (-14px no meio, 6px no fim), fazendo
+        // toda navezinha parecer clone da anterior.
+        const direcaoDoArco = Math.random() < 0.5 ? -1 : 1;
+        nave.style.setProperty('--nave-dy-meio', `${(direcaoDoArco * (6 + Math.random() * 30)).toFixed(0)}px`);
+        nave.style.setProperty('--nave-dy-fim', `${(-15 + Math.random() * 45).toFixed(0)}px`);
+
+        // Tamanho e brilho levemente diferentes a cada travessia.
+        nave.style.setProperty('--nave-escala', (0.72 + Math.random() * 0.65).toFixed(2));
+        nave.style.setProperty('--nave-opacidade', (0.65 + Math.random() * 0.35).toFixed(2));
+
+        // Velocidade variável (9s a 20s, era sempre 16s fixo).
+        const duracao = 9 + Math.random() * 11;
+        nave.style.animationDuration = `${duracao.toFixed(1)}s`;
 
         camada.appendChild(nave);
         nave.addEventListener('animationend', () => nave.remove());
+
+        agendarProximaTravessia();
     }
 
-    setTimeout(cruzarUmaVez, 30000 + Math.random() * 60000); // primeira aparição entre 30s e 1min30s, pra não depender só de quem fica 3min+ olhando
-    setInterval(cruzarUmaVez, TRES_MINUTOS_MS);
+    function agendarProximaTravessia() {
+        // Intervalo variável entre 2 e 5 minutos reais (em vez de sempre
+        // exatos 3 minutos) — evita o padrão "sempre no mesmo instante,
+        // sempre parecendo a mesma nave indo pro mesmo lugar".
+        const proximaEmMs = (2 + Math.random() * 3) * 60 * 1000;
+        setTimeout(cruzarUmaVez, proximaEmMs);
+    }
+
+    setTimeout(cruzarUmaVez, 30000 + Math.random() * 60000); // primeira aparição entre 30s e 1min30s, pra não depender só de quem fica minutos olhando
 }
 
 function iniciarFechamentoEstrelaModal() {
@@ -686,6 +739,62 @@ async function prepararContrato() {
         document.querySelectorAll('.rule-card').forEach(c => { if (regrasSelecionadas.includes(c.dataset.id)) c.classList.add('selecionada'); });
         atualizarEstadoSelecaoRegras();
         gerarContratoPersonalizado(regrasSelecionadas);
+
+        // Se o contrato já tinha sido "fechado" (enrolado) numa visita
+        // anterior, pula direto pro estado selado, sem reproduzir a
+        // animação de novo nem mostrar o papel aberto antes do selo.
+        const fechado = await obterConfiguracao('aurora_contrato_fechado');
+        if (fechado === '1') mostrarContratoSelado(true);
+    }
+}
+
+/* ---------------- "Fechar contrato": enrola o papel como um pergaminho ---------------- */
+function mostrarContratoSelado(semAnimacao = false) {
+    const wrap = document.getElementById('contratoWrap');
+    const selado = document.getElementById('contratoSeladoWrap');
+    if (!wrap || !selado) return;
+    wrap.classList.add('d-none');
+    wrap.classList.remove('contrato-fechando');
+    const papel = wrap.querySelector('.contract-paper');
+    if (papel) papel.classList.remove('contrato-enrolando');
+    selado.classList.remove('d-none');
+    if (!semAnimacao) setTimeout(() => selado.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);
+}
+
+function iniciarFechamentoContrato() {
+    const btnFechar = document.getElementById('btnFecharContrato');
+    const btnReabrir = document.getElementById('btnReabrirContrato');
+    const wrap = document.getElementById('contratoWrap');
+    const papel = wrap ? wrap.querySelector('.contract-paper') : null;
+    const selado = document.getElementById('contratoSeladoWrap');
+    if (!btnFechar || !wrap || !papel || !selado) return;
+
+    btnFechar.addEventListener('click', async () => {
+        btnFechar.disabled = true;
+        wrap.classList.add('contrato-fechando');
+        papel.classList.add('contrato-enrolando'); // dispara a animação de "enrolar" (ver css/style.css)
+
+        const finalizarFechamento = async () => {
+            papel.removeEventListener('animationend', finalizarFechamento);
+            await salvarConfiguracao('aurora_contrato_fechado', '1');
+            mostrarContratoSelado();
+            btnFechar.disabled = false;
+        };
+        papel.addEventListener('animationend', finalizarFechamento);
+        // Rede de segurança: se por algum motivo o evento não disparar
+        // (ex.: aba em segundo plano pausando a animação), finaliza mesmo
+        // assim depois do tempo esperado da animação (1.15s no CSS).
+        setTimeout(() => { if (wrap.classList.contains('contrato-fechando') && !wrap.classList.contains('d-none')) finalizarFechamento(); }, 1400);
+    });
+
+    if (btnReabrir) {
+        btnReabrir.addEventListener('click', async () => {
+            await salvarConfiguracao('aurora_contrato_fechado', '0');
+            selado.classList.add('d-none');
+            wrap.classList.remove('d-none', 'contrato-fechando');
+            papel.classList.remove('contrato-enrolando');
+            setTimeout(() => wrap.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+        });
     }
 }
 
@@ -1731,6 +1840,8 @@ function iniciarModuloRomance() {
         });
     }
 
+    iniciarFechamentoContrato();
+
     document.getElementById('btnAdicionarLembranca').addEventListener('click', () => document.getElementById('inputLembrancas').click());
     document.getElementById('inputLembrancas').addEventListener('change', (evt) => { adicionarLembrancas(evt.target.files); evt.target.value = ''; });
     document.getElementById('btnFecharLembranca').addEventListener('click', fecharLembrancaAmpliada);
@@ -1745,27 +1856,6 @@ function iniciarModuloRomance() {
     // Item 3 do prompt de correções: permite recomeçar o quiz do casal do zero.
     document.getElementById('btnRefazerQuiz').addEventListener('click', iniciarQuiz);
 
-    iniciarBotaoSom();
-}
-
-// Reflete a preferência salva (aurora_som_ativo) no ícone do botão e
-// alterna ao tocar — usa o mesmo helper que toca o sininho nos momentos-chave.
-function iniciarBotaoSom() {
-    const btn = document.getElementById('btnAlternarSom');
-    if (!btn) return;
-    const icone = btn.querySelector('i');
-    const atualizarIcone = () => {
-        icone.className = __auroraSomAtivo ? 'bi bi-volume-up-fill' : 'bi bi-volume-mute-fill';
-        btn.classList.toggle('mudo', !__auroraSomAtivo);
-    };
-    // __auroraSomAtivo é preenchido de forma assíncrona (lê do banco) — dá
-    // um instante pra essa leitura terminar antes de refletir no ícone.
-    setTimeout(atualizarIcone, 150);
-    btn.addEventListener('click', () => {
-        alternarSomAmbiente(!__auroraSomAtivo);
-        atualizarIcone();
-        if (__auroraSomAtivo) tocarSininho(0.8); // toca uma vez ao religar, como confirmação
-    });
 }
 
 /* ----------------------------------------------------------------------
@@ -2244,10 +2334,16 @@ async function renderizarTermometroDoDia() {
    descrito realmente acontecer — nunca sozinhas, nunca por data. Dá pra
    liberar de duas formas: (1) pelo painel administrativo em
    diagnostico.html, protegido pela senha de reset (ver
-   alternarCartaCondicional() em js/diagnostics.js); ou (2) tocando
-   direto no cartão ainda bloqueado, que pergunta "isso já aconteceu de
-   verdade?" e libera na hora se a resposta for sim — sem precisar da
-   senha nem da área de diagnóstico (ela também pode confirmar assim).
+   alternarCartaCondicional() em js/diagnostics.js) — uma liberação de
+   emergência, sem precisar dos dois; ou (2) tocando direto no cartão
+   ainda bloqueado, que agora exige o consentimento dos DOIS: aparecem
+   os botões "Ana" e "Gabriel", cada um digita a própria senha (a mesma
+   do Quadro de Previsões, ver solicitarSenhaPrevisoes() acima) pra
+   confirmar. Só quando os dois já confirmaram é que a carta libera de
+   verdade e abre. As confirmações parciais ficam salvas em
+   'aurora_cartas_condicionais_confirmacoes' (sincroniza entre
+   aparelhos), então dá pra um confirmar num dia e o outro confirmar
+   depois, em outro momento/aparelho.
    ---------------------------------------------------------------------- */
 async function renderizarCartasCondicionais() {
     const wrap = document.getElementById('cartasCondicionaisWrap');
@@ -2255,13 +2351,20 @@ async function renderizarCartasCondicionais() {
     if (!Array.isArray(CARTAS_CONDICIONAIS) || !CARTAS_CONDICIONAIS.length) { wrap.classList.add('d-none'); return; }
     wrap.classList.remove('d-none');
 
-    const salvo = await obterConfiguracao('aurora_cartas_condicionais_liberadas');
+    const [salvo, salvoConfirmacoes] = await Promise.all([
+        obterConfiguracao('aurora_cartas_condicionais_liberadas'),
+        obterConfiguracao('aurora_cartas_condicionais_confirmacoes'),
+    ]);
     const liberadas = salvo ? JSON.parse(salvo) : [];
+    const confirmacoes = salvoConfirmacoes ? JSON.parse(salvoConfirmacoes) : {};
 
     const lista = document.getElementById('cartasCondicionaisLista');
     if (!lista) return;
     lista.innerHTML = CARTAS_CONDICIONAIS.map((carta) => {
         const liberada = liberadas.includes(carta.id);
+        const confirmacao = confirmacoes[carta.id] || {};
+        const anaOk = Boolean(confirmacao.ana);
+        const gabrielOk = Boolean(confirmacao.gabriel);
         return `
             <div class="carta-condicional-item">
                 <button type="button" class="carta-condicional-card ${liberada ? 'liberada' : 'bloqueada'}" data-id="${carta.id}">
@@ -2271,11 +2374,16 @@ async function renderizarCartasCondicionais() {
                 </button>
                 ${liberada ? '' : `
                 <div class="carta-condicional-confirm d-none" id="cartaCondicionalConfirm_${carta.id}">
-                    <p class="carta-condicional-confirm-texto">Isso já aconteceu de verdade?</p>
+                    <p class="carta-condicional-confirm-texto">Isso já aconteceu de verdade? Os dois precisam confirmar (com a própria senha) pra abrir.</p>
                     <div class="d-flex gap-2">
-                        <button type="button" class="btn btn-outline-light btn-sm rounded-pill flex-fill btn-carta-condicional-nao" data-id="${carta.id}">Ainda não</button>
-                        <button type="button" class="btn btn-rosegold btn-sm rounded-pill flex-fill btn-carta-condicional-sim" data-id="${carta.id}">Sim, já aconteceu!</button>
+                        <button type="button" class="btn btn-outline-light btn-sm rounded-pill flex-fill btn-carta-condicional-pessoa" data-id="${carta.id}" data-pessoa="ana" ${anaOk ? 'disabled' : ''}>
+                            ${anaOk ? '<i class="bi bi-check-circle-fill me-1"></i>' : ''}${NOME_DELA_APELIDO}
+                        </button>
+                        <button type="button" class="btn btn-outline-light btn-sm rounded-pill flex-fill btn-carta-condicional-pessoa" data-id="${carta.id}" data-pessoa="gabriel" ${gabrielOk ? 'disabled' : ''}>
+                            ${gabrielOk ? '<i class="bi bi-check-circle-fill me-1"></i>' : ''}${NOME_DELE}
+                        </button>
                     </div>
+                    <p class="small text-white-50 text-center mt-2 mb-0">Senha de cada um — a mesma do Quadro de Previsões.</p>
                 </div>`}
             </div>
         `;
@@ -2289,9 +2397,9 @@ async function renderizarCartasCondicionais() {
         });
     });
 
-    // Cartas ainda bloqueadas: ao tocar, mostra a pergunta de confirmação
-    // (em vez de não fazer nada, como antes). Cada cartão tem sua própria
-    // caixinha de confirmação, escondida por padrão.
+    // Cartas ainda bloqueadas: ao tocar, mostra a caixinha com os botões
+    // "Ana" e "Gabriel" (em vez de não fazer nada, como antes). Cada
+    // cartão tem sua própria caixinha, escondida por padrão.
     lista.querySelectorAll('.carta-condicional-card.bloqueada').forEach((btn) => {
         btn.addEventListener('click', () => {
             const idAtual = btn.dataset.id;
@@ -2303,26 +2411,51 @@ async function renderizarCartasCondicionais() {
         });
     });
 
-    lista.querySelectorAll('.btn-carta-condicional-nao').forEach((btn) => {
-        btn.addEventListener('click', () => {
-            const caixa = document.getElementById(`cartaCondicionalConfirm_${btn.dataset.id}`);
-            if (caixa) caixa.classList.add('d-none');
-        });
-    });
+    // Botões "Ana" / "Gabriel" dentro da caixinha: cada um pede a senha
+    // de previsões da respectiva pessoa (solicitarSenhaPrevisoes). Só
+    // quando os dois já confirmaram (ana E gabriel) a carta é liberada
+    // de verdade e aberta.
+    lista.querySelectorAll('.btn-carta-condicional-pessoa').forEach((btn) => {
+        btn.addEventListener('click', async (evt) => {
+            evt.stopPropagation();
+            if (btn.disabled) return;
 
-    lista.querySelectorAll('.btn-carta-condicional-sim').forEach((btn) => {
-        btn.addEventListener('click', async () => {
             const id = btn.dataset.id;
+            const pessoa = btn.dataset.pessoa; // 'ana' ou 'gabriel'
             const carta = CARTAS_CONDICIONAIS.find(c => c.id === id);
             if (!carta) return;
 
-            const salvoAgora = await obterConfiguracao('aurora_cartas_condicionais_liberadas');
-            const liberadasAgora = salvoAgora ? JSON.parse(salvoAgora) : [];
-            if (!liberadasAgora.includes(id)) liberadasAgora.push(id);
-            await salvarConfiguracao('aurora_cartas_condicionais_liberadas', JSON.stringify(liberadasAgora), true);
+            if (!previsoesEstaConfigurado(pessoa)) {
+                alert('O quadro de previsões ainda não tem a senha do Gabriel configurada (ver SENHA_PREVISOES_GABRIEL_HASH em js/config.js).');
+                return;
+            }
 
-            await renderizarCartasCondicionais(); // reconstrói a lista já com o cartão liberado
-            abrirModoVela(carta.titulo, carta.texto.replace(/\n/g, '<br>'), `Com amor, ${NOME_DELE}.`);
+            const ok = await solicitarSenhaPrevisoes(pessoa);
+            if (!ok) return;
+
+            const salvoAgora = await obterConfiguracao('aurora_cartas_condicionais_confirmacoes');
+            const confirmacoesAgora = salvoAgora ? JSON.parse(salvoAgora) : {};
+            confirmacoesAgora[id] = confirmacoesAgora[id] || {};
+            confirmacoesAgora[id][pessoa] = true;
+            await salvarConfiguracao('aurora_cartas_condicionais_confirmacoes', JSON.stringify(confirmacoesAgora), true);
+
+            const osDoisConfirmaram = Boolean(confirmacoesAgora[id].ana && confirmacoesAgora[id].gabriel);
+            if (osDoisConfirmaram) {
+                const salvoLiberadas = await obterConfiguracao('aurora_cartas_condicionais_liberadas');
+                const liberadasAgora = salvoLiberadas ? JSON.parse(salvoLiberadas) : [];
+                if (!liberadasAgora.includes(id)) liberadasAgora.push(id);
+                await salvarConfiguracao('aurora_cartas_condicionais_liberadas', JSON.stringify(liberadasAgora), true);
+
+                await renderizarCartasCondicionais(); // reconstrói a lista já com o cartão liberado
+                abrirModoVela(carta.titulo, carta.texto.replace(/\n/g, '<br>'), `Com amor, ${NOME_DELE}.`);
+            } else {
+                // Só um dos dois confirmou até agora — reconstrói a lista
+                // (pra mostrar o check de quem já confirmou) e mantém essa
+                // caixinha aberta, esperando a outra pessoa.
+                await renderizarCartasCondicionais();
+                const caixaAtual = document.getElementById(`cartaCondicionalConfirm_${id}`);
+                if (caixaAtual) caixaAtual.classList.remove('d-none');
+            }
         });
     });
 }

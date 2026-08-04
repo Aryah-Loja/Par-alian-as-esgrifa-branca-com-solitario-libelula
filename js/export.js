@@ -397,6 +397,7 @@ async function gerarBackupZipBlob() {
         termometroLista: await obterConfigJSON('aurora_termometro_lista'),
         cartasCondicionaisLiberadas: await obterConfigJSON('aurora_cartas_condicionais_liberadas'),
         muralAna: await obterConfigJSON('aurora_mural_ana'),
+        contratoFechado: await obterConfiguracao('aurora_contrato_fechado') || null,
         medias: []
     };
 
@@ -526,6 +527,7 @@ async function aplicarBackupDeZip(zipDados) {
     if (manifest.termometroLista) await salvarConfiguracao('aurora_termometro_lista', JSON.stringify(manifest.termometroLista));
     if (manifest.cartasCondicionaisLiberadas) await salvarConfiguracao('aurora_cartas_condicionais_liberadas', JSON.stringify(manifest.cartasCondicionaisLiberadas));
     if (manifest.muralAna) await salvarConfiguracao('aurora_mural_ana', JSON.stringify(manifest.muralAna));
+    if (manifest.contratoFechado) await salvarConfiguracao('aurora_contrato_fechado', manifest.contratoFechado);
 
     // O backup é a "fotografia completa": listas locais são substituídas
     // pelas do backup (não acrescentadas), para não duplicar em cada sincronização.

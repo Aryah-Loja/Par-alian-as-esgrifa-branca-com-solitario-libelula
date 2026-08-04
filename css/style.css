@@ -477,23 +477,25 @@ body {
     to { transform: translate(6%, 8%) scale(1.15); }
 }
 
-/* Monograma "A & G" — fixo no canto, discreto, não rola com a página nem
-   atrapalha toque em nada (pointer-events: none). */
-.monograma-selo {
-    position: fixed !important; top: calc(14px + var(--safe-top, 0px)); left: 14px; z-index: 20;
-    opacity: 0.55; pointer-events: none; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4));
-}
-
-/* Botão de som — mesmo canto "de cima", do lado oposto ao monograma. */
-.botao-som-toggle {
+/* Indicador de presença — mostra quando os dois estão no site ao mesmo
+   tempo (ver js/presenca.js). Fica no canto fixo onde antes ficava o
+   botão de som, discreto, some quando só uma pessoa está conectada. */
+.presenca-indicador {
     position: fixed !important; top: calc(14px + var(--safe-top, 0px)); right: 14px; z-index: 20;
-    width: 34px; height: 34px; border-radius: 50%;
+    display: flex; align-items: center; gap: 6px;
     background: rgba(255,255,255,0.08); backdrop-filter: blur(12px) saturate(150%); -webkit-backdrop-filter: blur(12px) saturate(150%);
-    border: 1px solid rgba(216,185,120,0.3); color: rgba(255,255,255,0.75);
-    display: flex; align-items: center; justify-content: center; font-size: 0.9rem;
+    border: 1px solid rgba(216,185,120,0.3); border-radius: 999px; padding: 6px 12px 6px 10px;
+    color: rgba(255,255,255,0.85); font-size: 0.72rem; letter-spacing: 0.2px;
+    opacity: 0; transform: translateY(-6px); pointer-events: none; transition: opacity 0.4s ease, transform 0.4s ease;
 }
-.botao-som-toggle.mudo { color: rgba(255,255,255,0.35); }
-.botao-som-toggle:active { transform: scale(0.92) !important; }
+.presenca-indicador.visivel { opacity: 1; transform: translateY(0); }
+.presenca-indicador-ponto {
+    width: 8px; height: 8px; border-radius: 50%; background: #6fcf7d;
+    box-shadow: 0 0 6px rgba(111,207,125,0.9); animation: presencaPulso 1.8s ease-in-out infinite;
+}
+@keyframes presencaPulso {
+    0%, 100% { opacity: 1; } 50% { opacity: 0.45; }
+}
 
 /* Tela de carregamento discreta enquanto "Nossa História" busca vídeo,
    assinatura, timeline, cápsula do tempo etc. no IndexedDB — some sozinha
@@ -596,6 +598,29 @@ body {
 .signature-line { border-top: 1px solid #b3a184; margin-top: 6px; padding-top: 6px; }
 .signature-name { font-family: 'Jost', sans-serif; font-size: 0.85rem; font-weight: 600; margin: 0; color: #2b2523; }
 .signature-role { font-family: 'Jost', sans-serif; font-size: 0.68rem; letter-spacing: 1.5px; text-transform: uppercase; color: #8a7a5c; margin: 2px 0 0; }
+
+/* ---------------- "Fechar contrato": o papel se enrola como um pergaminho ----------------
+   .contract-roll-shade é uma camada de sombra por cima do papel, que escurece de baixo
+   pra cima enquanto o papel encolhe verticalmente com origem embaixo — dá a sensação de
+   estar se enrolando sobre si mesmo, em vez de só "sumir". Ver btnFecharContrato em
+   js/romance.js. */
+.contract-paper { transform-origin: center bottom; overflow: hidden; }
+.contract-roll-shade { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; background: linear-gradient(180deg, rgba(20,12,10,0.55) 0%, rgba(20,12,10,0.15) 35%, rgba(20,12,10,0) 60%); }
+.contract-paper.contrato-enrolando { animation: contratoEnrolarPapel 1.15s cubic-bezier(0.6, 0, 0.55, 1) forwards; }
+.contract-paper.contrato-enrolando .contract-roll-shade { animation: contratoEnrolarSombra 1.15s ease forwards; }
+#contratoWrap.contrato-fechando #btnFecharContrato { animation: fadeUp 0.4s ease reverse forwards; }
+
+@keyframes contratoEnrolarPapel {
+    0%   { transform: perspective(900px) scaleY(1) scaleX(1) rotateX(0deg); border-radius: 4px; filter: brightness(1); }
+    35%  { transform: perspective(900px) scaleY(0.62) scaleX(0.99) rotateX(8deg); border-radius: 4px 4px 60px 60px; filter: brightness(0.97); }
+    70%  { transform: perspective(900px) scaleY(0.22) scaleX(0.92) rotateX(16deg); border-radius: 60px; filter: brightness(0.85); }
+    100% { transform: perspective(900px) scaleY(0.025) scaleX(0.8) rotateX(20deg); border-radius: 60px; opacity: 0; filter: brightness(0.65); }
+}
+@keyframes contratoEnrolarSombra {
+    0% { opacity: 0; }
+    45% { opacity: 0.55; }
+    100% { opacity: 0.95; }
+}
 .contract-witness { max-width: 240px; margin: 0 auto; text-align: center; }
 .contract-witness .signature-line { border-top-style: dashed; }
 .counter-badge { display: inline-block; background: rgba(183,110,121,0.15); border: 1px solid rgba(183,110,121,0.5); border-radius: 999px; padding: 8px 18px; font-size: 0.85rem; margin-top: 14px; }
@@ -818,11 +843,15 @@ body {
 .ceu-nave-luz-2 { left: 21px; animation-delay: 0.3s; }
 .ceu-nave-luz-3 { left: 34px; animation-delay: 0.6s; }
 @keyframes ceuNaveCruzar {
-    0% { opacity: 0; transform: translate(0, 0); }
-    6% { opacity: 1; }
-    50% { transform: translate(calc(var(--nave-dx, 140%) / 2), -14px); }
-    94% { opacity: 1; }
-    100% { opacity: 0; transform: translate(var(--nave-dx, 140%), 6px); }
+    /* --nave-dy-meio/--nave-dy-fim/--nave-escala/--nave-opacidade são
+       sorteados em JS a cada travessia (ver iniciarNaveAlienigena, js/romance.js)
+       pra cada navezinha ter um arco, tamanho e brilho diferentes — nunca a
+       mesma "cara" duas vezes. */
+    0% { opacity: 0; transform: translate(0, 0) scale(var(--nave-escala, 1)); }
+    6% { opacity: var(--nave-opacidade, 1); }
+    50% { transform: translate(calc(var(--nave-dx, 140%) / 2), var(--nave-dy-meio, -14px)) scale(var(--nave-escala, 1)); }
+    94% { opacity: var(--nave-opacidade, 1); }
+    100% { opacity: 0; transform: translate(var(--nave-dx, 140%), var(--nave-dy-fim, 6px)) scale(var(--nave-escala, 1)); }
 }
 @keyframes ceuNaveLuzPiscar { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
 
@@ -891,13 +920,18 @@ body {
     -webkit-background-clip: text; background-clip: text; color: transparent;
 }
 .lc-label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.6px; color: rgba(255,255,255,0.5); margin-top: 3px; }
-/* O último quadrado (segundos) pulsa baixinho — é o único número que o
-   olho vê mudar em tempo real, então ele é quem "avisa" que o contador
-   está mesmo vivo, sem precisar de nenhuma outra explicação na tela. */
-.live-counter-grid .lc-unit:last-child { animation: lcPulse 2s ease-in-out infinite; }
-@keyframes lcPulse {
-    0%, 100% { box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 6px 16px rgba(0,0,0,0.18); }
-    50% { box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 6px 16px rgba(0,0,0,0.18), 0 0 16px rgba(216,185,120,0.45); }
+/* Cada quadrado só pisca no instante exato em que o número dele muda de
+   verdade (ver atualizarNumeroContador() em js/romance.js) — antes só o
+   quadrado dos segundos pulsava, sozinho, num loop de 2s sem relação
+   nenhuma com o segundo realmente mudando na tela; agora cada um (anos,
+   meses, dias, horas, minutos, segundos) só brilha quando o valor dele
+   próprio é atualizado, então dias só pisca uma vez por dia, não a cada
+   segundo. */
+.lc-unit.lc-atualizado { animation: lcFlash 0.6s ease; }
+@keyframes lcFlash {
+    0% { box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 6px 16px rgba(0,0,0,0.18); }
+    35% { box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 6px 16px rgba(0,0,0,0.18), 0 0 18px rgba(216,185,120,0.6); transform: scale(1.07); }
+    100% { box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 6px 16px rgba(0,0,0,0.18); transform: scale(1); }
 }
 @media (max-width: 360px) { .lc-num { font-size: 1.2rem; } }
 
@@ -976,6 +1010,7 @@ body {
 .carta-condicional-gatilho { font-size: 0.78rem; color: rgba(255,255,255,0.55); margin-top: 4px; }
 .carta-condicional-confirm { margin-top: 8px; padding: 12px 14px; background: rgba(255,255,255,0.05); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); border: 1px dashed rgba(183,110,121,0.5); border-radius: 14px; }
 .carta-condicional-confirm-texto { font-size: 0.85rem; color: rgba(255,255,255,0.85); margin-bottom: 10px; }
+.btn-carta-condicional-pessoa:disabled { opacity: 0.7; border-color: var(--rosegold); color: var(--rosegold); cursor: default; }
 
 /* ---------------- Mural da Ana ---------------- */
 .mural-papel { max-width: 480px; }

@@ -56,6 +56,7 @@
          de <img>, aparecendo como imagem quebrada. Ver
          tentarRecuperarComoHeic() em js/utils.js. -->
     <script defer src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <!-- Chuva de corações e balões subindo de baixo pra cima, mostrada só no
@@ -607,26 +608,13 @@
 
     <!-- ===================== NOSSA HISTÓRIA ===================== -->
     <div id="romancePage" class="romance-page">
-        <!-- Monograma "A & G" — um pequeno brasão discreto, como um selo de
-             joalheria, fixo no canto da tela (não rola com o conteúdo). -->
-        <div class="monograma-selo" aria-hidden="true">
-            <svg viewBox="0 0 60 60" width="34" height="34">
-                <circle cx="30" cy="30" r="28" fill="none" stroke="url(#monogramaAnel)" stroke-width="1.4"/>
-                <circle cx="30" cy="30" r="23" fill="none" stroke="url(#monogramaAnel)" stroke-width="0.6" opacity="0.6"/>
-                <text x="30" y="38" text-anchor="middle" font-family="'Cormorant Garamond', Georgia, serif" font-size="22" fill="url(#monogramaAnel)">A&amp;G</text>
-                <defs>
-                    <linearGradient id="monogramaAnel" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stop-color="#B76E79"/>
-                        <stop offset="100%" stop-color="#D8B978"/>
-                    </linearGradient>
-                </defs>
-            </svg>
+        <!-- Indicador de presença: aparece só quando os dois estão no site
+             ao mesmo tempo (ver js/presenca.js). Fixo no canto, some
+             sozinho quando fica só uma pessoa conectada. -->
+        <div id="presencaIndicador" class="presenca-indicador" aria-live="polite">
+            <span class="presenca-indicador-ponto" aria-hidden="true"></span>
+            <span id="presencaIndicadorTexto">Os dois online agora</span>
         </div>
-        <!-- Botão de som: sininho suave nos momentos-chave, com opção de
-             silenciar — a preferência fica salva entre sessões. -->
-        <button type="button" id="btnAlternarSom" class="botao-som-toggle" title="Ligar/desligar o som" aria-label="Ligar ou desligar o som">
-            <i class="bi bi-volume-up-fill"></i>
-        </button>
         <!-- Girassóis decorativos: discretos, atrás do conteúdo,
              não capturam toque (pointer-events:none) e não afetam a leitura.
              Ilustração própria em SVG (vetor, sem fundo — funciona como um "PNG
@@ -962,7 +950,18 @@
                         <div class="signature-block"><p class="signature-cursive js-nome-dele"></p><div class="signature-line"></div><p class="signature-name js-nome-dele"></p><p class="signature-role">Namorado</p></div>
                     </div>
                 </div>
+                <div class="contract-roll-shade"></div>
             </div>
+            <div class="text-center mt-4">
+                <button id="btnFecharContrato" type="button" class="btn btn-rosegold rounded-pill fw-bold px-4"><i class="bi bi-file-earmark-lock2 me-1"></i>Fechar contrato</button>
+            </div>
+        </div>
+
+        <div id="contratoSeladoWrap" class="mt-5 d-none text-center reveal-up" style="max-width: 460px; margin: 0 auto;">
+            <i class="bi bi-award-fill" style="font-size: 2.2rem; color: var(--rosegold);"></i>
+            <p class="romance-section-title mt-2">Contrato selado</p>
+            <p class="text-white-50 small" style="max-width: 360px; margin: 0 auto;">Guardado com carinho, pra sempre valendo entre a gente.</p>
+            <button id="btnReabrirContrato" type="button" class="btn btn-outline-light btn-sm rounded-pill mt-2">Abrir de novo</button>
         </div>
 
         <div id="capsulaTempoWrap" class="mt-5 reveal-up d-none" style="max-width: 340px; margin: 0 auto;">
@@ -1040,11 +1039,20 @@
             <div id="cartasCondicionaisLista" class="d-flex flex-column gap-2"></div>
         </div>
 
-        <div class="text-center mt-5 reveal-up">
-            <button id="btnMensagemFuturo" class="btn btn-share"><i class="bi bi-mic-fill me-2"></i>Deixe uma mensagem para nós do futuro</button>
-            <div class="mensagens-futuro-lista" id="mensagensFuturoLista"></div>
-            <p id="mensagensFuturoVazio" class="mensagens-futuro-vazio">Nenhuma mensagem guardada ainda.</p>
+        <!-- ===================== MENSAGEM RÁPIDA (pra nós do futuro) =====================
+             Antes era um botão discreto lá embaixo da página — agora tem
+             seção própria (título + descrição, igual às outras) pra não
+             passar despercebido. Ver js/futuro.js. -->
+        <div class="mt-5 reveal-up" style="max-width: 460px; margin: 0 auto;">
+            <p class="romance-section-title"><i class="bi bi-chat-heart-fill me-2"></i>Mensagem rápida</p>
+            <p class="small text-white-50 text-center mb-3">Um textinho, um áudio ou um vídeo curto pra guardar pra nós do futuro.</p>
+            <div class="text-center">
+                <button id="btnMensagemFuturo" class="btn btn-rosegold w-100"><i class="bi bi-mic-fill me-2"></i>Deixe uma mensagem rápida</button>
+                <div class="mensagens-futuro-lista" id="mensagensFuturoLista"></div>
+                <p id="mensagensFuturoVazio" class="mensagens-futuro-vazio">Nenhuma mensagem guardada ainda.</p>
+            </div>
         </div>
+
 
         <!-- ===================== MURAL DA ANA =====================
              Botão que abre um overlay em estilo "livro" pra ela escrever
@@ -1375,7 +1383,7 @@ Se existe uma certeza que eu tenho, é esta: enquanto eu puder, vou continuar es
     <div id="futuroOverlay" class="futuro-overlay d-none">
         <div class="futuro-box">
             <button id="btnFecharFuturo" class="cupom-close" aria-label="Fechar">&times;</button>
-            <h5 class="futuro-title">Mensagem para nós do futuro</h5>
+            <h5 class="futuro-title">Mensagem rápida</h5>
             <p class="futuro-sub" id="futuroSub">Escolha como quer guardar essa mensagem:</p>
 
             <div id="futuroEscolha" class="d-flex gap-2 justify-content-center flex-wrap">
@@ -1433,6 +1441,7 @@ Se existe uma certeza que eu tenho, é esta: enquanto eu puder, vou continuar es
     <script defer src="js/mapa-admin.js"></script>
     <script defer src="js/export.js"></script>
     <script defer src="js/sync.js"></script>
+    <script defer src="js/presenca.js"></script>
     <script defer src="js/suspense.js"></script>
     <script defer src="js/main.js"></script>
 
