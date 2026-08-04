@@ -2,6 +2,17 @@
 <html lang="pt-BR" class="checklist-html">
 <head>
 <meta charset="UTF-8">
+<script>
+    // Desliga a restauração automática de scroll do navegador — precisa ser
+    // a primeiríssima coisa a rodar. Sem isso, ao dar refresh o navegador
+    // tenta voltar pro mesmo pixel de scroll de antes, mas a lista de 132
+    // itens é montada aos poucos (sincroniza com a nuvem, lê o banco local,
+    // só depois desenha a lista inteira), então esse pixel salvo quase
+    // nunca corresponde ao mesmo lugar depois do refresh: a página recarrega
+    // já no meio da lista, escondendo o card de progresso ("X de Y feitos")
+    // lá no topo, e muda de lugar a cada atualização.
+    try { if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; } catch (e) { /* navegador sem suporte — ignora */ }
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#1c1014">
 <meta name="robots" content="noindex, nofollow">

@@ -83,6 +83,19 @@
         <p class="vinheta-sub" id="vinhetaSubTexto">JOIAS</p>
     </div>
     <script>
+        // Desliga a restauração automática de scroll do navegador. Sem isso,
+        // ao dar refresh o navegador tenta voltar pro MESMO pixel de scroll
+        // de antes de atualizar a página — mas como o conteúdo aqui é
+        // montado aos poucos (sincronização com a nuvem, banco local, várias
+        // seções que só aparecem depois de carregar), esse pixel salvo quase
+        // nunca corresponde ao mesmo lugar depois do refresh: a página
+        // recarrega já "pulada" pra algum ponto no meio, escondendo o topo
+        // (onde fica o contador e o restante do cabeçalho) e mudando de
+        // lugar a cada atualização, sem relação com o tamanho real do
+        // conteúdo carregado. Precisa ser a primeira coisa a rodar, antes de
+        // qualquer outro script.
+        try { if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; } catch (e) { /* navegador sem suporte — ignora */ }
+
         // Roda IMEDIATAMENTE ao interpretar o HTML — antes de qualquer script
         // externo (inclusive antes da sincronização com a nuvem, que pode
         // levar alguns segundos). Se o pedido já aconteceu, troca o texto
