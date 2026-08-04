@@ -299,6 +299,8 @@ async function solicitarPermissoes() {
     } catch (err) {
         permissoesLiberadas = false;
         console.error('Permissão de câmera/microfone negada:', err);
+        const detalhe = document.getElementById('permissaoNegadaDetalhe');
+        if (detalhe) detalhe.textContent = instrucoesDesbloquearPermissaoMidia(err);
     }
 }
 
@@ -659,4 +661,7 @@ function iniciarSuspense() {
         await solicitarPermissoes();
         verificarOrientacao();
     });
+
+    const btnRecarregar = document.getElementById('btnRecarregarPermissao');
+    if (btnRecarregar) btnRecarregar.addEventListener('click', () => location.reload());
 }

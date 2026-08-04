@@ -32,23 +32,60 @@ async function obterOuCriarDataPrimeiroAcesso() {
 }
 
 let contadorVivoIntervalo = null;
-async function iniciarContadorVivo() {
-    const grid = document.getElementById('liveCounterGrid');
-    if (!grid) return;
-    if (contadorVivoIntervalo) clearInterval(contadorVivoIntervalo);
-    const dataInicio = await obterOuCriarDataPrimeiroAcesso();
+let contadorVivoDataInicio = null;
+let contadorVivoOuvintesRegistrados = false;
 
-    function atualizar() {
-        const d = calcularDuracaoRelacionamento(dataInicio);
+// Recalcula e escreve os 6 números na tela. É "burra" de propósito (sempre
+// lê a hora atual de verdade) — nunca soma "+1" em cima do valor anterior,
+// então não existe como ela "travar" num número e ficar presa lá: se essa
+// função rodar, o valor mostrado está sempre certo para o instante em que
+// rodou.
+function atualizarContadorVivo() {
+    if (!contadorVivoDataInicio) return;
+    try {
+        const grid = document.getElementById('liveCounterGrid');
+        if (!grid) return; // página trocou de tela, sem erro no console à toa
+        const d = calcularDuracaoRelacionamento(contadorVivoDataInicio);
         document.getElementById('lcAnos').textContent = d.anos;
         document.getElementById('lcMeses').textContent = d.meses;
         document.getElementById('lcDias').textContent = d.dias;
         document.getElementById('lcHoras').textContent = String(d.horas).padStart(2, '0');
         document.getElementById('lcMinutos').textContent = String(d.minutos).padStart(2, '0');
         document.getElementById('lcSegundos').textContent = String(d.segundos).padStart(2, '0');
+    } catch (e) {
+        console.error('Falha ao atualizar o contador "Juntos há" (não deve travar o resto do site):', e);
     }
-    atualizar();
-    contadorVivoIntervalo = setInterval(atualizar, 1000);
+}
+
+async function iniciarContadorVivo() {
+    const grid = document.getElementById('liveCounterGrid');
+    if (!grid) return;
+    if (contadorVivoIntervalo) clearInterval(contadorVivoIntervalo);
+    contadorVivoDataInicio = await obterOuCriarDataPrimeiroAcesso();
+
+    atualizarContadorVivo();
+    contadorVivoIntervalo = setInterval(atualizarContadorVivo, 1000);
+
+    // Celulares pausam/atrasam o setInterval quando a tela é bloqueada ou o
+    // navegador vai para segundo plano por um bom tempo — em alguns
+    // aparelhos, o timer não retoma sozinho depois disso, e é exatamente
+    // isso que fazia o contador "parecer travado" (parava de marcar as
+    // horas/minutos e, com o tempo, os dias). Esses dois eventos disparam
+    // sempre que a aba volta a ficar visível/ativa e forçam: (1) um
+    // recálculo imediato, certo na hora, e (2) o reinício do intervalo, pra
+    // ele não continuar "morto" silenciosamente.
+    if (!contadorVivoOuvintesRegistrados) {
+        contadorVivoOuvintesRegistrados = true;
+        const retomar = () => {
+            if (document.visibilityState && document.visibilityState !== 'visible') return;
+            atualizarContadorVivo();
+            if (contadorVivoIntervalo) clearInterval(contadorVivoIntervalo);
+            contadorVivoIntervalo = setInterval(atualizarContadorVivo, 1000);
+        };
+        document.addEventListener('visibilitychange', retomar);
+        window.addEventListener('pageshow', retomar);
+        window.addEventListener('focus', retomar);
+    }
 }
 
 /* ---------------- Marcos do tempo juntos (1 semana, 1 mês, 3 meses... 10 anos) ----------------
@@ -1800,24 +1837,13 @@ function previsoesEstaConfigurado(pessoa) {
     return pessoa === 'gabriel' ? Boolean(SENHA_PREVISOES_GABRIEL_HASH) : true;
 }
 
-// Guarda (uma única vez) a primeira vez que esta seção foi aberta —
-// é a partir dessa data, e não da data do pedido, que contam os dias
-// até a revelação (evita revelar na hora caso o pedido já tenha
-// acontecido há mais de PREVISOES_DIAS_PARA_REVELACAO dias).
-async function obterOuCriarDataInicioPrevisoes() {
-    let data = await obterConfiguracao('aurora_previsoes_criado_em');
-    if (!data) {
-        data = new Date().toISOString();
-        await salvarConfiguracao('aurora_previsoes_criado_em', data);
-    }
-    return data;
-}
-
+// A contagem do Quadro de previsões agora é a MESMA da cápsula do tempo —
+// as duas usam a data do pedido (aurora_data_pedido) como ponto de
+// partida, então revelam no mesmo dia. (Antes, o quadro contava a partir
+// da primeira vez que a seção era aberta, o que podia desalinhar as duas
+// datas.)
 async function calcularDataRevelacaoPrevisoes() {
-    const dataInicioIso = await obterOuCriarDataInicioPrevisoes();
-    const alvo = new Date(dataInicioIso);
-    alvo.setDate(alvo.getDate() + PREVISOES_DIAS_PARA_REVELACAO);
-    return alvo;
+    return calcularDataDesbloqueioCapsula();
 }
 
 // Mesmo overlay de senha é reaproveitado pelos dois. Pro Gabriel, sempre
@@ -2091,7 +2117,8 @@ async function renderizarTermometroDoDia() {
                 Math.abs(opcao.valor - resultado.media) < Math.abs(maisProxima.valor - resultado.media) ? opcao : maisProxima
             );
             const registrosTexto = resultado.quantidade === 1 ? '1 registro' : `${resultado.quantidade} registros`;
-            mediaEl.textContent = `Média deste mês: ${resultado.media.toFixed(1)} ${opcaoMaisProxima.emoji} (${registrosTexto})`;
+            // Sem número — só a palavra/emoji do humor mais próximo da média do mês.
+            mediaEl.textContent = `Média deste mês: ${opcaoMaisProxima.rotulo} ${opcaoMaisProxima.emoji} (${registrosTexto})`;
         }
     }
 

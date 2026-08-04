@@ -932,6 +932,54 @@ function montarOpcoesMediaRecorder(modo) {
     return mimeType ? { mimeType, ...bitrate } : { ...bitrate };
 }
 
+/* ----------------------------------------------------------------------
+   MENSAGEM DE PERMISSÃO DE CÂMERA/MICROFONE BLOQUEADA
+   ----------------------------------------------------------------------
+   Depois que o navegador REALMENTE bloqueia câmera/microfone para um
+   site (usuário negou uma vez, ou o site está travado nas configurações
+   do navegador), ele para de mostrar aquele popup de "Permitir" — clicar
+   de novo no botão da página não adianta nada, porque o navegador nem
+   chega a perguntar de novo. É só isso que resolve: mudar a permissão
+   nas configurações do próprio navegador/aparelho e, depois, recarregar
+   a página (só reabrir não é suficiente em vários navegadores, o reload
+   é o que faz ele reavaliar a permissão).
+   Esta função não "desbloqueia" nada sozinha (isso o JavaScript não
+   consegue fazer, é uma proteção de segurança do navegador) — ela só
+   identifica o motivo e explica o caminho certo pra esse aparelho. */
+function ehIOSSafariComoNavegador() {
+    const ua = navigator.userAgent || '';
+    return ehIOS() && !/CriOS|FxiOS|EdgiOS|OPiOS/i.test(ua);
+}
+
+function instrucoesDesbloquearPermissaoMidia(err) {
+    const nome = err && err.name;
+
+    if (nome === 'NotFoundError' || nome === 'DevicesNotFoundError') {
+        return 'Não encontrei câmera ou microfone neste aparelho (ou outro app está usando eles agora). Feche outros apps que possam estar usando a câmera/microfone e tente de novo.';
+    }
+    if (nome === 'NotReadableError' || nome === 'TrackStartError') {
+        return 'A câmera/microfone não respondeu — geralmente é outro aplicativo (ou outra aba) usando eles ao mesmo tempo. Feche os outros apps/abas e tente de novo.';
+    }
+    if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+        return 'Este site precisa ser aberto por um link "https://" para gravar áudio/vídeo — links "http://" sem o "s" são bloqueados pelo próprio navegador por segurança.';
+    }
+
+    // A partir daqui, é permissão negada de verdade (NotAllowedError /
+    // PermissionDeniedError / SecurityError) — o botão "permitir" na
+    // página não resolve mais; precisa mudar isso nas configurações do
+    // navegador e recarregar.
+    if (ehIOSSafariComoNavegador()) {
+        return 'A câmera/microfone estão bloqueados para este site nas configurações do iPhone. Vá em Ajustes > Safari > Câmera (e Microfone) e permita, ou Ajustes > Safari > Configurações de Site (na parte de baixo) e libere este site. Depois, volte aqui e recarregue a página.';
+    }
+    if (ehIOS()) {
+        return 'A câmera/microfone estão bloqueados para este site. Vá em Ajustes do iPhone > procure o app do navegador que você está usando (Chrome, Firefox etc.) > libere Câmera e Microfone. Depois volte aqui e recarregue a página.';
+    }
+    if (/android/i.test(navigator.userAgent || '')) {
+        return 'A câmera/microfone estão bloqueados para este site. Toque no ícone de cadeado (ou "i") ao lado do endereço no topo do navegador > Permissões do site > libere Câmera e Microfone. Depois recarregue a página.';
+    }
+    return 'A câmera/microfone estão bloqueados para este site nas configurações do navegador. Procure o ícone de cadeado/informações ao lado do endereço, abra as permissões do site e libere Câmera e Microfone — depois recarregue a página.';
+}
+
 /* ---------------- Fundo dinâmico do <body> (corrige "áreas brancas") ----------------
    Durante o bounce-scroll do iOS (ou quando o conteúdo é mais curto que a
    tela), o navegador revela a cor de fundo do <body>. Se o body estivesse

@@ -1792,7 +1792,7 @@ const PREVISOES_PERGUNTAS = [
 // vazio, o botão do Gabriel fica visível mas avisa que ainda não foi
 // configurado (mesmo padrão do Client ID do Google Drive).
 // Hash correto de "130456700" (confirmado).
-const SENHA_PREVISOES_GABRIEL_HASH = 'b927233d4cc11fd36021de2692a4bc16e6fc0a34f22dbe431cac89288b900333';
+const SENHA_PREVISOES_GABRIEL_HASH = '660ca7f0fd9d75fe9c2c9abef9476c4c1f7c24ad6517d9b8190e034a4b378016';
 
 /* ----------------------------------------------------------------------
    TERMÔMETRO DO DIA
@@ -1804,11 +1804,12 @@ const SENHA_PREVISOES_GABRIEL_HASH = 'b927233d4cc11fd36021de2692a4bc16e6fc0a34f2
    js/romance.js.
    ---------------------------------------------------------------------- */
 const TERMOMETRO_OPCOES = [
-    { valor: 1, emoji: '😞', rotulo: 'Difícil' },
-    { valor: 2, emoji: '😕', rotulo: 'Não tão bom' },
-    { valor: 3, emoji: '😐', rotulo: 'Normal' },
-    { valor: 4, emoji: '🙂', rotulo: 'Bom' },
-    { valor: 5, emoji: '🥰', rotulo: 'Ótimo' },
+    { valor: 1, emoji: '😠', rotulo: 'Irritada' },
+    { valor: 2, emoji: '😞', rotulo: 'Difícil' },
+    { valor: 3, emoji: '😕', rotulo: 'Não tão bom' },
+    { valor: 4, emoji: '😐', rotulo: 'Mais ou menos' },
+    { valor: 5, emoji: '🙂', rotulo: 'Feliz' },
+    { valor: 6, emoji: '🥰', rotulo: 'Muito feliz' },
 ];
 
 /* ----------------------------------------------------------------------

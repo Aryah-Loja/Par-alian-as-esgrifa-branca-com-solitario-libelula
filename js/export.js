@@ -189,7 +189,9 @@ async function abrirCameraPolaroid() {
         document.getElementById('polaroidCameraVideo').srcObject = polaroidCameraStream;
     } catch (err) {
         console.error('Não foi possível abrir a câmera para a Polaroid:', err);
-        document.getElementById('polaroidCameraErro').classList.remove('d-none');
+        const erroEl = document.getElementById('polaroidCameraErro');
+        erroEl.textContent = instrucoesDesbloquearPermissaoMidia(err);
+        erroEl.classList.remove('d-none');
     }
 }
 

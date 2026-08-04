@@ -487,7 +487,11 @@
             <div id="permissaoNegadaMsg" class="text-white d-none">
                 <i class="bi bi-camera-video-off fs-1 text-danger"></i>
                 <p class="mt-2 mb-2">Precisamos de acesso à câmera e ao microfone para continuar.</p>
-                <button id="btnPedirPermissaoNovamente" class="btn btn-rosegold rounded-pill btn-sm fw-bold">Permitir câmera e microfone</button>
+                <p id="permissaoNegadaDetalhe" class="small text-white-50 mb-3" style="max-width:340px;margin-left:auto;margin-right:auto;"></p>
+                <div class="d-flex gap-2 justify-content-center flex-wrap">
+                    <button id="btnPedirPermissaoNovamente" class="btn btn-rosegold rounded-pill btn-sm fw-bold">Tentar novamente</button>
+                    <button id="btnRecarregarPermissao" class="btn btn-outline-light rounded-pill btn-sm fw-bold">Recarregar a página</button>
+                </div>
             </div>
             <div id="conteudoGravacao" class="d-none">
                 <p class="text-white fw-bold mb-1">Grave um vídeo para confirmar sua identidade.</p>

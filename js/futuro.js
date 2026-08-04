@@ -105,7 +105,7 @@ async function escolherModoFuturo(modo) {
         if (modo === 'video') { previewVideo.srcObject = futuroStream; previewVideo.classList.remove('d-none'); vozIndicador.classList.add('d-none'); }
         else { previewVideo.classList.add('d-none'); vozIndicador.classList.remove('d-none'); }
     } catch (err) {
-        statusEl.textContent = 'Não foi possível acessar o microfone/câmera. Verifique as permissões do navegador e tente novamente.';
+        statusEl.textContent = instrucoesDesbloquearPermissaoMidia(err);
         statusEl.className = 'save-status err';
         console.error('Permissão negada para mensagem do futuro:', err);
     }
