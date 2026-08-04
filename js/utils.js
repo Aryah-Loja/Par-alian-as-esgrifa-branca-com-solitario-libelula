@@ -1346,7 +1346,18 @@ function testarVideoReproduzivel(blob) {
             resolve(ok);
         };
 
-        video.onloadedmetadata = () => finalizar(Number.isFinite(video.duration) && video.duration > 0);
+        // CORREÇÃO: vídeos gravados pelo próprio site via MediaRecorder
+        // (ver salvarVideoComSeguranca, js/suspense.js) saem sem o cabeçalho
+        // de duração (sem "Cues"), e por isso o navegador reporta
+        // video.duration = Infinity — um comportamento normal e documentado
+        // do MediaRecorder, não um sinal de arquivo quebrado (o vídeo toca
+        // normalmente do início ao fim). Antes, `Number.isFinite(...)`
+        // rejeitava Infinity como se o vídeo não abrisse, fazendo o vídeo do
+        // pedido sumir da tela inicial (romance.js, garantirBackupDeVideoDisponivel)
+        // e vídeos bons da galeria aparecerem como "não abriu" no diagnóstico.
+        // `duration > 0` sozinho já cobre isso: verdadeiro pra Infinity e pra
+        // qualquer duração real, falso pra NaN/0 (arquivo de fato incompatível).
+        video.onloadedmetadata = () => finalizar(video.duration > 0);
         video.onerror = () => finalizar(false);
         // Alguns navegadores não disparam nenhum dos dois eventos com um
         // arquivo realmente incompatível — depois de 6s, assume que não deu certo.
