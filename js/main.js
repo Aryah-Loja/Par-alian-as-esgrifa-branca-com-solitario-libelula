@@ -75,4 +75,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     // terminando de carregar e empurrando o layout depois deste ponto.
     window.scrollTo(0, 0);
     window.addEventListener('load', () => window.scrollTo(0, 0), { once: true });
+
+    // O MESMO problema que forcarRecalculoDeLayout() já resolve ao voltar
+    // de outra aba (ver js/utils.js) também acontece no carregamento
+    // inicial, com uma página tão alta quanto esta (várias telas empilhadas,
+    // ~17000px): o navegador às vezes desenha a altura errada na primeira
+    // passada, deixando "preso" um pedaço do topo escondido atrás do que já
+    // foi pintado — o mesmo aparecer/sumir que apagar e desfazer o elemento
+    // no DevTools corrige na mão. Chamando a função aqui, no fim da
+    // inicialização, sem precisar trocar de aba.
+    forcarRecalculoDeLayout();
+    setTimeout(forcarRecalculoDeLayout, 400); // roda de novo depois que fontes/imagens tardias terminarem de carregar
 });

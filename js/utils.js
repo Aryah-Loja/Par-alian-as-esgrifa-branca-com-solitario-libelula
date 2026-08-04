@@ -385,6 +385,14 @@ function forcarRecalculoDeLayout() {
         document.body.style.display = 'none';
         void document.body.offsetHeight; // força o navegador a recalcular o layout de verdade
         document.body.style.display = '';
+        // Zera qualquer rolagem "presa" num container que não devia ter
+        // rolagem própria nenhuma (ex.: #romancePage, que já tem
+        // overflow:hidden — mas pode acumular um scrollTop interno em
+        // alguns navegadores/toques, escondendo o topo do conteúdo).
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+        const romancePage = document.getElementById('romancePage');
+        if (romancePage) romancePage.scrollTop = 0;
     });
 }
 
