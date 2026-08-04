@@ -81,6 +81,16 @@ button:active, a:active, [role="button"]:active { transform: scale(0.96); }
 ::selection { background: var(--gold-soft); color: #2b1620; }
 :focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 4px; }
 
+/* Barra de rolagem com a cara do site (dentro de modais, listas longas
+   etc.) — só cosmético, em navegadores sem suporte cai na barra padrão
+   do sistema, sem quebrar nada. */
+* { scrollbar-width: thin; scrollbar-color: rgba(216,185,120,0.55) transparent; }
+*::-webkit-scrollbar { width: 6px; height: 6px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: linear-gradient(180deg, var(--rosegold), var(--gold)); border-radius: 999px; }
+
+.spinner-border { color: var(--gold) !important; }
+
 body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -646,7 +656,8 @@ body {
 /* "flex-start" + padding responsivo (clamp): o overlay sempre abre
    mostrando o topo do papel, com respiro nas bordas em qualquer aparelho. */
 .carta-discussao-overlay { position: fixed; inset: 0; z-index: 12500; background: rgba(10,6,8,0.94); display: flex; align-items: flex-start; justify-content: center; padding: clamp(28px, 8vh, 60px) clamp(18px, 6vw, 40px); overflow-y: auto; overscroll-behavior: contain; }
-.carta-discussao-papel { max-width: 380px; width: 100%; background: #faf0e1; border-radius: 4px; padding: clamp(26px, 6vw, 38px) clamp(20px, 5vw, 30px); box-shadow: 0 20px 50px rgba(0,0,0,0.5); margin: auto; }
+.carta-discussao-papel { max-width: 380px; width: 100%; background: #faf0e1; border-radius: 4px; padding: clamp(26px, 6vw, 38px) clamp(20px, 5vw, 30px); box-shadow: 0 20px 50px rgba(0,0,0,0.5); margin: auto; position: relative; overflow: hidden; }
+.carta-discussao-papel::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--rosegold-dark), var(--rosegold) 50%, var(--gold)); }
 .carta-discussao-papel .letter-text { color: #2b2523; }
 
 .carta-discussao-dica { font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; font-size: 0.95rem; color: #4a3b38; text-align: center; margin: 0 0 16px; }
@@ -673,7 +684,8 @@ body {
 
 /* Card de adjetivo — transição suave entre uma carta e outra, clicável
    (além do botão "mais um", tocar direto no card também passa a carta) */
-.adjetivo-card { background: linear-gradient(160deg, rgba(183,110,121,0.14), rgba(255,255,255,0.05)); border: 1px solid rgba(183,110,121,0.35); border-radius: 20px; padding: 28px 20px; text-align: center; cursor: pointer; opacity: 0; transform: translateY(6px); transition: opacity 0.3s ease, transform 0.3s ease; min-height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.adjetivo-card { background: linear-gradient(160deg, rgba(183,110,121,0.14), rgba(255,255,255,0.05)); backdrop-filter: blur(14px) saturate(150%); -webkit-backdrop-filter: blur(14px) saturate(150%); border: 1px solid rgba(183,110,121,0.35); border-radius: 20px; padding: 28px 20px; text-align: center; cursor: pointer; opacity: 0; transform: translateY(6px); transition: opacity 0.3s ease, transform 0.3s ease, border-color 0.15s ease; min-height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.adjetivo-card:active { border-color: rgba(216,185,120,0.6); }
 .adjetivo-card-visivel { opacity: 1; transform: translateY(0); }
 .adjetivo-eyebrow { font-family: 'Jost', sans-serif; font-size: 0.65rem; letter-spacing: 3px; text-transform: uppercase; color: rgba(240,217,221,0.55); margin: 0 0 6px; }
 .adjetivo-palavra { font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; font-size: 1.7rem; color: var(--rosegold); margin: 0 0 8px; }

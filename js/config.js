@@ -33,8 +33,16 @@ const NOME_DELE_COMPLETO = "Gabriel Schmeisk";
    ver exatamente o mesmo estado.
    Troque esta string se um dia for reaproveitar o projeto para outro
    casal, para não misturar dados de experiências diferentes.
+
+   >>> VERSÃO DE TESTE <<<
+   Este ID tem um sufixo "-teste" só pra esta cópia: tudo que for salvo
+   (fotos, mensagens, resets, o que for) vai pra um registro DIFERENTE
+   na nuvem, sem encostar em nada do site real (que continua usando
+   'aurora-ana-gabriel-namoro'). Quando estiver satisfeito com os testes
+   e for publicar de verdade, é só apagar o "-teste" abaixo — nesse
+   momento o site volta a ler/escrever o registro de produção normal.
    ---------------------------------------------------------------------- */
-const EXPERIENCE_ID = 'aurora-ana-gabriel-namoro';
+const EXPERIENCE_ID = 'aurora-ana-gabriel-namoro-teste';
 
 /* ----------------------------------------------------------------------
    VALORES PADRÃO DA HOME DA JOALHERIA
