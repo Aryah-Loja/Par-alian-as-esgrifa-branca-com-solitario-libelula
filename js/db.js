@@ -12,7 +12,7 @@
 // foi aberto antes, cada um fica no seu próprio banco, sem risco de
 // misturar (ou sobrescrever) fotos/vídeos/mensagens salvos localmente.
 // Pra voltar ao banco de produção normal, é só tirar o "-teste" abaixo.
-const db = new Dexie('AuroraDB-teste');
+const db = new Dexie('AuroraDB');
 
 // Coordena múltiplas abas abertas ao mesmo tempo durante um upgrade de schema.
 db.on('blocked', () => {
