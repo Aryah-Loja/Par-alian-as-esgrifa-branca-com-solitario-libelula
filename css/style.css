@@ -466,6 +466,24 @@ body {
     to { transform: translate(6%, 8%) scale(1.15); }
 }
 
+/* Monograma "A & G" — fixo no canto, discreto, não rola com a página nem
+   atrapalha toque em nada (pointer-events: none). */
+.monograma-selo {
+    position: fixed !important; top: calc(14px + var(--safe-top, 0px)); left: 14px; z-index: 20;
+    opacity: 0.55; pointer-events: none; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4));
+}
+
+/* Botão de som — mesmo canto "de cima", do lado oposto ao monograma. */
+.botao-som-toggle {
+    position: fixed !important; top: calc(14px + var(--safe-top, 0px)); right: 14px; z-index: 20;
+    width: 34px; height: 34px; border-radius: 50%;
+    background: rgba(255,255,255,0.08); backdrop-filter: blur(12px) saturate(150%); -webkit-backdrop-filter: blur(12px) saturate(150%);
+    border: 1px solid rgba(216,185,120,0.3); color: rgba(255,255,255,0.75);
+    display: flex; align-items: center; justify-content: center; font-size: 0.9rem;
+}
+.botao-som-toggle.mudo { color: rgba(255,255,255,0.35); }
+.botao-som-toggle:active { transform: scale(0.92) !important; }
+
 /* Tela de carregamento discreta enquanto "Nossa História" busca vídeo,
    assinatura, timeline, cápsula do tempo etc. no IndexedDB — some sozinha
    assim que tudo estiver pronto (ver goToRomancePage em js/romance.js). */

@@ -145,6 +145,7 @@ function checklistLigarEventosDaLista(container) {
         input.addEventListener('change', async (evt) => {
             const id = evt.target.getAttribute('data-checklist-id');
             evt.target.closest('.checklist-item').classList.toggle('checklist-item-feito', evt.target.checked);
+            if (evt.target.checked) celebrarMomento(0.7);
             await checklistAlternarItem(id, evt.target.checked);
         });
     });

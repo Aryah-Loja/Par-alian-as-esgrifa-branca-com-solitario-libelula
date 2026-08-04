@@ -672,6 +672,7 @@ function gerarContratoPersonalizado(idsEscolhidos) {
     document.getElementById('regrasSelecaoWrap').classList.add('d-none');
     const contratoWrap = document.getElementById('contratoWrap');
     contratoWrap.classList.remove('d-none');
+    celebrarMomento(1.3);
     setTimeout(() => contratoWrap.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
 }
 
@@ -760,6 +761,7 @@ async function iniciarEnvelopeCapsula() {
         if (emAnimacao) return; emAnimacao = true;
         hint.classList.remove('visivel');
         envelope.classList.add('aberto');
+        celebrarMomento(1.3);
 
         // Abre direto no modo "luz de vela" — nunca fica flutuando por cima da tela depois de fechada.
         setTimeout(() => {
@@ -1742,6 +1744,28 @@ function iniciarModuloRomance() {
 
     // Item 3 do prompt de correções: permite recomeçar o quiz do casal do zero.
     document.getElementById('btnRefazerQuiz').addEventListener('click', iniciarQuiz);
+
+    iniciarBotaoSom();
+}
+
+// Reflete a preferência salva (aurora_som_ativo) no ícone do botão e
+// alterna ao tocar — usa o mesmo helper que toca o sininho nos momentos-chave.
+function iniciarBotaoSom() {
+    const btn = document.getElementById('btnAlternarSom');
+    if (!btn) return;
+    const icone = btn.querySelector('i');
+    const atualizarIcone = () => {
+        icone.className = __auroraSomAtivo ? 'bi bi-volume-up-fill' : 'bi bi-volume-mute-fill';
+        btn.classList.toggle('mudo', !__auroraSomAtivo);
+    };
+    // __auroraSomAtivo é preenchido de forma assíncrona (lê do banco) — dá
+    // um instante pra essa leitura terminar antes de refletir no ícone.
+    setTimeout(atualizarIcone, 150);
+    btn.addEventListener('click', () => {
+        alternarSomAmbiente(!__auroraSomAtivo);
+        atualizarIcone();
+        if (__auroraSomAtivo) tocarSininho(0.8); // toca uma vez ao religar, como confirmação
+    });
 }
 
 /* ----------------------------------------------------------------------
@@ -2061,6 +2085,10 @@ async function prepararQuadroPrevisoes() {
         bloqueado.classList.add('d-none');
         revelado.classList.remove('d-none');
         await renderizarComparativoPrevisoes();
+        // Só comemora na primeira vez que revela — não em toda visita
+        // depois de já ter revelado.
+        const jaCelebrado = await obterConfiguracao('aurora_previsoes_celebrado');
+        if (!jaCelebrado) { celebrarMomento(1.3); await salvarConfiguracao('aurora_previsoes_celebrado', '1'); }
     }
 }
 
@@ -2138,6 +2166,7 @@ async function registrarTermometroDoDia(valor) {
     await salvarConfiguracao('aurora_termometro_lista', JSON.stringify(lista));
 
     if (notaInput) notaInput.value = '';
+    celebrarMomento(0.7);
     if (status) {
         status.textContent = 'Registrado!';
         status.className = 'save-status ok';

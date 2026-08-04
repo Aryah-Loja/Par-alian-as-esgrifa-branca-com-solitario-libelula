@@ -988,6 +988,66 @@ function instrucoesDesbloquearPermissaoMidia(err) {
     return 'A câmera/microfone estão bloqueados para este site nas configurações do navegador. Procure o ícone de cadeado/informações ao lado do endereço, abra as permissões do site e libere Câmera e Microfone — depois recarregue a página.';
 }
 
+/* ----------------------------------------------------------------------
+   TOQUE + VIBRAÇÃO NOS MOMENTOS-CHAVE
+   ----------------------------------------------------------------------
+   Um sininho bem suave (sintetizado na hora via Web Audio — sem precisar
+   de nenhum arquivo de áudio externo) e uma vibração levinha no celular
+   (só existe em Android; iOS Safari não libera vibração pra web, então
+   lá simplesmente não faz nada, sem gerar erro) — chamados juntos nos
+   momentos que merecem um "confirmado com carinho": abrir a cápsula do
+   tempo, revelar uma previsão, marcar um item do checklist, registrar o
+   humor do dia, assinar o contrato.
+   Guarda a preferência (som ligado/desligado) em 'aurora_som_ativo' —
+   respeita a escolha da pessoa entre uma sessão e outra.
+   ---------------------------------------------------------------------- */
+let __auroraSomAtivo = true;
+let __auroraAudioCtx = null;
+
+(async () => {
+    const salvo = await obterConfiguracao('aurora_som_ativo');
+    if (salvo === 'false') __auroraSomAtivo = false;
+})();
+
+function alternarSomAmbiente(ativo) {
+    __auroraSomAtivo = ativo;
+    salvarConfiguracao('aurora_som_ativo', String(ativo));
+}
+
+function tocarSininho(intensidade = 1) {
+    if (!__auroraSomAtivo) return;
+    try {
+        if (!__auroraAudioCtx) __auroraAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const ctx = __auroraAudioCtx;
+        if (ctx.state === 'suspended') ctx.resume();
+        const agora = ctx.currentTime;
+        // Dois tons curtos e suaves (um acorde simples), com fade-out —
+        // soa como um "tin" delicado, não como notificação de app.
+        [880, 1318.5].forEach((freq, i) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0, agora);
+            gain.gain.linearRampToValueAtTime(0.09 * intensidade, agora + 0.02 + i * 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.0001, agora + 0.9);
+            osc.connect(gain).connect(ctx.destination);
+            osc.start(agora + i * 0.05);
+            osc.stop(agora + 1);
+        });
+    } catch (e) { /* Web Audio indisponível — silenciosamente ignora */ }
+}
+
+function vibrarLeve(padrao = 15) {
+    try { if (navigator.vibrate) navigator.vibrate(padrao); } catch (e) { /* iOS/Safari: API não existe — ignora */ }
+}
+
+// Função única pra chamar nos momentos-chave — som + vibração juntos.
+function celebrarMomento(intensidade = 1) {
+    tocarSininho(intensidade);
+    vibrarLeve(intensidade > 1 ? [12, 30, 12] : 15);
+}
+
 /* ---------------- Fundo dinâmico do <body> (corrige "áreas brancas") ----------------
    Durante o bounce-scroll do iOS (ou quando o conteúdo é mais curto que a
    tela), o navegador revela a cor de fundo do <body>. Se o body estivesse
