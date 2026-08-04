@@ -257,6 +257,14 @@ async function montarChecklist() {
 
     if (carregando) carregando.classList.add('d-none');
     container.classList.add('checklist-categorias-visivel');
+
+    // Reforço: a página só fica "alta" (com os 132 itens) a partir daqui —
+    // antes disso ela é só o cabeçalho + card de progresso + spinner. Se
+    // sobrou algum scroll residual de antes desse momento (ex.: navegador
+    // tentando restaurar posição, mesmo com history.scrollRestoration
+    // manual, ver checklist.html), garante que a pessoa sempre vê o topo
+    // (card de progresso) assim que a lista de verdade aparece.
+    window.scrollTo(0, 0);
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
