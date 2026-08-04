@@ -177,10 +177,17 @@
 
     <a href="index.html" class="diag-voltar">← Voltar para o site</a>
 
+    <!-- CORREÇÃO: faltavam aqui (index.html e checklist.html já tinham os
+         dois). Sem eles, gerarBackupZipBlob()/aplicarBackupDeZip() (js/export.js,
+         que depende de JSZip) ficavam indefinidos, e "Forçar sincronização
+         agora" quebrava com "gerarBackupZipBlob is not defined" assim que
+         qualquer ação nesta página tentava publicar na nuvem. -->
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
     <script src="js/config.js"></script>
     <script src="js/db.js"></script>
     <script src="js/preservacao.js"></script>
     <script src="js/utils.js"></script>
+    <script src="js/export.js"></script>
     <script src="js/sync.js"></script>
     <script src="js/diagnostics.js"></script>
 
