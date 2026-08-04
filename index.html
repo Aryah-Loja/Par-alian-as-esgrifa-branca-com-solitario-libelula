@@ -96,6 +96,23 @@
         // qualquer outro script.
         try { if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; } catch (e) { /* navegador sem suporte — ignora */ }
 
+        // Reforço do reset acima: em alguns navegadores/webviews (ex.: o
+        // navegador embutido do Instagram/WhatsApp, ou versões antigas do
+        // Chrome Android) o "scrollRestoration = manual" não é suficiente
+        // sozinho — o próprio navegador ainda empurra a página pro último
+        // pixel de scroll DEPOIS que tudo já carregou, por fora do controle
+        // do history API. Por isso força a rolagem de volta pro topo mais
+        // de uma vez: assim que o HTML inicial existe, quando a página
+        // termina de carregar (imagens, fontes, tudo) e mais uma vez logo
+        // depois — inclusive quando a página volta do cache do navegador ao
+        // apertar "voltar" (evento pageshow), que é outro momento clássico
+        // desse pulo indesejado. Não atrapalha nada: assim que a pessoa
+        // rolar a tela com o dedo, esses forçamentos já passaram e o site
+        // some no gerenciamento normal do restante do código.
+        window.scrollTo(0, 0);
+        window.addEventListener('load', function () { window.scrollTo(0, 0); setTimeout(function () { window.scrollTo(0, 0); }, 300); });
+        window.addEventListener('pageshow', function () { window.scrollTo(0, 0); });
+
         // Roda IMEDIATAMENTE ao interpretar o HTML — antes de qualquer script
         // externo (inclusive antes da sincronização com a nuvem, que pode
         // levar alguns segundos). Se o pedido já aconteceu, troca o texto
