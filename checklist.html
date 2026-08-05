@@ -106,6 +106,26 @@
         </button>
     </div>
 
+    <!-- Tela de celebração ao completar 100% do checklist (ver
+         mostrarCelebracaoChecklistCompleto em js/checklist.js). Só
+         aparece uma vez por sessão, no instante exato em que a barra
+         chega a 100% — nunca ao simplesmente recarregar a página já
+         completa. Mesmo espírito visual da vinheta de abertura do site
+         (radial escuro + brilho + partículas), ver .vinheta-abertura em
+         css/style.css. -->
+    <div id="checklistCelebracaoOverlay" class="checklist-celebracao-overlay d-none">
+        <div class="checklist-celebracao-brilho"></div>
+        <div class="checklist-celebracao-particula p1"></div>
+        <div class="checklist-celebracao-particula p2"></div>
+        <div class="checklist-celebracao-particula p3"></div>
+        <div class="checklist-celebracao-particula p4"></div>
+        <div class="checklist-celebracao-particula p5"></div>
+        <i class="bi bi-trophy-fill checklist-celebracao-icone"></i>
+        <h2 class="checklist-celebracao-titulo">Checklist completo!</h2>
+        <p class="checklist-celebracao-texto">Vivemos tudo que a gente listou. E ainda tem muito mais história pela frente.</p>
+        <button type="button" id="btnFecharCelebracaoChecklist" class="btn btn-rosegold rounded-pill fw-bold px-4 mt-3">Continuar</button>
+    </div>
+
     <script defer src="js/config.js"></script>
     <script defer src="js/db.js"></script>
     <script defer src="js/preservacao.js"></script>

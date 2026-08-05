@@ -599,7 +599,7 @@
     <!-- ===================== CARREGANDO "NOSSA HISTÓRIA" (discreto) ===================== -->
     <div id="romanceLoadingOverlay" class="romance-loading-overlay d-none">
         <div class="romance-loading-box">
-            <p class="romance-loading-texto">preparando nossa história...</p>
+            <p class="romance-loading-texto" id="romanceLoadingTexto">preparando nossa história...</p>
             <div class="romance-loading-barra-fundo">
                 <div id="romanceLoadingBarra" class="romance-loading-barra"></div>
             </div>
@@ -777,7 +777,7 @@
             </div>
         </div>
 
-        <div style="max-width: 420px; margin: 0 auto;" class="reveal-up">
+        <div id="secaoTimelineHistoria" style="max-width: 420px; margin: 0 auto;" class="reveal-up">
             <p class="romance-section-title">Nosso céu</p>
             <p class="ceu-subtitulo">Assim como não consigo contar as estrelas, quero não conseguir contar todos os momentos bons que a gente ainda vai ter. Toque em uma pra reviver esse aqui, e que os que faltam sejam infinitos.</p>
             <div class="ceu-estrelado" id="ceuEstreladoContainer">
@@ -790,7 +790,7 @@
             </div>
         </div>
 
-        <div class="mt-5 reveal-up">
+        <div id="secaoMomentosHistoria" class="mt-5 reveal-up">
             <p class="romance-section-title">Nossos momentos</p>
             <div class="table-gallery" id="momentosGallery">
                 <div class="table-photo"><img alt="Foto do casal 1"></div>
@@ -817,7 +817,7 @@
             </div>
         </div>
 
-        <div class="mt-5 reveal-up" style="max-width: 440px; margin: 0 auto;">
+        <div id="secaoBichosHistoria" class="mt-5 reveal-up" style="max-width: 440px; margin: 0 auto;">
             <p class="romance-section-title"><i class="bi bi-paw me-2"></i>Seus Animais</p>
             <div class="bichos-grid" id="seusBichosGrid"></div>
             <div class="bicho-slinky-destaque d-none" id="bichoSlinkyDestaque">
@@ -828,7 +828,7 @@
             <p class="bichos-memoria" id="bichosEmMemoria"></p>
         </div>
 
-        <div class="mt-5 reveal-up" style="max-width: 440px; margin: 0 auto;">
+        <div id="secaoMapaHistoria" class="mt-5 reveal-up" style="max-width: 440px; margin: 0 auto;">
             <p class="romance-section-title"><i class="bi bi-signpost-split-fill me-2"></i>Nosso mapa</p>
             <div class="mapa-trilha" id="mapaTrilhaGrid"></div>
             <div class="text-center mt-3 d-flex gap-2 justify-content-center flex-wrap">
@@ -851,7 +851,7 @@
             </div>
         </div>
 
-        <div class="mt-5 reveal-up" style="max-width: 440px; margin: 0 auto;">
+        <div id="secaoPlaylistHistoria" class="mt-5 reveal-up" style="max-width: 440px; margin: 0 auto;">
             <p class="romance-section-title">Nossa playlist</p>
             <div class="playlist-card">
                 <p class="playlist-track-title" id="playlistTitulo"></p>
@@ -1049,13 +1049,16 @@
              Antes era um botão discreto lá embaixo da página — agora tem
              seção própria (título + descrição, igual às outras) pra não
              passar despercebido. Ver js/futuro.js. -->
-        <div class="mt-5 reveal-up" style="max-width: 460px; margin: 0 auto;">
+        <div id="secaoMensagemFuturoHistoria" class="mt-5 reveal-up" style="max-width: 460px; margin: 0 auto;">
             <p class="romance-section-title"><i class="bi bi-chat-heart-fill me-2"></i>Mensagem rápida</p>
             <p class="small text-white-50 text-center mb-3">Um textinho, um áudio ou um vídeo curto pra guardar pra nós do futuro.</p>
             <div class="text-center">
                 <button id="btnMensagemFuturo" class="btn btn-rosegold w-100"><i class="bi bi-mic-fill me-2"></i>Deixe uma mensagem rápida</button>
                 <div class="mensagens-futuro-lista" id="mensagensFuturoLista"></div>
-                <p id="mensagensFuturoVazio" class="mensagens-futuro-vazio">Nenhuma mensagem guardada ainda.</p>
+                <div id="mensagensFuturoVazio" class="mensagens-futuro-vazio">
+                    <i class="bi bi-envelope-heart mensagens-futuro-vazio-icone" aria-hidden="true"></i>
+                    <p class="mensagens-futuro-vazio-texto">Ainda não tem nada aqui, mas vai ter. Deixe a primeira mensagem pra vocês do futuro.</p>
+                </div>
             </div>
         </div>
 
@@ -1065,7 +1068,7 @@
              pensamentos/poemas à vontade, com lista dos textos guardados
              e opção de apagar cada um. Ver #muralOverlay (fora de
              #romancePage) mais abaixo, e iniciarMural() em js/romance.js. -->
-        <div class="text-center mt-5 reveal-up" style="max-width: 460px; margin-left: auto; margin-right: auto;">
+        <div id="secaoMuralHistoria" class="text-center mt-5 reveal-up" style="max-width: 460px; margin-left: auto; margin-right: auto;">
             <p class="romance-section-title">Seu mural</p>
             <button id="btnAbrirMural" class="btn btn-share"><i class="bi bi-journal-richtext me-2"></i>Abrir meu mural</button>
         </div>
@@ -1119,6 +1122,34 @@ Se existe uma certeza que eu tenho, é esta: enquanto eu puder, vou continuar es
             <br>
             <button id="btnModoSilencioso" class="btn btn-outline-light btn-sm rounded-pill mt-2"><i class="bi bi-moon-stars-fill me-1"></i>Preciso de um tempo, mas te amo</button>
         </div>
+    </div>
+
+    <!-- ===================== BARRA FINA DE PROGRESSO DE SCROLL =====================
+         Um traço dourado no topo mostrando quanto já rolou de "Nossa
+         História" — só pra dar noção do tamanho da página, sem números.
+         Filho direto do body (mesmo motivo do FAB logo abaixo e do
+         #maisOpcoesOverlay: não pode ficar dentro de #romancePage, que
+         tem overflow:hidden, ver bug #1 do CONTEXTO-PROJETO.md). Só
+         aparece quando "Nossa História" está de fato na tela (ver
+         iniciarBarraProgressoScrollHistoria em js/romance.js). -->
+    <div id="historiaProgressoScroll" class="historia-progresso-scroll d-none">
+        <div id="historiaProgressoScrollBarra" class="historia-progresso-scroll-barra"></div>
+    </div>
+
+    <!-- ===================== BOTÃO FLUTUANTE: NAVEGAR ENTRE SEÇÕES DE "NOSSA HISTÓRIA" =====================
+         Mesmo padrão do botão flutuante da checklist (ver
+         .checklist-nav-flutuante em css/style.css e
+         iniciarNavegacaoCategoriasChecklist em js/checklist.js), adaptado
+         pra pular direto entre os grandes blocos da página (timeline,
+         quiz, bichos, mapa, playlist, cápsula, previsões, mensagem pro
+         futuro, mural) sem precisar rolar tudo de novo. Filho direto do
+         body, position:fixed. Ver iniciarNavegacaoSecoesHistoria em
+         js/romance.js. -->
+    <div id="historiaNavFlutuante" class="historia-nav-flutuante d-none">
+        <div id="historiaNavMenu" class="historia-nav-menu"></div>
+        <button type="button" id="btnHistoriaNavToggle" class="historia-nav-botao" aria-label="Navegar entre seções de Nossa História" aria-expanded="false">
+            <i class="bi bi-compass"></i>
+        </button>
     </div>
 
     <!-- ===================== "MAIS OPÇÕES" (exportar mapa/constelação/carta/polaroid, rever loja) =====================
