@@ -488,13 +488,28 @@ body {
     color: rgba(255,255,255,0.85); font-size: 0.72rem; letter-spacing: 0.2px;
     opacity: 0; transform: translateY(-6px); pointer-events: none; transition: opacity 0.4s ease, transform 0.4s ease;
 }
-.presenca-indicador.visivel { opacity: 1; transform: translateY(0); }
+.presenca-indicador.visivel { opacity: 1; transform: translateY(0); pointer-events: auto; cursor: pointer; }
+.presenca-indicador.visivel:active { transform: translateY(0) scale(0.95); }
 .presenca-indicador-ponto {
     width: 8px; height: 8px; border-radius: 50%; background: #6fcf7d;
     box-shadow: 0 0 6px rgba(111,207,125,0.9); animation: presencaPulso 1.8s ease-in-out infinite;
 }
 @keyframes presencaPulso {
     0%, 100% { opacity: 1; } 50% { opacity: 0.45; }
+}
+
+/* Recadinho rápido (enviar/receber enquanto os dois estão online, ver
+   js/presenca.js) — reaproveita o "papel" claro (.carta-discussao-papel)
+   e o textarea do mural (.mural-textarea, .mural-intro). */
+.recado-papel { max-width: 380px; }
+.recado-respondendo-preview {
+    font-size: 0.78rem; color: rgba(43,37,35,0.6); font-style: italic;
+    background: rgba(43,37,35,0.06); border-radius: 10px; padding: 8px 12px; margin-bottom: 12px;
+}
+.recado-recebido-de { font-size: 0.85rem; color: rgba(43,37,35,0.65); margin-bottom: 8px; }
+.recado-recebido-texto {
+    font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.35rem; color: #2b2523;
+    line-height: 1.5; white-space: pre-wrap;
 }
 
 /* Tela de carregamento discreta enquanto "Nossa História" busca vídeo,
