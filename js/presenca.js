@@ -1,30 +1,56 @@
 /**
- * PRESENCA.JS — "Os dois online agora"
+ * PRESENCA.JS — "Os dois online agora" + Recadinho (com histórico e
+ * recado pra quem entrar depois)
  * ----------------------------------------------------------------------
  * Indicador discreto e fixo no canto (ver #presencaIndicador em index.html
- * e .presenca-indicador em css/style.css) que aparece só quando há mais de
- * uma aba/aparelho conectado ao mesmo tempo — ou seja, quando dá pra supor
- * que Ana e Gabriel estão no site juntos, agora.
- *
- * Usa o recurso de Presence do Supabase Realtime (mesmo projeto já usado
- * em js/sync.js para o backup na nuvem — reaproveita SUPABASE_URL e
- * SUPABASE_ANON_KEY de lá). Presence não precisa de nenhuma tabela: cada
- * aba entra num "canal" compartilhado e o Supabase avisa a todo mundo
- * quem mais está conectado, em tempo real, via WebSocket.
+ * e .presenca-indicador em css/style.css). Usa o recurso de Presence do
+ * Supabase Realtime (mesmo projeto já usado em js/sync.js para o backup
+ * na nuvem — reaproveita SUPABASE_URL e SUPABASE_ANON_KEY de lá).
+ * Presence não precisa de nenhuma tabela: cada aba entra num "canal"
+ * compartilhado e o Supabase avisa a todo mundo quem mais está
+ * conectado, em tempo real, via WebSocket.
  *
  * Importante: como o site não tem login, não dá pra saber COM CERTEZA se
  * as duas conexões são de fato Ana e Gabriel (podem ser duas abas da
  * mesma pessoa) — é só uma aproximação razoável, não uma garantia.
  *
- * RECADINHO RÁPIDO: enquanto os dois estiverem online, tocar no indicador
- * abre um campo pra mandar uma mensagem curta, que aparece na hora na
- * tela do outro (com opção de responder). Usa broadcast do Supabase
- * Realtime no MESMO canal da presença (nenhuma tabela nova, nenhum
- * histórico salvo) — só chega a quem estiver com o site aberto agora; se
- * a pessoa não estiver conectada naquele instante, a mensagem se perde
- * (não é uma caixa de mensagens, é um "toc-toc" na hora).
+ * RECADINHO: tocar no indicador abre um campo pra mandar uma mensagem
+ * curta — funciona a qualquer momento, mesmo sozinho no site. Duas
+ * camadas trabalham juntas:
+ *   1) Broadcast do Supabase Realtime, no mesmo canal da presença — se a
+ *      outra pessoa estiver com o site aberto agora, a mensagem chega
+ *      instantaneamente, sem precisar recarregar nada.
+ *   2) Um arquivo JSON no MESMO bucket do Supabase Storage já usado pelo
+ *      backup (ver RECADOS_ARQUIVO abaixo) guarda cada recado enviado —
+ *      isso dá um histórico de tudo que já foi trocado E faz o papel de
+ *      "recado pra quem entrar depois": se ninguém mais estava online na
+ *      hora do envio, o recado fica esperando ali e aparece sozinho,
+ *      automaticamente, assim que a outra pessoa abrir "Nossa História"
+ *      (ver verificarRecadosPendentes, chamada em goToRomancePage no
+ *      js/romance.js) — sem precisar dos dois online ao mesmo tempo.
+ *
+ * Como o site não tem login, quem "recebe" um recado pendente é definido
+ * pelo APARELHO, não pela pessoa: guardamos localmente (localStorage) os
+ * ids dos recados que ESTE aparelho enviou, pra nunca mostrar de volta
+ * pra quem escreveu como se fosse uma mensagem nova recebida (ver
+ * recadoFoiEnviadoPorMim/recadoMarcarComoEnviadoPorMim). Igual ao resto
+ * do site, isso é uma aproximação razoável pra um casal sem login, não
+ * uma garantia absoluta.
+ *
+ * Limitação conhecida (mesma natureza do backup em js/sync.js): o
+ * arquivo de recados é sobrescrito inteiro a cada envio (upsert simples,
+ * sem banco de dados de verdade) — em caso de dois envios praticamente
+ * simultâneos dos dois aparelhos, o que salvar por último "ganha" e pode
+ * sobrescrever o outro no arquivo da nuvem. Extremamente raro num casal
+ * de duas pessoas, mas vale documentar.
  */
 const PRESENCA_CANAL = 'aurora-presenca';
+
+// Arquivo de recados na nuvem — mesmo bucket do backup (SUPABASE_BUCKET,
+// ver js/sync.js), mesmo padrão de nome fixo do EXPERIENCE_ID (js/config.js).
+const RECADOS_ARQUIVO = `${typeof EXPERIENCE_ID !== 'undefined' ? EXPERIENCE_ID : 'aurora'}-recados.json`;
+const RECADOS_LIMITE_HISTORICO = 200; // trunca os mais antigos além disso, pra o arquivo não crescer sem limite
+const RECADOS_ENVIADOS_POR_MIM_CHAVE = 'aurora_recados_enviados_por_mim';
 
 // Guarda a última contagem recebida do Supabase pra poder reavaliar a
 // visibilidade sem precisar de um novo evento de presença — por exemplo,
@@ -42,9 +68,17 @@ let presencaCanalAtivo = null;
 // mandou o último recado recebido).
 let recadoPessoaEscolhida = null;
 
-// Guarda o último recado recebido nesta aba, só pra poder mostrar um
-// preview curto dele quando a pessoa aperta "Responder".
+// Guarda o(s) último(s) recado(s) recebido(s)/pendente(s) nesta aba, só
+// pra poder mostrar um preview curto deles quando a pessoa aperta
+// "Responder" (sempre em relação ao mais recente do lote).
 let recadoUltimoRecebido = null;
+
+// Cache local do histórico completo (carregado da nuvem uma vez por
+// sessão e mantido atualizado conforme novos recados são enviados ou
+// recebidos) — usado tanto pra render do histórico quanto pra achar
+// pendentes.
+let recadosCache = { mensagens: [] };
+let recadosCacheCarregado = false;
 
 function estaEmNossaHistoria() {
     const romancePage = document.getElementById('romancePage');
@@ -53,12 +87,26 @@ function estaEmNossaHistoria() {
 
 // Indicador só faz sentido dentro de "Nossa História" (onde antes ficava
 // o botão de som) — nas telas anteriores (loja/checkout) ele fica sempre
-// escondido, mesmo que os dois já estejam conectados.
+// escondido. Diferente de antes, agora ele fica visível mesmo sozinho
+// (texto/ícone mudam conforme o estado), porque tocar nele sempre serve
+// pra alguma coisa: deixar um recado esperando, mesmo sem ninguém do
+// outro lado agora.
 function atualizarIndicadorPresenca(totalConexoes) {
     presencaUltimoTotal = totalConexoes;
     const el = document.getElementById('presencaIndicador');
     if (!el) return;
-    el.classList.toggle('visivel', totalConexoes >= 2 && estaEmNossaHistoria());
+
+    const osDoisOnline = totalConexoes >= 2;
+    el.classList.toggle('visivel', estaEmNossaHistoria());
+    el.classList.toggle('online-agora', osDoisOnline);
+
+    const ponto = document.getElementById('presencaIndicadorPonto');
+    if (ponto) ponto.classList.toggle('d-none', !osDoisOnline);
+
+    const texto = document.getElementById('presencaIndicadorTexto');
+    if (texto) texto.textContent = osDoisOnline ? 'Os dois online agora' : 'Deixar um recado';
+
+    el.setAttribute('aria-label', osDoisOnline ? 'Os dois online agora — abrir recadinho' : 'Deixar um recado pra quando a outra pessoa entrar');
 }
 
 // Chamada por js/romance.js assim que "Nossa História" é exibida, pra
@@ -67,7 +115,89 @@ function refrescarIndicadorPresenca() {
     atualizarIndicadorPresenca(presencaUltimoTotal);
 }
 
-/* ------------------------- Recadinho rápido ------------------------- */
+/* ------------------------- Guarda-local de "enviado por mim" ------------------------- */
+
+function recadosEnviadosPorMimObter() {
+    try {
+        const bruto = localStorage.getItem(RECADOS_ENVIADOS_POR_MIM_CHAVE);
+        const lista = bruto ? JSON.parse(bruto) : [];
+        return Array.isArray(lista) ? lista : [];
+    } catch (e) { return []; }
+}
+
+function recadoMarcarComoEnviadoPorMim(id) {
+    try {
+        const lista = recadosEnviadosPorMimObter();
+        lista.push(id);
+        // Mantém só os últimos 300 ids — não precisa crescer pra sempre.
+        const cortada = lista.slice(-300);
+        localStorage.setItem(RECADOS_ENVIADOS_POR_MIM_CHAVE, JSON.stringify(cortada));
+    } catch (e) { /* localStorage indisponível — no pior caso, este aparelho pode ver de volta o próprio recado enviado, sem quebrar nada */ }
+}
+
+function recadoFoiEnviadoPorMim(id) {
+    return recadosEnviadosPorMimObter().includes(id);
+}
+
+/* ------------------------- Nuvem: ler/gravar o arquivo de recados ------------------------- */
+
+function recadosCaminhoLeitura() {
+    return `${SUPABASE_URL}/storage/v1/object/public/${SUPABASE_BUCKET}/${RECADOS_ARQUIVO}?t=${Date.now()}`;
+}
+function recadosCaminhoEscrita() {
+    return `${SUPABASE_URL}/storage/v1/object/${SUPABASE_BUCKET}/${RECADOS_ARQUIVO}`;
+}
+
+// Busca o arquivo na nuvem; se ainda não existir (primeiro recado de
+// todos) ou não der pra alcançar (sem internet), volta uma lista vazia
+// em vez de quebrar qualquer coisa — o recadinho sempre funciona pelo
+// menos via broadcast, mesmo se a parte de nuvem falhar.
+async function recadosBuscarDaNuvem() {
+    if (!syncEstaConfigurado()) return { mensagens: [] };
+    try {
+        const resposta = await fetch(recadosCaminhoLeitura());
+        if (!resposta.ok) return { mensagens: [] };
+        const dados = await resposta.json();
+        if (!dados || !Array.isArray(dados.mensagens)) return { mensagens: [] };
+        return dados;
+    } catch (e) {
+        console.warn('Não consegui buscar o histórico de recados na nuvem (sem internet?) — segue sem histórico por agora.', e);
+        return { mensagens: [] };
+    }
+}
+
+async function recadosSalvarNaNuvem(dados) {
+    if (!syncEstaConfigurado()) return false;
+    try {
+        const resposta = await fetch(recadosCaminhoEscrita(), {
+            method: 'POST',
+            headers: {
+                'apikey': SUPABASE_ANON_KEY,
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                'Content-Type': 'application/json',
+                'x-upsert': 'true'
+            },
+            body: JSON.stringify(dados)
+        });
+        return resposta.ok;
+    } catch (e) {
+        console.warn('Não consegui salvar o recado na nuvem (sem internet?) — se a outra pessoa estiver online agora, ainda chega por broadcast.', e);
+        return false;
+    }
+}
+
+// Garante que recadosCache está carregado (uma vez por sessão é
+// suficiente pro histórico; verificarRecadosPendentes sempre busca uma
+// cópia fresca da nuvem separadamente, pra não perder recados enviados
+// de outro aparelho entre uma checagem e outra).
+async function recadosGarantirCacheCarregado() {
+    if (recadosCacheCarregado) return recadosCache;
+    recadosCache = await recadosBuscarDaNuvem();
+    recadosCacheCarregado = true;
+    return recadosCache;
+}
+
+/* ------------------------- Recadinho: compor/enviar ------------------------- */
 
 // Volta o overlay de escrever pro estado inicial: escolher quem está
 // mandando (Gabriel ou Poloni).
@@ -105,6 +235,11 @@ function recadoMostrarBlocoEscrever(pessoa) {
         }
     }
 
+    // Avisa que, mesmo sozinho no site agora, o recado não se perde —
+    // só não chega na hora (fica esperando na nuvem).
+    const aviso = document.getElementById('recadoOfflineAviso');
+    if (aviso) aviso.classList.toggle('d-none', presencaUltimoTotal >= 2);
+
     const input = document.getElementById('recadoTextoInput');
     if (input) { input.value = ''; input.focus(); }
     const status = document.getElementById('recadoEnviarStatus');
@@ -113,14 +248,23 @@ function recadoMostrarBlocoEscrever(pessoa) {
 
 // respondendo=true pula direto pro campo de texto, já com a pessoa
 // "oposta" a quem mandou o último recado (ver btnResponderRecado);
-// respondendo=false (abertura pelo indicador de presença) sempre volta
-// pro picker do zero.
+// respondendo=false (abertura pelo indicador) sempre volta pro picker
+// do zero.
 function abrirRecadoCompose(respondendo) {
     const overlay = document.getElementById('recadoComposeOverlay');
     if (!overlay) return;
     overlay.classList.remove('d-none');
     overlay.scrollTop = 0;
     bloquearScrollFundoLembranca();
+
+    // Histórico começa fechado toda vez que o overlay abre, mas já
+    // atualiza o cache em segundo plano pra estar pronto se a pessoa
+    // tocar em "Ver histórico".
+    const historicoWrap = document.getElementById('recadoHistoricoWrap');
+    const historicoToggle = document.getElementById('btnAlternarHistoricoRecados');
+    if (historicoWrap) historicoWrap.classList.add('d-none');
+    if (historicoToggle) historicoToggle.setAttribute('aria-expanded', 'false');
+    recadosGarantirCacheCarregado();
 
     if (respondendo && recadoUltimoRecebido) {
         const outraPessoa = recadoUltimoRecebido.de === 'gabriel' ? 'ana' : 'gabriel';
@@ -138,46 +282,100 @@ function fecharRecadoCompose() {
     desbloquearScrollFundoLembranca();
 }
 
-// Envia o texto digitado pro outro aparelho via broadcast (não fica
-// salvo em lugar nenhum — se ninguém mais estiver conectado agora, a
-// mensagem simplesmente não chega a ninguém).
-function enviarRecadoAtual() {
+// Envia o recado: sempre grava no histórico da nuvem primeiro (é isso
+// que garante que ele nunca se perde, mesmo sem ninguém do outro lado
+// agora) e, se a outra pessoa estiver online neste instante, também
+// manda por broadcast pra chegar instantaneamente.
+async function enviarRecadoAtual() {
     const input = document.getElementById('recadoTextoInput');
     const status = document.getElementById('recadoEnviarStatus');
+    const botao = document.getElementById('btnEnviarRecado');
     const texto = input ? input.value.trim() : '';
     if (!texto || !recadoPessoaEscolhida) return;
 
-    if (!presencaCanalAtivo) {
-        if (status) { status.textContent = 'Sem conexão com o outro aparelho agora — tenta de novo em instantes.'; status.className = 'save-status err mt-2'; }
-        return;
+    if (botao) botao.disabled = true;
+    if (status) { status.textContent = 'Enviando...'; status.className = 'save-status mt-2'; }
+
+    const mensagem = {
+        id: gerarIdUnico('recado'),
+        de: recadoPessoaEscolhida,
+        texto,
+        enviadoEm: new Date().toISOString(),
+        entregue: false
+    };
+
+    // Este aparelho é quem está enviando — nunca deve ver este recado de
+    // volta como se fosse "recebido" (ver verificarRecadosPendentes).
+    recadoMarcarComoEnviadoPorMim(mensagem.id);
+
+    // Atualiza o cache local e persiste na nuvem (é o que vira histórico
+    // e recado-pra-quem-entrar-depois).
+    await recadosGarantirCacheCarregado();
+    recadosCache.mensagens.push(mensagem);
+    if (recadosCache.mensagens.length > RECADOS_LIMITE_HISTORICO) {
+        recadosCache.mensagens = recadosCache.mensagens.slice(-RECADOS_LIMITE_HISTORICO);
+    }
+    const salvouNaNuvem = await recadosSalvarNaNuvem(recadosCache);
+
+    // Broadcast: só faz sentido (e só existe canal) se os dois estiverem
+    // online agora — entrega instantânea, além da nuvem.
+    if (presencaCanalAtivo && presencaUltimoTotal >= 2) {
+        try {
+            presencaCanalAtivo.send({ type: 'broadcast', event: 'recado', payload: mensagem });
+        } catch (e) { /* nuvem já salvou o recado, não é crítico se o broadcast falhar */ }
     }
 
-    presencaCanalAtivo.send({
-        type: 'broadcast',
-        event: 'recado',
-        payload: { de: recadoPessoaEscolhida, texto, enviadoEm: new Date().toISOString() },
-    });
-
-    if (status) { status.textContent = 'Enviado!'; status.className = 'save-status ok mt-2'; }
-    setTimeout(fecharRecadoCompose, 900);
+    if (botao) botao.disabled = false;
+    if (status) {
+        if (salvouNaNuvem) {
+            status.textContent = presencaUltimoTotal >= 2 ? 'Enviado!' : 'Enviado! Vai aparecer assim que a outra pessoa entrar.';
+            status.className = 'save-status ok mt-2';
+        } else {
+            status.textContent = presencaUltimoTotal >= 2 ? 'Enviado (mas não consegui guardar no histórico — sem internet?).' : 'Não consegui enviar agora (sem internet?) — tenta de novo em instantes.';
+            status.className = 'save-status err mt-2';
+        }
+    }
+    renderizarHistoricoRecados();
+    setTimeout(fecharRecadoCompose, salvouNaNuvem ? 1100 : 1800);
 }
 
-// Chamada pelo listener de broadcast 'recado' (ver iniciarPresenca
-// abaixo) assim que uma mensagem chega do outro aparelho.
-function exibirRecadoRecebido(payload) {
-    if (!payload || !payload.texto) return;
-    recadoUltimoRecebido = payload;
+/* ------------------------- Recadinho: receber (na hora ou pendente) ------------------------- */
+
+// Mostra um ou mais recados de uma vez no overlay de recebido. Chamada
+// tanto pelo broadcast em tempo real (lista de 1 item) quanto por
+// verificarRecadosPendentes (pode ser mais de um, se a pessoa ficou
+// offline por um tempo e mais de um recado foi deixado esperando).
+function exibirRecadosRecebidos(lista) {
+    const mensagens = (lista || []).filter(m => m && m.texto);
+    if (!mensagens.length) return;
+    recadoUltimoRecebido = mensagens[mensagens.length - 1];
 
     const overlay = document.getElementById('recadoRecebidoOverlay');
-    if (!overlay) return;
-    const de = document.getElementById('recadoRecebidoDe');
-    const textoEl = document.getElementById('recadoRecebidoTexto');
-    if (de) de.textContent = `${payload.de === 'gabriel' ? NOME_DELE : NOME_DELA_APELIDO} mandou um recado:`;
-    if (textoEl) textoEl.textContent = payload.texto;
+    const container = document.getElementById('recadoRecebidoLista');
+    const eyebrow = document.getElementById('recadoRecebidoEyebrow');
+    if (!overlay || !container) return;
+
+    if (eyebrow) eyebrow.textContent = mensagens.length > 1 ? `Chegaram ${mensagens.length} recadinhos` : 'Chegou um recadinho';
+
+    container.innerHTML = mensagens.map((m) => {
+        const nome = m.de === 'gabriel' ? NOME_DELE : NOME_DELA_APELIDO;
+        const textoEscapado = String(m.texto).replace(/</g, '&lt;');
+        return `
+            <div class="recado-recebido-item">
+                <p class="recado-recebido-de">${nome} mandou um recado:</p>
+                <p class="recado-recebido-texto">${textoEscapado}</p>
+            </div>
+        `;
+    }).join('');
 
     overlay.classList.remove('d-none');
     overlay.scrollTop = 0;
     bloquearScrollFundoLembranca();
+}
+
+// Compatibilidade: mantém o nome antigo usado pelo listener de broadcast.
+function exibirRecadoRecebido(payload) {
+    exibirRecadosRecebidos([payload]);
 }
 
 function fecharRecadoRecebido() {
@@ -187,16 +385,90 @@ function fecharRecadoRecebido() {
     desbloquearScrollFundoLembranca();
 }
 
-// Liga os toques: indicador de presença abre o recado (só quando os
-// dois estão online), botões do picker, enviar, responder e fechar.
-// Não depende do Supabase estar disponível — só conecta os elementos da
-// tela; enviarRecadoAtual() já trata a falta de canal sozinha.
+// Chamada em goToRomancePage (js/romance.js) toda vez que "Nossa
+// História" é exibida: busca uma cópia fresca do histórico na nuvem e
+// mostra qualquer recado ainda não entregue que NÃO tenha sido enviado
+// por este próprio aparelho — é isso que faz um recado deixado com o
+// site offline aparecer sozinho pra outra pessoa assim que ela entrar,
+// mesmo que os dois nunca tenham ficado online ao mesmo tempo.
+async function verificarRecadosPendentes() {
+    if (!syncEstaConfigurado()) return;
+    const dados = await recadosBuscarDaNuvem();
+    recadosCache = dados;
+    recadosCacheCarregado = true;
+
+    const pendentes = dados.mensagens.filter(m => !m.entregue && !recadoFoiEnviadoPorMim(m.id));
+    if (!pendentes.length) return;
+
+    exibirRecadosRecebidos(pendentes);
+
+    // Marca como entregues e persiste — assim não aparecem de novo pra
+    // mais ninguém (nem pra este aparelho, num recarregamento futuro).
+    const idsPendentes = new Set(pendentes.map(m => m.id));
+    dados.mensagens = dados.mensagens.map(m => idsPendentes.has(m.id) ? { ...m, entregue: true } : m);
+    recadosCache = dados;
+    await recadosSalvarNaNuvem(dados);
+}
+
+/* ------------------------- Histórico (dentro do compose) ------------------------- */
+
+function formatarDataHoraRecado(iso) {
+    try {
+        return new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    } catch (e) { return ''; }
+}
+
+async function renderizarHistoricoRecados() {
+    const lista = document.getElementById('recadoHistoricoLista');
+    if (!lista) return;
+    const dados = await recadosGarantirCacheCarregado();
+    const mensagens = (dados.mensagens || []).slice().reverse();
+
+    if (!mensagens.length) {
+        lista.innerHTML = `<p class="recado-historico-vazio">Nenhum recado trocado ainda — o primeiro fica guardado aqui.</p>`;
+        return;
+    }
+
+    lista.innerHTML = mensagens.map((m) => {
+        const nome = m.de === 'gabriel' ? NOME_DELE : NOME_DELA_APELIDO;
+        const textoEscapado = String(m.texto).replace(/</g, '&lt;').replace(/\n/g, '<br>');
+        return `
+            <div class="recado-historico-item">
+                <div class="recado-historico-item-topo">
+                    <span class="recado-historico-item-de">${nome}</span>
+                    <span class="recado-historico-item-data">${formatarDataHoraRecado(m.enviadoEm)}</span>
+                </div>
+                <p class="recado-historico-item-texto">${textoEscapado}</p>
+            </div>
+        `;
+    }).join('');
+}
+
+function alternarHistoricoRecados() {
+    const wrap = document.getElementById('recadoHistoricoWrap');
+    const toggle = document.getElementById('btnAlternarHistoricoRecados');
+    const toggleTexto = document.getElementById('recadoHistoricoToggleTexto');
+    if (!wrap || !toggle) return;
+    const abrindo = wrap.classList.contains('d-none');
+    wrap.classList.toggle('d-none', !abrindo);
+    toggle.setAttribute('aria-expanded', String(abrindo));
+    if (toggleTexto) toggleTexto.textContent = abrindo ? 'Esconder histórico de recados' : 'Ver histórico de recados';
+    if (abrindo) renderizarHistoricoRecados();
+}
+
+/* ------------------------- Ligação dos toques ------------------------- */
+
+// Liga os toques: indicador abre o recado (sempre, mesmo sozinho — ver
+// atualizarIndicadorPresenca), botões do picker, enviar, responder,
+// fechar e o toggle do histórico. Não depende do Supabase estar
+// disponível — só conecta os elementos da tela; enviarRecadoAtual() já
+// trata a falta de nuvem/canal sozinha.
 function iniciarRecadoUI() {
     const indicador = document.getElementById('presencaIndicador');
     if (indicador) {
-        const abrirSeOnline = () => { if (presencaUltimoTotal >= 2) abrirRecadoCompose(false); };
-        indicador.addEventListener('click', abrirSeOnline);
-        indicador.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirSeOnline(); } });
+        const abrir = () => abrirRecadoCompose(false);
+        indicador.addEventListener('click', abrir);
+        indicador.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrir(); } });
     }
 
     const btnGabriel = document.getElementById('btnRecadoSouGabriel');
@@ -213,12 +485,16 @@ function iniciarRecadoUI() {
     if (btnResponder) btnResponder.addEventListener('click', () => { fecharRecadoRecebido(); abrirRecadoCompose(true); });
     const btnFecharRecebido = document.getElementById('btnFecharRecadoRecebido');
     if (btnFecharRecebido) btnFecharRecebido.addEventListener('click', fecharRecadoRecebido);
+
+    const btnHistorico = document.getElementById('btnAlternarHistoricoRecados');
+    if (btnHistorico) btnHistorico.addEventListener('click', alternarHistoricoRecados);
 }
 
 function iniciarPresenca() {
     // Liga os toques do recadinho sempre, mesmo sem Supabase disponível
-    // (o indicador só fica clicável quando presencaUltimoTotal >= 2, o
-    // que só acontece se o canal abaixo funcionar de verdade).
+    // (o indicador funciona a qualquer momento agora; sem nuvem/canal,
+    // enviarRecadoAtual() e verificarRecadosPendentes() simplesmente não
+    // conseguem persistir/checar nada, sem quebrar o resto do site).
     iniciarRecadoUI();
 
     // Precisa do cliente do Supabase (carregado via CDN em index.html) e
@@ -236,12 +512,20 @@ function iniciarPresenca() {
             atualizarIndicadorPresenca(Object.keys(estado).length);
         });
 
-        // Recadinho rápido: broadcast no mesmo canal da presença (ver
-        // seção acima). Por padrão o Supabase Realtime não ecoa o
+        // Recadinho em tempo real: broadcast no mesmo canal da presença
+        // (ver seção acima). Por padrão o Supabase Realtime não ecoa o
         // broadcast de volta pra quem enviou, então não precisa de
-        // nenhuma checagem extra pra ignorar o próprio recado.
+        // nenhuma checagem extra pra ignorar o próprio recado aqui — mas
+        // também marcamos como "enviado por mim" no envio (ver
+        // enviarRecadoAtual), que é o que protege o histórico/pendentes.
         canal.on('broadcast', { event: 'recado' }, ({ payload }) => {
             exibirRecadoRecebido(payload);
+            // Já chegou na hora — não precisa aparecer de novo depois
+            // como "pendente" pra este mesmo aparelho num recarregamento.
+            if (payload && payload.id) {
+                recadosCache.mensagens = (recadosCache.mensagens || []).map(m => m.id === payload.id ? { ...m, entregue: true } : m);
+                if (!recadosCache.mensagens.some(m => m.id === payload.id)) recadosCache.mensagens.push({ ...payload, entregue: true });
+            }
         });
 
         canal.subscribe(async (status) => {

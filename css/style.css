@@ -489,6 +489,10 @@ body {
     opacity: 0; transform: translateY(-6px); pointer-events: none; transition: opacity 0.4s ease, transform 0.4s ease;
 }
 .presenca-indicador.visivel { opacity: 1; transform: translateY(0); pointer-events: auto; cursor: pointer; }
+/* Estado "os dois online" ganha um leve destaque na borda pra chamar
+   mais atenção do que o estado padrão (sozinho, só o convite pra deixar
+   um recado). */
+.presenca-indicador.online-agora { border-color: rgba(111,207,125,0.5); }
 .presenca-indicador.visivel:active { transform: translateY(0) scale(0.95); background: rgba(255,255,255,0.16); }
 .presenca-indicador-icone { font-size: 0.8rem; color: rgba(216,185,120,0.85); margin-left: 2px; }
 .presenca-indicador-ponto {
@@ -499,19 +503,46 @@ body {
     0%, 100% { opacity: 1; } 50% { opacity: 0.45; }
 }
 
-/* Recadinho rápido (enviar/receber enquanto os dois estão online, ver
-   js/presenca.js) — reaproveita o "papel" claro (.carta-discussao-papel)
-   e o textarea do mural (.mural-textarea, .mural-intro). */
+/* Recadinho (enviar/receber/histórico, ver js/presenca.js) — reaproveita
+   o "papel" claro (.carta-discussao-papel) e o textarea do mural
+   (.mural-textarea, .mural-intro). */
 .recado-papel { max-width: 380px; }
 .recado-respondendo-preview {
     font-size: 0.78rem; color: rgba(43,37,35,0.6); font-style: italic;
     background: rgba(43,37,35,0.06); border-radius: 10px; padding: 8px 12px; margin-bottom: 12px;
+}
+.recado-offline-aviso {
+    font-size: 0.76rem; color: var(--rosegold-dark); line-height: 1.5;
+    background: rgba(183,110,121,0.08); border: 1px solid rgba(183,110,121,0.25);
+    border-radius: 10px; padding: 8px 12px; margin: 10px 0 0; text-align: left;
 }
 .recado-recebido-de { font-size: 0.85rem; color: rgba(43,37,35,0.65); margin-bottom: 8px; }
 .recado-recebido-texto {
     font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.35rem; color: #2b2523;
     line-height: 1.5; white-space: pre-wrap;
 }
+/* Quando mais de um recado chega/estava esperando de uma vez, cada um
+   vira um bloco separado por uma linha fina, em vez de tudo grudado. */
+.recado-recebido-item + .recado-recebido-item { margin-top: 16px; padding-top: 16px; border-top: 1px dashed rgba(43,37,35,0.18); }
+
+/* ---------------- Histórico de recados (dentro do compose) ---------------- */
+.recado-historico-toggle-wrap { margin-top: 18px; padding-top: 14px; border-top: 1px solid rgba(43,37,35,0.12); }
+.recado-historico-toggle {
+    background: none; border: none; color: var(--rosegold-dark); font-family: 'Jost', sans-serif;
+    font-size: 0.78rem; font-weight: 600; padding: 4px 8px; cursor: pointer;
+}
+.recado-historico-toggle:hover { text-decoration: underline; }
+.recado-historico-wrap { margin-top: 10px; max-height: 240px; overflow-y: auto; text-align: left; }
+.recado-historico-lista { display: flex; flex-direction: column; gap: 8px; }
+.recado-historico-item {
+    background: rgba(43,37,35,0.05); border: 1px solid rgba(43,37,35,0.12); border-radius: 12px;
+    padding: 9px 12px;
+}
+.recado-historico-item-topo { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 3px; }
+.recado-historico-item-de { font-family: 'Jost', sans-serif; font-size: 0.72rem; font-weight: 700; color: var(--rosegold-dark); text-transform: uppercase; letter-spacing: 0.03em; }
+.recado-historico-item-data { font-size: 0.66rem; color: rgba(43,37,35,0.5); white-space: nowrap; }
+.recado-historico-item-texto { font-size: 0.85rem; color: #2b2523; margin: 0; white-space: pre-wrap; line-height: 1.45; }
+.recado-historico-vazio { font-size: 0.8rem; color: rgba(43,37,35,0.5); text-align: center; padding: 14px 8px; font-style: italic; }
 
 /* Tela de carregamento discreta enquanto "Nossa História" busca vídeo,
    assinatura, timeline, cápsula do tempo etc. no IndexedDB — some sozinha
@@ -619,29 +650,83 @@ body {
    .contract-roll-shade é uma camada de sombra por cima do papel, que escurece de baixo
    pra cima enquanto o papel encolhe verticalmente com origem embaixo — dá a sensação de
    estar se enrolando sobre si mesmo, em vez de só "sumir". Ver btnFecharContrato em
-   js/romance.js. */
+   js/romance.js.
+
+   Versão revisada: a anterior usava perspective()+rotateX() junto com
+   scaleX/scaleY, o que distorcia o papel num trapézio esquisito antes de
+   sumir. Agora é só scaleY (encolhe de baixo pra cima, sem 3D) + uma
+   leve scaleX no fim (o "aperto" final do rolo) + um pequeno keyframe de
+   recuo (98%) logo no início, imitando o papel "assentando" antes de
+   começar a enrolar de verdade — mais parecido com pergaminho, sem
+   distorção. */
 .contract-paper { transform-origin: center bottom; overflow: hidden; }
-.contract-roll-shade { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; background: linear-gradient(180deg, rgba(20,12,10,0.55) 0%, rgba(20,12,10,0.15) 35%, rgba(20,12,10,0) 60%); }
-.contract-paper.contrato-enrolando { animation: contratoEnrolarPapel 1.15s cubic-bezier(0.6, 0, 0.55, 1) forwards; }
-.contract-paper.contrato-enrolando .contract-roll-shade { animation: contratoEnrolarSombra 1.15s ease forwards; }
+.contract-roll-shade { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; background: linear-gradient(180deg, rgba(20,12,10,0.6) 0%, rgba(20,12,10,0.18) 40%, rgba(20,12,10,0) 65%); }
+.contract-paper.contrato-enrolando { animation: contratoEnrolarPapel 1.05s cubic-bezier(0.55, 0, 0.2, 1) forwards; }
+.contract-paper.contrato-enrolando .contract-roll-shade { animation: contratoEnrolarSombra 1.05s ease forwards; }
 #contratoWrap.contrato-fechando #btnFecharContrato { animation: fadeUp 0.4s ease reverse forwards; }
 
 @keyframes contratoEnrolarPapel {
-    0%   { transform: perspective(900px) scaleY(1) scaleX(1) rotateX(0deg); border-radius: 4px; filter: brightness(1); }
-    35%  { transform: perspective(900px) scaleY(0.62) scaleX(0.99) rotateX(8deg); border-radius: 4px 4px 60px 60px; filter: brightness(0.97); }
-    70%  { transform: perspective(900px) scaleY(0.22) scaleX(0.92) rotateX(16deg); border-radius: 60px; filter: brightness(0.85); }
-    100% { transform: perspective(900px) scaleY(0.025) scaleX(0.8) rotateX(20deg); border-radius: 60px; opacity: 0; filter: brightness(0.65); }
+    0%   { transform: scaleY(1) scaleX(1); border-radius: 4px; filter: brightness(1); }
+    12%  { transform: scaleY(1.015) scaleX(1); border-radius: 4px; filter: brightness(1); }
+    45%  { transform: scaleY(0.55) scaleX(0.995); border-radius: 4px 4px 40px 40px; filter: brightness(0.96); }
+    75%  { transform: scaleY(0.16) scaleX(0.94); border-radius: 40px; filter: brightness(0.88); }
+    100% { transform: scaleY(0.02) scaleX(0.8); border-radius: 40px; opacity: 0; filter: brightness(0.7); }
 }
 @keyframes contratoEnrolarSombra {
     0% { opacity: 0; }
-    45% { opacity: 0.55; }
-    100% { opacity: 0.95; }
+    12% { opacity: 0; }
+    50% { opacity: 0.5; }
+    100% { opacity: 0.92; }
 }
 .contract-witness { max-width: 240px; margin: 0 auto; text-align: center; }
 .contract-witness .signature-line { border-top-style: dashed; }
 .counter-badge { display: inline-block; background: rgba(183,110,121,0.15); border: 1px solid rgba(183,110,121,0.5); border-radius: 999px; padding: 8px 18px; font-size: 0.85rem; margin-top: 14px; }
 .btn-share { background: transparent; border: 1px solid var(--rosegold); color: var(--rosegold); border-radius: 999px; padding: 10px 22px; font-weight: bold; }
 .btn-share:hover { background: var(--rosegold); color: white; }
+
+/* ---------------- "Seu mural" — cartão de entrada mais chamativo ----------------
+   Antes era um botão-pílula simples (.btn-share) igual a vários outros do
+   site, pouco convidativo pra algo que devia parecer um espaço especial.
+   Agora é um cartão com ícone em destaque, brilho sutil e leve elevação
+   ao toque, no mesmo espírito visual do resto de "Nossa História". */
+.mural-cta-card {
+    width: 100%;
+    display: flex; align-items: center; gap: 16px;
+    text-align: left;
+    background: linear-gradient(135deg, rgba(216,185,120,0.12), rgba(183,110,121,0.10));
+    border: 1px solid rgba(216,185,120,0.35);
+    border-radius: 18px;
+    padding: 16px 18px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.25s var(--ease-premium), border-color 0.25s ease, box-shadow 0.25s ease;
+    box-shadow: 0 10px 26px rgba(0,0,0,0.22);
+}
+.mural-cta-card::before {
+    /* Faixa de brilho dourado subindo pela borda esquerda — dá o toque de "algo precioso". */
+    content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1px;
+    background: linear-gradient(135deg, var(--gold), transparent 40%, transparent 60%, var(--rosegold));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude;
+    opacity: 0.5; pointer-events: none;
+}
+.mural-cta-card:hover, .mural-cta-card:active {
+    transform: translateY(-2px);
+    border-color: var(--gold);
+    box-shadow: 0 14px 32px rgba(0,0,0,0.3);
+}
+.mural-cta-icone-wrap {
+    flex-shrink: 0; width: 50px; height: 50px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(160deg, var(--rosegold), var(--rosegold-dark));
+    color: #fff; font-size: 1.35rem;
+    box-shadow: 0 6px 16px rgba(183,110,121,0.4);
+}
+.mural-cta-textos { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.mural-cta-titulo { font-family: 'Jost', sans-serif; font-weight: 700; font-size: 1.02rem; color: #fff; letter-spacing: 0.2px; }
+.mural-cta-sub { font-size: 0.78rem; color: rgba(255,255,255,0.6); }
+.mural-cta-seta { color: var(--gold); font-size: 1.1rem; flex-shrink: 0; transition: transform 0.25s ease; }
+.mural-cta-card:hover .mural-cta-seta { transform: translateX(3px); }
 
 /* ---------------- Mesa de fotos ("Nossos momentos") ---------------- */
 .table-gallery { position: relative; max-width: 480px; margin: 0 auto; padding: 34px 8px 55px; }
@@ -1039,13 +1124,31 @@ body {
 .mural-papel { max-width: 480px; }
 .mural-intro { font-size: 0.85rem; color: rgba(43,37,35,0.75); text-align: center; margin-bottom: 14px; }
 .mural-textarea { width: 100%; min-height: 140px; border-radius: 12px; padding: 14px 16px; background: rgba(255,255,255,0.55); border: 1px solid rgba(43,37,35,0.25); color: #2b2523; font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.05rem; resize: vertical; }
-.mural-lista { display: flex; flex-direction: column; gap: 12px; text-align: left; }
-.mural-item { background: rgba(43,37,35,0.05); border: 1px solid rgba(43,37,35,0.15); border-radius: 14px; padding: 12px 16px; }
+.mural-lista { display: flex; flex-direction: column; gap: 14px; text-align: left; }
+/* Cartão de cada texto do mural — borda dourada à esquerda + aspas
+   decorativas grandes no fundo, pra parecer página de diário/poema em
+   vez de um bloco de texto genérico. */
+.mural-item {
+    background: linear-gradient(135deg, rgba(183,110,121,0.06), rgba(216,185,120,0.05));
+    border: 1px solid rgba(43,37,35,0.14);
+    border-left: 3px solid var(--rosegold);
+    border-radius: 4px 14px 14px 4px;
+    padding: 14px 18px 14px 20px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.mural-item:hover { transform: translateX(2px); box-shadow: 0 6px 16px rgba(43,37,35,0.1); }
+.mural-item::after {
+    content: '\201D'; position: absolute; top: -14px; right: 10px;
+    font-family: Georgia, serif; font-size: 3.6rem; line-height: 1;
+    color: var(--rosegold); opacity: 0.14; pointer-events: none;
+}
 .mural-item-topo { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }
-.mural-item-data { font-size: 0.7rem; color: rgba(43,37,35,0.6); text-transform: uppercase; letter-spacing: 0.05em; }
-.mural-item-texto { font-size: 0.92rem; color: #2b2523; margin: 0; white-space: pre-wrap; }
-.mural-item-excluir { background: none; border: none; color: rgba(160,40,50,0.7); font-size: 0.95rem; cursor: pointer; padding: 2px 4px; line-height: 1; }
-.mural-item-excluir:hover { color: rgba(160,40,50,1); }
+.mural-item-data { font-size: 0.68rem; color: var(--rosegold-dark); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+.mural-item-texto { font-size: 0.95rem; color: #2b2523; margin: 0; white-space: pre-wrap; font-family: 'Cormorant Garamond', Georgia, serif; line-height: 1.6; position: relative; z-index: 1; }
+.mural-item-excluir { background: none; border: none; color: rgba(160,40,50,0.55); font-size: 0.95rem; cursor: pointer; padding: 2px 6px; line-height: 1; border-radius: 6px; transition: color 0.2s ease, background 0.2s ease; }
+.mural-item-excluir:hover { color: rgba(160,40,50,1); background: rgba(160,40,50,0.08); }
 
 /* ---------------- Playlist ---------------- */
 .playlist-card { background: rgba(255,255,255,0.06); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); border: 1px solid rgba(183,110,121,0.35); border-radius: 20px; padding: 20px 18px; max-width: 440px; margin: 0 auto; position: relative; overflow: hidden; }
@@ -1385,10 +1488,14 @@ html.galeria-scroll-lock body { position: fixed; left: 0; right: 0; width: 100%;
 }
 
 /* Contador de easter eggs — pill discreto, semitransparente, legível
-   tanto no fundo claro da loja quanto no escuro de "Nossa história". */
+   tanto no fundo claro da loja quanto no escuro de "Nossa história".
+   bottom elevado o suficiente pra nunca encostar no botão flutuante de
+   navegação entre seções (.historia-nav-flutuante: 52px de botão + 20px
+   de bottom) — antes os dois ficavam praticamente nas mesmas coordenadas
+   no canto inferior direito e se sobrepunham. */
 .contador-easter-eggs {
     position: fixed;
-    bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(90px + env(safe-area-inset-bottom, 0px));
     right: 14px;
     z-index: 3000;
     background: rgba(20, 14, 17, 0.72);
@@ -1405,10 +1512,16 @@ html.galeria-scroll-lock body { position: fixed; left: 0; right: 0; width: 100%;
 }
 body.modo-visualizacao-ativo .contador-easter-eggs { display: none; } /* não briga com a barra do modo visualização */
 
-/* Enquanto o modo visualização está ativo, o final da loja ganha um
-   respiro extra do tamanho da barra fixa do rodapé, para ela não cobrir
-   o botão "Comprar Agora". */
-body.modo-visualizacao-ativo #lojaScreen { padding-bottom: 92px; }
+/* O pedido já foi feito de verdade — em modo visualização a lojinha é só
+   nostalgia, então "Comprar Agora" fica escondido junto (evita qualquer
+   caminho, mesmo que só visual, de parecer que dá pra reiniciar um
+   pedido novo a partir daqui; o botão final de pagamento já era
+   escondido, ver botaoConfirmar em abrirLojaSomenteVisualizacao no
+   js/romance.js — isso fecha a mesma porta também na etapa anterior). */
+body.modo-visualizacao-ativo #barraComprarAgora { display: none; }
+/* Sem a barra fixa do rodapé, a lojinha não precisa mais do respiro
+   extra que existia só pra ela não cobrir o botão "Comprar Agora". */
+body.modo-visualizacao-ativo #lojaScreen { padding-bottom: 24px; }
 
 /* ============================================================================
    LEMBRETE DE BACKUP MANUAL

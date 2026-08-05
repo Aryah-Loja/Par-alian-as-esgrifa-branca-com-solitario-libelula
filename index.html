@@ -383,7 +383,7 @@
             <p class="small text-muted" style="font-size: 0.7rem;"><span class="js-marca-loja">Aryah Joias Exclusivas S.A.</span> | CNPJ: 14.062.006/0108-26<br>Rua Maj. Manoel Azevedo de Sousa, 474 - Centro, Sales Oliveira- SP<br>© 2026 Todos os direitos reservados.</p>
         </footer>
 
-        <div class="fixed-bottom bg-white p-3 shadow-lg border-top">
+        <div id="barraComprarAgora" class="fixed-bottom bg-white p-3 shadow-lg border-top">
             <button id="btnIrParaCheckout" class="btn btn-rosegold w-100 py-3 fs-5 fw-bold rounded-pill shadow">Comprar Agora</button>
         </div>
     </div>
@@ -606,34 +606,40 @@
         </div>
     </div>
 
-    <!-- Indicador de presença: aparece só quando os dois estão no site ao
-         mesmo tempo (ver js/presenca.js) E a pessoa já está em "Nossa
-         História". Precisa ser filho DIRETO do body (não de #romancePage,
-         que tem overflow:hidden) — no Safari do iPhone, position:fixed
-         dentro de um ancestral com overflow:hidden não escapa do
-         clipping do jeito que deveria, então só o texto aparecia (a
-         "pílula" com fundo/blur/borda ficava cortada). Mesmo bug já
-         documentado em CONTEXTO-PROJETO.md (item 1 dos bugs conhecidos).
-         Tocável: quando visível (os dois online), abre o recadinho rápido
-         (ver #recadoComposeOverlay abaixo e iniciarRecadoUI() em
-         js/presenca.js). -->
-    <div id="presencaIndicador" class="presenca-indicador" aria-live="polite" role="button" tabindex="0" aria-label="Enviar um recadinho rápido">
-        <span class="presenca-indicador-ponto" aria-hidden="true"></span>
-        <span id="presencaIndicadorTexto">Os dois online agora</span>
+    <!-- Indicador de presença / recadinho: fica sempre visível dentro de
+         "Nossa História" agora (antes só aparecia quando os dois
+         estavam online ao mesmo tempo) — o texto/ícone mudam conforme o
+         estado (ver atualizarIndicadorPresenca em js/presenca.js), mas
+         tocar nele sempre abre o recadinho, mesmo sozinho, porque agora
+         toda mensagem enviada fica guardada na nuvem (ver
+         RECADOS_ARQUIVO em js/presenca.js) — se a outra pessoa não
+         estiver online, a mensagem espera e aparece assim que ela abrir
+         o site, em vez de se perder. Precisa ser filho DIRETO do body
+         (não de #romancePage, que tem overflow:hidden) — no Safari do
+         iPhone, position:fixed dentro de um ancestral com
+         overflow:hidden não escapa do clipping do jeito que deveria,
+         então só o texto aparecia (a "pílula" com fundo/blur/borda
+         ficava cortada). Mesmo bug já documentado em
+         CONTEXTO-PROJETO.md (item 1 dos bugs conhecidos). -->
+    <div id="presencaIndicador" class="presenca-indicador" aria-live="polite" role="button" tabindex="0" aria-label="Abrir o recadinho">
+        <span id="presencaIndicadorPonto" class="presenca-indicador-ponto d-none" aria-hidden="true"></span>
+        <span id="presencaIndicadorTexto">Deixar um recado</span>
         <i class="bi bi-chat-dots-fill presenca-indicador-icone" aria-hidden="true"></i>
     </div>
 
-    <!-- Recadinho rápido: enviado por um enquanto os dois estão online,
-         via broadcast do Supabase Realtime no mesmo canal usado pela
-         presença (ver js/presenca.js). Não fica salvo em lugar nenhum —
-         só chega a quem estiver com o site aberto naquele momento. Fica
-         fora de #romancePage de propósito, mesmo motivo dos overlays
-         acima (overflow:hidden quebra position:fixed no Safari do
-         iPhone). -->
+    <!-- Recadinho: quando os dois estão online, chega na hora via
+         broadcast do Supabase Realtime (mesmo canal da presença, ver
+         js/presenca.js). Além disso, toda mensagem enviada agora também
+         fica guardada num arquivo na nuvem (mesmo bucket do backup) —
+         isso dá um histórico das conversas e faz a mensagem esperar
+         guardada se a outra pessoa não estiver online (aparece sozinha
+         assim que ela abrir o site). Fica fora de #romancePage de
+         propósito, mesmo motivo dos overlays acima (overflow:hidden
+         quebra position:fixed no Safari do iPhone). -->
     <div id="recadoComposeOverlay" class="carta-discussao-overlay d-none">
         <button id="btnFecharRecadoCompose" class="modo-vela-fechar" aria-label="Fechar"><i class="bi bi-x-lg"></i></button>
         <div class="carta-discussao-papel recado-papel text-center">
-            <p class="letter-eyebrow visivel">Recadinho rápido</p>
+            <p class="letter-eyebrow visivel">Recadinho</p>
 
             <div id="recadoEscolhaPessoa">
                 <p class="mural-intro">Quem está mandando?</p>
@@ -647,22 +653,37 @@
                 <p class="mural-intro" id="recadoEscrevendoComo"></p>
                 <p id="recadoRespondendoPreview" class="recado-respondendo-preview d-none"></p>
                 <textarea id="recadoTextoInput" rows="4" maxlength="500" class="mural-textarea" placeholder="Escreva algo rapidinho..."></textarea>
+                <p id="recadoOfflineAviso" class="recado-offline-aviso d-none"><i class="bi bi-clock-history me-1"></i>Ninguém mais está online agora — sem problema, o recado fica esperando e aparece assim que a outra pessoa entrar.</p>
                 <div class="mt-3">
                     <button id="btnEnviarRecado" class="btn btn-rosegold rounded-pill fw-bold"><i class="bi bi-send-fill me-1"></i>Enviar</button>
                     <p id="recadoEnviarStatus" class="save-status mt-2"></p>
                 </div>
             </div>
+
+            <!-- Histórico: lista dos recadinhos já trocados, mais recente
+                 primeiro (ver renderizarHistoricoRecados em js/presenca.js). -->
+            <div class="recado-historico-toggle-wrap">
+                <button id="btnAlternarHistoricoRecados" type="button" class="recado-historico-toggle" aria-expanded="false">
+                    <i class="bi bi-clock-history me-1"></i><span id="recadoHistoricoToggleTexto">Ver histórico de recados</span>
+                </button>
+            </div>
+            <div id="recadoHistoricoWrap" class="recado-historico-wrap d-none">
+                <div id="recadoHistoricoLista" class="recado-historico-lista"></div>
+            </div>
         </div>
     </div>
 
-    <!-- Recadinho recebido: aparece na hora, disparado pelo listener de
-         broadcast 'recado' em js/presenca.js, com opção de responder
-         direto. -->
+    <!-- Recadinho(s) recebido(s): aparece assim que a pessoa entra em
+         "Nossa História", disparado tanto pelo listener de broadcast
+         'recado' (chegada em tempo real, ver js/presenca.js) quanto pela
+         checagem de recados pendentes guardados na nuvem (verificarRecadosPendentes,
+         chamada em goToRomancePage). Suporta mostrar mais de um recado
+         de uma vez (#recadoRecebidoLista), caso a pessoa tenha deixado
+         mais de um esperando enquanto o outro estava offline. -->
     <div id="recadoRecebidoOverlay" class="carta-discussao-overlay d-none">
         <div class="carta-discussao-papel recado-papel text-center">
-            <p class="letter-eyebrow visivel">Chegou um recadinho</p>
-            <p class="recado-recebido-de" id="recadoRecebidoDe"></p>
-            <p class="recado-recebido-texto" id="recadoRecebidoTexto"></p>
+            <p class="letter-eyebrow visivel" id="recadoRecebidoEyebrow">Chegou um recadinho</p>
+            <div id="recadoRecebidoLista"></div>
             <div class="d-flex gap-2 justify-content-center flex-wrap mt-4">
                 <button id="btnResponderRecado" class="btn btn-rosegold rounded-pill fw-bold"><i class="bi bi-reply-fill me-1"></i>Responder</button>
                 <button id="btnFecharRecadoRecebido" class="btn btn-outline-dark rounded-pill">Fechar</button>
@@ -1121,7 +1142,14 @@
              #romancePage) mais abaixo, e iniciarMural() em js/romance.js. -->
         <div id="secaoMuralHistoria" class="text-center mt-5 reveal-up" style="max-width: 460px; margin-left: auto; margin-right: auto;">
             <p class="romance-section-title">Seu mural</p>
-            <button id="btnAbrirMural" class="btn btn-share"><i class="bi bi-journal-richtext me-2"></i>Abrir meu mural</button>
+            <button id="btnAbrirMural" class="mural-cta-card" type="button">
+                <span class="mural-cta-icone-wrap"><i class="bi bi-journal-richtext"></i></span>
+                <span class="mural-cta-textos">
+                    <span class="mural-cta-titulo">Abrir meu mural</span>
+                    <span class="mural-cta-sub" id="muralCtaSub">Um espaço só seu, pra escrever à vontade</span>
+                </span>
+                <i class="bi bi-chevron-right mural-cta-seta"></i>
+            </button>
         </div>
 
         <div class="text-center mt-5 reveal-up" style="max-width: 460px; margin-left: auto; margin-right: auto;">

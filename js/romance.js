@@ -1314,7 +1314,12 @@ async function goToRomancePage(primeiraVez) {
     // que chegamos em "Nossa História" — ele fica sempre escondido nas
     // telas anteriores, mesmo que os dois já estivessem conectados.
     try { if (typeof refrescarIndicadorPresenca === 'function') refrescarIndicadorPresenca(); } catch (e) { /* indicador é só um extra, nunca deve travar a navegação */ }
-    
+
+    // Recado(s) deixado(s) esperando enquanto este aparelho estava
+    // offline (ver verificarRecadosPendentes em js/presenca.js) — busca
+    // e mostra em segundo plano, sem atrasar o resto do carregamento.
+    try { if (typeof verificarRecadosPendentes === 'function') verificarRecadosPendentes(); } catch (e) { console.error('Falha ao checar recados pendentes (não deve afetar o resto da página):', e); }
+
     window.scrollTo(0, 0);
     mostrarLoadingRomance();
 
@@ -2663,10 +2668,22 @@ async function excluirTextoMural(id) {
     await renderizarMural();
 }
 
+// Mantém o subtítulo do cartão de entrada ("Seu mural") em dia com a
+// quantidade de textos já guardados — só um detalhe a mais pra deixar o
+// cartão menos estático e mais convidativo (ver estilo em .mural-cta-sub).
+function atualizarMuralCtaSub(quantidade) {
+    const sub = document.getElementById('muralCtaSub');
+    if (!sub) return;
+    if (!quantidade) sub.textContent = 'Um espaço só seu, pra escrever à vontade';
+    else if (quantidade === 1) sub.textContent = '1 texto guardado até agora';
+    else sub.textContent = `${quantidade} textos guardados até agora`;
+}
+
 async function renderizarMural() {
     const lista = document.getElementById('muralLista');
     if (!lista) return;
     const itens = await obterMural();
+    atualizarMuralCtaSub(itens.length);
 
     if (!itens.length) {
         lista.innerHTML = `
@@ -2717,6 +2734,7 @@ function iniciarMural() {
     if (!botaoAbrir) return;
     const introEl = document.getElementById('muralIntro');
     if (introEl) introEl.textContent = TEXTOS.muralIntro;
+    obterMural().then((itens) => atualizarMuralCtaSub(itens.length)).catch(() => {});
     botaoAbrir.addEventListener('click', abrirMural);
     const botaoFechar = document.getElementById('btnFecharMural');
     if (botaoFechar) botaoFechar.addEventListener('click', fecharMural);
