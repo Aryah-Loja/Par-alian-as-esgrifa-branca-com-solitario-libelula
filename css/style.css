@@ -927,10 +927,13 @@ body {
    meses, dias, horas, minutos, segundos) só brilha quando o valor dele
    próprio é atualizado, então dias só pisca uma vez por dia, não a cada
    segundo. */
+/* Pisca suave, só um detalhe no instante em que o número muda de verdade
+   (era um brilho forte + salto de escala grande demais — reduzido pra um
+   brilho discreto e quase sem "pulo" de tamanho). */
 .lc-unit.lc-atualizado { animation: lcFlash 0.6s ease; }
 @keyframes lcFlash {
     0% { box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 6px 16px rgba(0,0,0,0.18); }
-    35% { box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 6px 16px rgba(0,0,0,0.18), 0 0 18px rgba(216,185,120,0.6); transform: scale(1.07); }
+    35% { box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 6px 16px rgba(0,0,0,0.18), 0 0 8px rgba(216,185,120,0.28); transform: scale(1.02); }
     100% { box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 6px 16px rgba(0,0,0,0.18); transform: scale(1); }
 }
 @media (max-width: 360px) { .lc-num { font-size: 1.2rem; } }
@@ -944,8 +947,12 @@ body {
 .quiz-opcoes { display: flex; flex-direction: column; gap: 8px; }
 .quiz-opcao-btn { background: rgba(255,255,255,0.05); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); border: 1px solid rgba(255,255,255,0.15); color: #f0d9dd; border-radius: 12px; padding: 10px 14px; font-size: 0.88rem; text-align: left; transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease; }
 .quiz-opcao-btn:active { transform: scale(0.98); }
-.quiz-opcao-btn.selecionada.certa { background: rgba(126,231,135,0.18); border-color: #7ee787; color: #d9ffe0; }
-.quiz-opcao-btn.selecionada.errada { background: rgba(255,138,138,0.15); border-color: #ff8a8a; color: #ffd9d9; }
+/* Certo/errado do quiz usavam verde/vermelho genéricos de "app comum" —
+   destoava do resto do site (só rosegold + dourado em tudo). Trocado por
+   dourado (acerto) e rosegold mais fechado/dessaturado (erro), mantendo a
+   diferenciação clara sem sair da paleta. */
+.quiz-opcao-btn.selecionada.certa { background: rgba(216,185,120,0.2); border-color: var(--gold); color: #fff8e8; }
+.quiz-opcao-btn.selecionada.errada { background: rgba(140,90,97,0.22); border-color: rgba(183,110,121,0.6); color: #f0d9dd; }
 .quiz-opcao-btn:disabled { opacity: 0.6; }
 .quiz-reacao { text-align: center; font-size: 0.85rem; color: #f0d9dd; margin-top: 14px; min-height: 20px; opacity: 0; transition: opacity 0.4s ease; }
 .quiz-reacao.visivel { opacity: 1; }
@@ -1625,3 +1632,39 @@ html.checklist-html { background-color: #1c1014; }
 .checklist-form-adicionar input[type="text"]::placeholder { color: rgba(240,217,221,0.4); }
 .checklist-form-adicionar input[readonly] { opacity: 0.65; }
 
+
+/* ---------------- Botão flutuante: navegar entre categorias (checklist.html) ----------------
+   Fica fixo no canto inferior direito, acima da lista, abaixo dos overlays
+   de verdade (modal "Adicionar item" é 12500). Abre um menuzinho com as 9
+   categorias pra pular direto pra qualquer uma via scroll suave, sem
+   precisar descer a lista de 132 itens toda vez (ver
+   iniciarNavegacaoCategoriasChecklist em js/checklist.js). */
+.checklist-nav-flutuante {
+    position: fixed !important; right: 18px; bottom: calc(20px + var(--safe-bottom, 0px)); z-index: 500;
+    display: flex; flex-direction: column; align-items: flex-end; gap: 10px;
+}
+.checklist-nav-botao {
+    width: 52px; height: 52px; border-radius: 50%; border: 1px solid rgba(216,185,120,0.4);
+    background: linear-gradient(160deg, var(--rosegold), var(--rosegold-dark));
+    color: #fff; font-size: 1.3rem; display: flex; align-items: center; justify-content: center;
+    box-shadow: var(--shadow-deep); transition: transform 0.25s var(--ease-premium);
+}
+.checklist-nav-flutuante.aberto .checklist-nav-botao { transform: rotate(180deg); }
+.checklist-nav-menu {
+    max-height: 0; opacity: 0; pointer-events: none; overflow: hidden;
+    display: flex; flex-direction: column; gap: 6px;
+    background: rgba(28,16,20,0.92); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%);
+    border: 1px solid rgba(216,185,120,0.3); border-radius: 16px; padding: 0 6px;
+    transition: max-height 0.3s var(--ease-premium), opacity 0.25s ease, padding 0.3s ease;
+    width: min(72vw, 260px);
+}
+.checklist-nav-flutuante.aberto .checklist-nav-menu {
+    max-height: 60vh; opacity: 1; pointer-events: auto; padding: 8px 6px; overflow-y: auto;
+}
+.checklist-nav-item {
+    background: transparent; border: none; text-align: left; color: #f0d9dd;
+    font-family: 'Jost', sans-serif; font-size: 0.85rem; padding: 9px 10px; border-radius: 10px;
+    display: flex; align-items: center; gap: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.checklist-nav-item:hover, .checklist-nav-item:active { background: rgba(255,255,255,0.08); }
+.checklist-nav-item-emoji { flex-shrink: 0; }
