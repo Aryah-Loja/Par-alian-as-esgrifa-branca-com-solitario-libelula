@@ -606,15 +606,21 @@
         </div>
     </div>
 
+    <!-- Indicador de presença: aparece só quando os dois estão no site ao
+         mesmo tempo (ver js/presenca.js) E a pessoa já está em "Nossa
+         História". Precisa ser filho DIRETO do body (não de #romancePage,
+         que tem overflow:hidden) — no Safari do iPhone, position:fixed
+         dentro de um ancestral com overflow:hidden não escapa do
+         clipping do jeito que deveria, então só o texto aparecia (a
+         "pílula" com fundo/blur/borda ficava cortada). Mesmo bug já
+         documentado em CONTEXTO-PROJETO.md (item 1 dos bugs conhecidos). -->
+    <div id="presencaIndicador" class="presenca-indicador" aria-live="polite">
+        <span class="presenca-indicador-ponto" aria-hidden="true"></span>
+        <span id="presencaIndicadorTexto">Os dois online agora</span>
+    </div>
+
     <!-- ===================== NOSSA HISTÓRIA ===================== -->
     <div id="romancePage" class="romance-page">
-        <!-- Indicador de presença: aparece só quando os dois estão no site
-             ao mesmo tempo (ver js/presenca.js). Fixo no canto, some
-             sozinho quando fica só uma pessoa conectada. -->
-        <div id="presencaIndicador" class="presenca-indicador" aria-live="polite">
-            <span class="presenca-indicador-ponto" aria-hidden="true"></span>
-            <span id="presencaIndicadorTexto">Os dois online agora</span>
-        </div>
         <!-- Girassóis decorativos: discretos, atrás do conteúdo,
              não capturam toque (pointer-events:none) e não afetam a leitura.
              Ilustração própria em SVG (vetor, sem fundo — funciona como um "PNG

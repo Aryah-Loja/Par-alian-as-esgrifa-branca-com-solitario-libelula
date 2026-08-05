@@ -94,6 +94,18 @@
         </div>
     </div>
 
+    <!-- Botão flutuante pra pular direto entre as 9 categorias, sem precisar
+         rolar a lista inteira de 132 itens toda vez (ver iniciarNavegacaoCategoriasChecklist
+         em js/checklist.js). Filho direto do body, position:fixed, mesmo
+         padrão de qualquer overlay novo no site (ver CONTEXTO-PROJETO.md,
+         bug conhecido nº1). Só aparece depois que a lista termina de montar. -->
+    <div id="checklistNavFlutuante" class="checklist-nav-flutuante d-none">
+        <div id="checklistNavMenu" class="checklist-nav-menu"></div>
+        <button type="button" id="btnChecklistNavToggle" class="checklist-nav-botao" aria-label="Navegar entre categorias" aria-expanded="false">
+            <i class="bi bi-compass"></i>
+        </button>
+    </div>
+
     <script defer src="js/config.js"></script>
     <script defer src="js/db.js"></script>
     <script defer src="js/preservacao.js"></script>
