@@ -613,10 +613,60 @@
          dentro de um ancestral com overflow:hidden não escapa do
          clipping do jeito que deveria, então só o texto aparecia (a
          "pílula" com fundo/blur/borda ficava cortada). Mesmo bug já
-         documentado em CONTEXTO-PROJETO.md (item 1 dos bugs conhecidos). -->
-    <div id="presencaIndicador" class="presenca-indicador" aria-live="polite">
+         documentado em CONTEXTO-PROJETO.md (item 1 dos bugs conhecidos).
+         Tocável: quando visível (os dois online), abre o recadinho rápido
+         (ver #recadoComposeOverlay abaixo e iniciarRecadoUI() em
+         js/presenca.js). -->
+    <div id="presencaIndicador" class="presenca-indicador" aria-live="polite" role="button" tabindex="0" aria-label="Enviar um recadinho rápido">
         <span class="presenca-indicador-ponto" aria-hidden="true"></span>
         <span id="presencaIndicadorTexto">Os dois online agora</span>
+    </div>
+
+    <!-- Recadinho rápido: enviado por um enquanto os dois estão online,
+         via broadcast do Supabase Realtime no mesmo canal usado pela
+         presença (ver js/presenca.js). Não fica salvo em lugar nenhum —
+         só chega a quem estiver com o site aberto naquele momento. Fica
+         fora de #romancePage de propósito, mesmo motivo dos overlays
+         acima (overflow:hidden quebra position:fixed no Safari do
+         iPhone). -->
+    <div id="recadoComposeOverlay" class="carta-discussao-overlay d-none">
+        <button id="btnFecharRecadoCompose" class="modo-vela-fechar" aria-label="Fechar"><i class="bi bi-x-lg"></i></button>
+        <div class="carta-discussao-papel recado-papel text-center">
+            <p class="letter-eyebrow visivel">Recadinho rápido</p>
+
+            <div id="recadoEscolhaPessoa">
+                <p class="mural-intro">Quem está mandando?</p>
+                <div class="d-flex gap-2 justify-content-center flex-wrap">
+                    <button id="btnRecadoSouGabriel" type="button" class="btn btn-outline-dark btn-sm rounded-pill"><i class="bi bi-person-fill me-1"></i>Gabriel</button>
+                    <button id="btnRecadoSouAna" type="button" class="btn btn-outline-dark btn-sm rounded-pill"><i class="bi bi-person-fill me-1"></i>Poloni</button>
+                </div>
+            </div>
+
+            <div id="recadoEscreverBloco" class="d-none">
+                <p class="mural-intro" id="recadoEscrevendoComo"></p>
+                <p id="recadoRespondendoPreview" class="recado-respondendo-preview d-none"></p>
+                <textarea id="recadoTextoInput" rows="4" maxlength="500" class="mural-textarea" placeholder="Escreva algo rapidinho..."></textarea>
+                <div class="mt-3">
+                    <button id="btnEnviarRecado" class="btn btn-rosegold rounded-pill fw-bold"><i class="bi bi-send-fill me-1"></i>Enviar</button>
+                    <p id="recadoEnviarStatus" class="save-status mt-2"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recadinho recebido: aparece na hora, disparado pelo listener de
+         broadcast 'recado' em js/presenca.js, com opção de responder
+         direto. -->
+    <div id="recadoRecebidoOverlay" class="carta-discussao-overlay d-none">
+        <div class="carta-discussao-papel recado-papel text-center">
+            <p class="letter-eyebrow visivel">Chegou um recadinho</p>
+            <p class="recado-recebido-de" id="recadoRecebidoDe"></p>
+            <p class="recado-recebido-texto" id="recadoRecebidoTexto"></p>
+            <div class="d-flex gap-2 justify-content-center flex-wrap mt-4">
+                <button id="btnResponderRecado" class="btn btn-rosegold rounded-pill fw-bold"><i class="bi bi-reply-fill me-1"></i>Responder</button>
+                <button id="btnFecharRecadoRecebido" class="btn btn-outline-dark rounded-pill">Fechar</button>
+            </div>
+        </div>
     </div>
 
     <!-- ===================== NOSSA HISTÓRIA ===================== -->
