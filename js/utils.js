@@ -1048,6 +1048,39 @@ function celebrarMomento(intensidade = 1) {
     vibrarLeve(intensidade > 1 ? [12, 30, 12] : 15);
 }
 
+/* ---------------------------------------------------------------------
+ * VIBRAÇÃO LEVE AO TOCAR, NO SITE INTEIRO (30/07 em diante)
+ * ----------------------------------------------------------------------
+ * O "encolher ao tocar" (ver comentário "Toque com molejo" em
+ * css/style.css, `button:active, a:active...`) já existe globalmente —
+ * não precisa de JS nenhum, é só `:active` + transition, e já cobre
+ * qualquer botão/link do site. O que faltava mesmo era a vibração: só a
+ * checklist e alguns poucos momentos-chave de "Nossa História" tinham
+ * (via celebrarMomento(), acima). Esse listener estende só a VIBRAÇÃO
+ * (bem mais sutil que celebrarMomento) pro site inteiro, sem mexer no
+ * efeito visual, que já está bom.
+ *
+ * IMPORTANTE: não adiciona nenhuma animação/classe nova no elemento —
+ * fazer isso competiria com a transição de transform que já existe no
+ * ":active" de cada botão (as duas mexem na mesma propriedade ao mesmo
+ * tempo), o que dava um "pulo" feio bem no instante de soltar o toque.
+ * Só a vibração é nova aqui.
+ *
+ * Qualquer botão que já dispare sua própria vibração (ex.: celebrarMomento
+ * nos momentos especiais) pode ficar de fora com data-sem-toque-global,
+ * pra não vibrar duas vezes seguidas no mesmo toque.
+ */
+function iniciarToqueFeedbackGlobal() {
+    const SELETOR_TOCAVEL = 'button, .btn, [role="button"], a.btn, .toque-feedback';
+    document.addEventListener('click', (evento) => {
+        const alvo = evento.target.closest(SELETOR_TOCAVEL);
+        if (!alvo || alvo.disabled || alvo.classList.contains('disabled')) return;
+        if (alvo.hasAttribute('data-sem-toque-global')) return;
+        vibrarLeve(8);
+    }, { passive: true });
+}
+document.addEventListener('DOMContentLoaded', iniciarToqueFeedbackGlobal);
+
 /* ---------------- Fundo dinâmico do <body> (corrige "áreas brancas") ----------------
    Durante o bounce-scroll do iOS (ou quando o conteúdo é mais curto que a
    tela), o navegador revela a cor de fundo do <body>. Se o body estivesse

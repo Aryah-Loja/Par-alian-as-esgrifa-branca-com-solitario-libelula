@@ -129,7 +129,7 @@ function checklistHtmlCategoria(cat, catIdx, estado) {
         .join('');
 
     return `
-        <section class="checklist-categoria">
+        <section class="checklist-categoria" id="checklistCat_${catIdx}">
             <div class="checklist-categoria-header">
                 <p class="checklist-categoria-titulo"><span class="checklist-categoria-emoji">${cat.emoji}</span>${cat.nome}</p>
                 <span class="checklist-categoria-contador" data-checklist-cat-contador="${catIdx}"></span>
@@ -245,6 +245,54 @@ function iniciarModalAdicionarItemChecklist() {
     });
 }
 
+/** Botão flutuante que abre um menuzinho pra pular direto pra qualquer uma
+ * das 9 categorias (rolagem suave), sem precisar descer pela lista de 132
+ * itens toda vez. Montado uma vez só (categorias são fixas em
+ * CHECKLIST_ENCONTROS), chamado depois que a lista real já está na tela. */
+function iniciarNavegacaoCategoriasChecklist() {
+    const wrap = document.getElementById('checklistNavFlutuante');
+    const botao = document.getElementById('btnChecklistNavToggle');
+    const menu = document.getElementById('checklistNavMenu');
+    if (!wrap || !botao || !menu) return;
+
+    menu.innerHTML = CHECKLIST_ENCONTROS.map((cat, catIdx) => `
+        <button type="button" class="checklist-nav-item" data-ir-para-categoria="${catIdx}">
+            <span class="checklist-nav-item-emoji">${cat.emoji}</span>${cat.nome}
+        </button>
+    `).join('');
+
+    const fechar = () => {
+        wrap.classList.remove('aberto');
+        botao.setAttribute('aria-expanded', 'false');
+    };
+    const alternar = () => {
+        const abrindo = !wrap.classList.contains('aberto');
+        wrap.classList.toggle('aberto', abrindo);
+        botao.setAttribute('aria-expanded', String(abrindo));
+    };
+
+    botao.addEventListener('click', (evt) => { evt.stopPropagation(); alternar(); });
+
+    menu.querySelectorAll('[data-ir-para-categoria]').forEach(item => {
+        item.addEventListener('click', () => {
+            const catIdx = item.getAttribute('data-ir-para-categoria');
+            const secao = document.getElementById(`checklistCat_${catIdx}`);
+            fechar();
+            if (!secao) return;
+            // Compensa o header fixo (ver .galeria-header) pra não esconder
+            // o título da categoria logo abaixo do topo.
+            const topoComFolga = secao.getBoundingClientRect().top + window.scrollY - 90;
+            window.scrollTo({ top: topoComFolga, behavior: 'smooth' });
+        });
+    });
+
+    // Clicar fora fecha o menu; ESC também, pra quem usa teclado/leitor de tela.
+    document.addEventListener('click', (evt) => { if (!wrap.contains(evt.target)) fechar(); });
+    document.addEventListener('keydown', (evt) => { if (evt.key === 'Escape') fechar(); });
+
+    wrap.classList.remove('d-none');
+}
+
 async function montarChecklist() {
     const container = document.getElementById('checklistCategorias');
     if (!container) return;
@@ -255,6 +303,7 @@ async function montarChecklist() {
 
     checklistRenderizarLista();
     checklistPreencherSelectDeCategorias();
+    iniciarNavegacaoCategoriasChecklist();
 
     if (carregando) carregando.classList.add('d-none');
     container.classList.add('checklist-categorias-visivel');

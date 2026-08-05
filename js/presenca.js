@@ -18,10 +18,31 @@
  */
 const PRESENCA_CANAL = 'aurora-presenca';
 
+// Guarda a última contagem recebida do Supabase pra poder reavaliar a
+// visibilidade sem precisar de um novo evento de presença — por exemplo,
+// quando a pessoa entra em "Nossa História" bem depois de a outra pessoa
+// já estar conectada (nenhum evento novo dispara nesse momento).
+let presencaUltimoTotal = 0;
+
+function estaEmNossaHistoria() {
+    const romancePage = document.getElementById('romancePage');
+    return !!romancePage && getComputedStyle(romancePage).display !== 'none';
+}
+
+// Indicador só faz sentido dentro de "Nossa História" (onde antes ficava
+// o botão de som) — nas telas anteriores (loja/checkout) ele fica sempre
+// escondido, mesmo que os dois já estejam conectados.
 function atualizarIndicadorPresenca(totalConexoes) {
+    presencaUltimoTotal = totalConexoes;
     const el = document.getElementById('presencaIndicador');
     if (!el) return;
-    el.classList.toggle('visivel', totalConexoes >= 2);
+    el.classList.toggle('visivel', totalConexoes >= 2 && estaEmNossaHistoria());
+}
+
+// Chamada por js/romance.js assim que "Nossa História" é exibida, pra
+// reavaliar a visibilidade com a contagem mais recente já conhecida.
+function refrescarIndicadorPresenca() {
+    atualizarIndicadorPresenca(presencaUltimoTotal);
 }
 
 function iniciarPresenca() {

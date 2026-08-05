@@ -1192,6 +1192,11 @@ async function goToRomancePage(primeiraVez) {
     const romancePage = document.getElementById('romancePage');
     romancePage.scrollTop = 0;      // <-- adicione aqui
     
+    // Reavalia o indicador "os dois online agora" (js/presenca.js) agora
+    // que chegamos em "Nossa História" — ele fica sempre escondido nas
+    // telas anteriores, mesmo que os dois já estivessem conectados.
+    try { if (typeof refrescarIndicadorPresenca === 'function') refrescarIndicadorPresenca(); } catch (e) { /* indicador é só um extra, nunca deve travar a navegação */ }
+    
     window.scrollTo(0, 0);
     mostrarLoadingRomance();
 
@@ -1873,6 +1878,13 @@ function abrirLojaSomenteVisualizacao() {
     loja.style.display = '';
     definirFundoBody(CORES_FUNDO.claro);
 
+    // O indicador "os dois online agora" (js/presenca.js) não é mais filho
+    // de #romancePage (ver correção do bug de position:fixed dentro de
+    // overflow:hidden no Safari), então esconder a página não esconde ele
+    // mais de graça por cascata — precisa reavaliar explicitamente aqui,
+    // senão ele fica flutuando por cima da lojinha em modo visualização.
+    try { if (typeof refrescarIndicadorPresenca === 'function') refrescarIndicadorPresenca(); } catch (e) { /* indicador é só um extra, nunca deve travar a navegação */ }
+
     const botaoConfirmar = document.getElementById('btnConfirmarPedido');
     if (botaoConfirmar) botaoConfirmar.classList.add('d-none'); // impede reiniciar o pedido sem querer
 
@@ -1903,6 +1915,7 @@ function fecharLojaSomenteVisualizacao() {
     romancePage.style.display = '';
     definirFundoBody(CORES_FUNDO.escuro);
     window.scrollTo(0, 0);
+    try { if (typeof refrescarIndicadorPresenca === 'function') refrescarIndicadorPresenca(); } catch (e) { /* indicador é só um extra, nunca deve travar a navegação */ }
 
     // Alternar display:none -> '' reinicia as animações de entrada
     // (.reveal-up), dando a impressão de tela em branco por um instante;
