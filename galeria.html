@@ -2,6 +2,12 @@
 <html lang="pt-BR" class="galeria-html">
 <head>
 <meta charset="UTF-8">
+    <!-- Garante que o navegador sempre revalide esta página com o servidor em vez de
+         usar uma cópia antiga guardada localmente no aparelho (ver scripts/atualizar-versao.js
+         para o versionamento dos arquivos css/js abaixo). -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
 <script>
     // Desliga a restauração automática de scroll do navegador — precisa ser
     // a primeiríssima coisa a rodar. Sem isso, ao dar refresh o navegador
@@ -25,10 +31,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/style.css?v=20260805152703">
 <script defer src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4"></script>
-<script defer src="js/desktop-block.js"></script>
+<script defer src="js/desktop-block.js?v=20260805152703"></script>
 </head>
 <body class="galeria-body">
 
@@ -189,8 +195,8 @@
         </div>
     </div>
 
-    <script defer src="js/config.js"></script>
-    <script defer src="js/utils.js"></script>
-    <script defer src="js/galeria.js"></script>
+    <script defer src="js/config.js?v=20260805152703"></script>
+    <script defer src="js/utils.js?v=20260805152703"></script>
+    <script defer src="js/galeria.js?v=20260805152703"></script>
 </body>
 </html>
