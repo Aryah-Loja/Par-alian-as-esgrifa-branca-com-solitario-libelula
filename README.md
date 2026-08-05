@@ -30,6 +30,30 @@ habilitado (vem habilitado por padrão). Se quiser gerar o arquivo na mão
 (ex.: pra testar localmente antes de subir), rode `node
 scripts/gerar-manifesto-galeria.js`.
 
+## Cache no celular ("o site continua desatualizado depois que eu publiquei")
+
+Todo `css/style.css` e todo arquivo dentro de `js/` (além de
+`secret/secret.css` e `secret/secret.js`) é carregado nas páginas com um
+`?v=NÚMERO` no final do link (ex: `js/main.js?v=20260805152703`). Isso
+existe porque o celular guarda uma cópia local desses arquivos pra abrir
+mais rápido da próxima vez — e sem essa etiqueta de versão, ele pode
+continuar usando a cópia antiga mesmo depois de você publicar uma
+atualização no GitHub Pages. Trocar o número força o celular a baixar a
+versão nova. As páginas também têm tags de `Cache-Control: no-cache` no
+`<head>`, que ajudam o próprio HTML a ser revalidado com o servidor toda
+vez.
+
+Sempre que você mudar `css/style.css` ou qualquer arquivo em `js/` (ou os
+equivalentes em `secret/`) e for publicar, rode antes de subir:
+
+```
+node scripts/atualizar-versao.js
+```
+
+Isso atualiza o número em todas as páginas de uma vez. Depois é só
+commit/push como de costume. Não precisa mexer em nada manualmente nem
+lembrar de nenhum número — o script gera um novo sozinho toda vez.
+
 ## Estrutura de pastas
 
 ```
