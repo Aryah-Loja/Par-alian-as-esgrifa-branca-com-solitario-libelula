@@ -470,9 +470,13 @@
 
         <div id="signatureScreen" class="d-none w-100 px-3 text-center">
             <p class="text-white fw-bold mb-1">Assine para confirmar o recebimento do pedido</p>
-            <p class="text-white-50 small mb-3">Use o dedo para assinar na área abaixo</p>
+            <p class="text-white-50 small mb-3" id="signatureSubtexto">Use o dedo para assinar na área abaixo</p>
             <div class="signature-pad-wrap">
                 <canvas id="signatureCanvas" width="320" height="160"></canvas>
+                <!-- Modo "rever a lojinha" (ver mostrarAssinaturaSomenteVisualizacao,
+                     js/suspense.js): mostra a assinatura real já salva no lugar do
+                     canvas, sem deixar assinar de novo. -->
+                <img id="assinaturaSalvaImg" class="d-none" alt="Assinatura já feita" style="background:#fff;width:100%;height:160px;object-fit:contain;border:2px dashed var(--rosegold);border-radius:10px;display:block;">
                 <p class="signature-hint" id="signatureHint">Toque e arraste para assinar</p>
                 <div class="d-flex gap-2 mt-2">
                     <button id="btnLimparAssinatura" class="btn btn-light border flex-fill rounded-pill small fw-bold">Limpar</button>
@@ -527,6 +531,13 @@
                     </div>
                     <div id="videoActions" class="d-none mt-2 d-flex flex-column gap-2">
                         <button id="btnRegravar" class="btn btn-light border rounded-pill btn-sm fw-bold">Regravar</button>
+                    </div>
+                    <!-- Modo "rever a lojinha" (ver iniciarTelaDeVideoSomenteVisualizacao,
+                         js/suspense.js): mostra o vídeo real já gravado no lugar da
+                         câmera, sem pedir uma gravação nova. -->
+                    <div id="videoVisualizacaoAcoes" class="d-none mt-3">
+                        <p class="text-white-50 small mb-2">Esse foi o vídeo que você gravou de verdade nesse dia.</p>
+                        <button id="btnContinuarVideoVisualizacao" class="btn btn-rosegold rounded-pill fw-bold px-4 py-2">Continuar</button>
                     </div>
                 </div>
             </div>

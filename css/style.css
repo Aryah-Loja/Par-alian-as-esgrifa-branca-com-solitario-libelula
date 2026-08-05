@@ -1473,7 +1473,11 @@ html.galeria-scroll-lock body { position: fixed; left: 0; right: 0; width: 100%;
     bottom: 0;
     left: 0;
     right: 0;
-    z-index: 4500;
+    /* Acima do suspense-overlay (10000) e do processing-overlay (10600):
+       a revivida da lojinha agora passa por checkout/perguntas/assinatura/
+       vídeo também, então essa barra (e o botão "Voltar") precisa
+       continuar visível e clicável em cima de qualquer uma dessas telas. */
+    z-index: 20000;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -1512,16 +1516,16 @@ html.galeria-scroll-lock body { position: fixed; left: 0; right: 0; width: 100%;
 }
 body.modo-visualizacao-ativo .contador-easter-eggs { display: none; } /* não briga com a barra do modo visualização */
 
-/* O pedido já foi feito de verdade — em modo visualização a lojinha é só
-   nostalgia, então "Comprar Agora" fica escondido junto (evita qualquer
-   caminho, mesmo que só visual, de parecer que dá pra reiniciar um
-   pedido novo a partir daqui; o botão final de pagamento já era
-   escondido, ver botaoConfirmar em abrirLojaSomenteVisualizacao no
-   js/romance.js — isso fecha a mesma porta também na etapa anterior). */
-body.modo-visualizacao-ativo #barraComprarAgora { display: none; }
-/* Sem a barra fixa do rodapé, a lojinha não precisa mais do respiro
-   extra que existia só pra ela não cobrir o botão "Comprar Agora". */
-body.modo-visualizacao-ativo #lojaScreen { padding-bottom: 24px; }
+/* O pedido já foi feito de verdade, mas em modo visualização a revivida
+   passa por "Comprar Agora" e "Confirmar Pagamento" de novo, de propósito
+   (só não grava nada — ver modoVisualizacaoLojaAtiva, js/store.js, e a
+   assinatura/vídeo reaproveitados em js/suspense.js). Os dois botões só
+   sobem um pouco pra não ficar embaixo da barra fixa "Voltar para nossa
+   história". */
+body.modo-visualizacao-ativo #barraComprarAgora,
+body.modo-visualizacao-ativo #checkoutScreen .fixed-bottom {
+    bottom: 64px;
+}
 
 /* ============================================================================
    LEMBRETE DE BACKUP MANUAL

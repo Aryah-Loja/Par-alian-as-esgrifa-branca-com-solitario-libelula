@@ -219,6 +219,14 @@ function gerarAssinaturaTransparente(canvas) {
 
 function iniciarAssinatura() {
     document.getElementById('signatureScreen').classList.remove('d-none');
+
+    // Modo "rever a lojinha" (ver modoVisualizacaoLojaAtiva, js/store.js):
+    // a assinatura real já existe salva, não pede uma nova.
+    if (modoVisualizacaoLojaAtiva) {
+        mostrarAssinaturaSomenteVisualizacao();
+        return;
+    }
+
     iniciarSignaturePad();
 
     document.getElementById('btnConfirmarAssinatura').onclick = async () => {
@@ -238,6 +246,34 @@ function iniciarAssinatura() {
 
         if (navigator.vibrate) { try { navigator.vibrate([200, 100, 200]); } catch (e) { /* vibração não suportada/permitida — só um extra tátil, nunca crítico */ } }
 
+        document.getElementById('signatureScreen').classList.add('d-none');
+        iniciarRastreio();
+    };
+}
+
+/* Mostra a assinatura real (já salva em js/db.js) no lugar do pad de
+   desenho — não grava nada, só deixa relembrar como ela ficou. */
+async function mostrarAssinaturaSomenteVisualizacao() {
+    document.getElementById('signatureCanvas').classList.add('d-none');
+
+    const subtexto = document.getElementById('signatureSubtexto');
+    if (subtexto) subtexto.textContent = 'Essa foi a assinatura que você fez de verdade nesse dia.';
+
+    const img = document.getElementById('assinaturaSalvaImg');
+    try {
+        const salva = await obterMedia('assinatura');
+        if (salva && salva.texto) img.src = salva.texto;
+    } catch (e) { console.error('Falha ao carregar a assinatura salva para o modo visualização:', e); }
+    img.classList.remove('d-none');
+
+    document.getElementById('signatureHint').textContent = '';
+    document.getElementById('btnLimparAssinatura').classList.add('d-none');
+
+    const btnConfirmar = document.getElementById('btnConfirmarAssinatura');
+    btnConfirmar.classList.remove('flex-fill');
+    btnConfirmar.classList.add('mx-auto', 'px-4');
+    btnConfirmar.textContent = 'Continuar';
+    btnConfirmar.onclick = () => {
         document.getElementById('signatureScreen').classList.add('d-none');
         iniciarRastreio();
     };
@@ -348,6 +384,33 @@ function iniciarTelaDeVideo() {
     }
 }
 
+/* Modo "rever a lojinha" (ver modoVisualizacaoLojaAtiva, js/store.js): o
+   vídeo real já existe salvo, não pede câmera nem uma gravação nova —
+   só mostra o vídeo de verdade com um botão de continuar. */
+async function iniciarTelaDeVideoSomenteVisualizacao() {
+    document.getElementById('videoScreen').classList.remove('d-none');
+    document.getElementById('orientacaoMsg').classList.add('d-none');
+    document.getElementById('permissaoNegadaMsg').classList.add('d-none');
+    document.getElementById('conteudoGravacao').classList.remove('d-none');
+
+    document.getElementById('videoPreview').style.display = 'none';
+    document.getElementById('btnIniciarGravacao').classList.add('d-none');
+    document.getElementById('btnPararGravacao').classList.add('d-none');
+    document.getElementById('saveStatus').textContent = '';
+    document.getElementById('videoGrandeAviso').classList.add('d-none');
+    document.getElementById('videoActions').classList.add('d-none');
+
+    const playback = document.getElementById('videoPlayback');
+    playback.style.display = 'block';
+    playback.removeAttribute('src');
+    try {
+        const salvo = await obterMedia('video_pedido');
+        if (salvo && salvo.blob) playback.src = URL.createObjectURL(salvo.blob);
+    } catch (e) { console.error('Falha ao carregar o vídeo salvo para o modo visualização:', e); }
+
+    document.getElementById('videoVisualizacaoAcoes').classList.remove('d-none');
+}
+
 function baixarVideoAutomaticamente(blob, mimeType) {
     try {
         const extensao = mimeType.includes('mp4') ? 'mp4' : 'webm';
@@ -365,6 +428,10 @@ function baixarVideoAutomaticamente(blob, mimeType) {
 }
 
 async function salvarVideoComSeguranca(blob, mimeType) {
+    // Segurança extra: em modo "rever a lojinha" nunca sobrescreve o
+    // vídeo real nem dispara um download automático de novo.
+    if (modoVisualizacaoLojaAtiva) return false;
+
     const statusEl = document.getElementById('saveStatus');
     if (statusEl) { statusEl.textContent = 'Salvando vídeo com segurança...'; statusEl.className = 'save-status pending'; }
 
@@ -493,7 +560,11 @@ function iniciarCartaFinal() {
                 aoContinuar: async () => {
                     document.getElementById('modoVelaOverlay').classList.add('d-none');
                     desbloquearScrollFundoLembranca();
-                    await salvarConfiguracao('aurora_stage', 'final', true);
+                    // Em modo "rever a lojinha" o estágio já é 'final' de
+                    // verdade — não grava de novo.
+                    if (!modoVisualizacaoLojaAtiva) {
+                        await salvarConfiguracao('aurora_stage', 'final', true);
+                    }
                     iniciarFlashback(() => { goToRomancePage(true); });
                 }
             });
@@ -566,6 +637,32 @@ function carregarImagensFlashback() {
     }
 }
 
+/* Deixa a sequência "suspense" (perguntas -> fotos -> assinatura ->
+   rastreio -> verificação -> vídeo -> carta) pronta pra começar do zero
+   de novo. Usada ao sair do modo "rever a lojinha" no meio do caminho
+   (ver fecharLojaSomenteVisualizacao em js/romance.js) e ao voltar pra
+   "Nossa História" ao final de qualquer fluxo (ver goToRomancePage),
+   pra nunca deixar uma tela do meio aberta numa próxima revisão. */
+function resetarTelasSuspenseParaProximaRevisao() {
+    document.getElementById('loaderSuspense').classList.remove('d-none');
+    document.getElementById('questionBox').classList.add('d-none');
+    document.getElementById('photoGallery').classList.add('d-none');
+    document.querySelectorAll('#photoGallery .polaroid').forEach(p => { p.style.display = 'none'; p.classList.remove('foto-visivel'); });
+    document.getElementById('typingScreen').style.display = 'none';
+    document.getElementById('typedText').textContent = '';
+    document.getElementById('signatureScreen').classList.add('d-none');
+    document.getElementById('trackingScreen').classList.add('d-none');
+    document.getElementById('verificacaoScreen').classList.add('d-none');
+    document.getElementById('videoScreen').classList.add('d-none');
+    document.getElementById('videoVisualizacaoAcoes').classList.add('d-none');
+    document.getElementById('finalScreen').classList.add('d-none');
+
+    perguntaAtual = 0;
+
+    const botaoConfirmar = document.getElementById('btnConfirmarPedido');
+    if (botaoConfirmar) botaoConfirmar.disabled = false;
+}
+
 /* ---------------- Inicialização e wiring de eventos ---------------- */
 function iniciarSuspense() {
     carregarImagensPolaroid();
@@ -593,10 +690,21 @@ function iniciarSuspense() {
 
     document.getElementById('btnConfirmarIdentidade').addEventListener('click', () => {
         document.getElementById('verificacaoScreen').classList.add('d-none');
-        iniciarTelaDeVideo();
+        if (modoVisualizacaoLojaAtiva) {
+            iniciarTelaDeVideoSomenteVisualizacao();
+        } else {
+            iniciarTelaDeVideo();
+        }
+    });
+
+    document.getElementById('btnContinuarVideoVisualizacao').addEventListener('click', () => {
+        document.getElementById('videoScreen').classList.add('d-none');
+        document.getElementById('videoVisualizacaoAcoes').classList.add('d-none');
+        finalizarSequencia();
     });
 
     document.getElementById('btnIniciarGravacao').addEventListener('click', async () => {
+        if (modoVisualizacaoLojaAtiva) return; // segurança extra: nunca grava um vídeo novo em modo visualização
         if (!mediaStream) {
             await solicitarPermissoes();
             verificarOrientacao();

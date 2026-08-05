@@ -345,7 +345,11 @@ async function marcarEasterEggEncontrado(id) {
     try { encontrados = JSON.parse(await obterConfiguracao('easterEggsEncontrados') || '[]'); } catch (e) { /* trata como nenhum encontrado ainda */ }
     if (!Array.isArray(encontrados)) encontrados = [];
 
-    if (!encontrados.includes(id)) {
+    // Em modo "rever a lojinha" (ver modoVisualizacaoLojaAtiva, js/store.js)
+    // os easter eggs já foram todos descobertos de verdade antes; a tela
+    // ainda aparece de novo, mas nada é gravado no banco.
+    const emRevivida = typeof modoVisualizacaoLojaAtiva !== 'undefined' && modoVisualizacaoLojaAtiva;
+    if (!encontrados.includes(id) && !emRevivida) {
         encontrados.push(id);
         try { await salvarConfiguracao('easterEggsEncontrados', encontrados, false, false); } catch (e) { /* não crítico se falhar salvar */ }
     }

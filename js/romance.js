@@ -1304,6 +1304,19 @@ async function goToRomancePage(primeiraVez) {
     document.getElementById('checkoutScreen').style.display = 'none';
     document.getElementById('suspenseOverlay').style.display = 'none';
     document.getElementById('processingOverlay').style.display = 'none';
+    try { if (typeof resetarTelasSuspenseParaProximaRevisao === 'function') resetarTelasSuspenseParaProximaRevisao(); } catch (e) { /* não crítico, só deixa a próxima revisão da lojinha começar do zero */ }
+
+    // Se a página estava em modo "rever a lojinha" (ver abrirLojaSomenteVisualizacao
+    // logo abaixo), desliga tudo que é exclusivo desse modo ao voltar pra
+    // "Nossa História" — cobre tanto quem terminou a revivida inteira
+    // (carta final) quanto qualquer outro jeito de chegar aqui.
+    if (typeof modoVisualizacaoLojaAtiva !== 'undefined' && modoVisualizacaoLojaAtiva) {
+        modoVisualizacaoLojaAtiva = false;
+        trocarNomeLojaParaVisualizacao(false);
+        document.getElementById('modoVisualizacaoBarra').classList.add('d-none');
+        document.body.classList.remove('modo-visualizacao-ativo');
+    }
+
     document.getElementById('romancePage').style.display = 'block';
     definirFundoBody(CORES_FUNDO.escuro);
     
@@ -1989,19 +2002,27 @@ function iniciarModuloRomance() {
 }
 
 /* ----------------------------------------------------------------------
-   "REVER A LOJINHA" — só visualização, nunca afeta o que já foi gravado
+   "REVER A LOJINHA" — revive a experiência inteira, sem gravar nada de
+   novo no banco
    ----------------------------------------------------------------------
-   Depois que tudo já aconteceu, a pessoa pode querer rever a "lojinha
-   falsa" das alianças (o disfarce inicial do site) só por nostalgia. Isso
-   NÃO deve, de jeito nenhum, poder reiniciar o pedido — por isso o botão
-   "Confirmar Pagamento" da loja fica escondido enquanto estiver em modo
-   visualização, e nada aqui grava nada no banco.
+   Depois que tudo já aconteceu de verdade, a pessoa pode querer reviver a
+   "lojinha falsa" das alianças inteira (compra, perguntas, fotos) por
+   nostalgia — inclusive passando de novo pela tela de assinatura e pela
+   verificação por vídeo. Como a assinatura e o vídeo reais já existem
+   salvos (ver js/db.js), essas duas etapas não pedem uma assinatura/vídeo
+   novos: enquanto modoVisualizacaoLojaAtiva estiver ligada, js/suspense.js
+   mostra o que já foi salvo (mostrarAssinaturaSomenteVisualizacao,
+   iniciarTelaDeVideoSomenteVisualizacao) e pula toda chamada de
+   salvarMedia/salvarConfiguracao no caminho — os dados do pedido real
+   nunca são sobrescritos nessa revivida.
    ---------------------------------------------------------------------- */
 function abrirLojaSomenteVisualizacao() {
     document.getElementById('romancePage').style.display = 'none';
     const loja = document.getElementById('lojaScreen');
     loja.style.display = '';
     definirFundoBody(CORES_FUNDO.claro);
+
+    modoVisualizacaoLojaAtiva = true;
 
     // O indicador "os dois online agora" (js/presenca.js) não é mais filho
     // de #romancePage (ver correção do bug de position:fixed dentro de
@@ -2010,8 +2031,12 @@ function abrirLojaSomenteVisualizacao() {
     // senão ele fica flutuando por cima da lojinha em modo visualização.
     try { if (typeof refrescarIndicadorPresenca === 'function') refrescarIndicadorPresenca(); } catch (e) { /* indicador é só um extra, nunca deve travar a navegação */ }
 
+    // O clique real de "Confirmar Pagamento" desabilita este botão
+    // permanentemente (ver wiring em js/suspense.js) — reabilita aqui pra
+    // a revivida poder ser feita de novo, do início ao fim, toda vez que
+    // "Rever a lojinha" for aberta.
     const botaoConfirmar = document.getElementById('btnConfirmarPedido');
-    if (botaoConfirmar) botaoConfirmar.classList.add('d-none'); // impede reiniciar o pedido sem querer
+    if (botaoConfirmar) botaoConfirmar.disabled = false;
 
     trocarNomeLojaParaVisualizacao(true);
 
@@ -2035,7 +2060,18 @@ function abrirLojaSomenteVisualizacao() {
 }
 
 function fecharLojaSomenteVisualizacao() {
+    modoVisualizacaoLojaAtiva = false;
+
     document.getElementById('lojaScreen').style.display = 'none';
+    // Cobre sair no meio do caminho (checkout ou qualquer tela do
+    // "suspense": perguntas, fotos, assinatura, vídeo, carta) — fecha tudo
+    // e deixa pronto pra recomeçar do zero na próxima vez que "Rever a
+    // lojinha" for aberta.
+    document.getElementById('checkoutScreen').style.display = 'none';
+    document.getElementById('suspenseOverlay').style.display = 'none';
+    document.getElementById('processingOverlay').style.display = 'none';
+    try { if (typeof resetarTelasSuspenseParaProximaRevisao === 'function') resetarTelasSuspenseParaProximaRevisao(); } catch (e) { /* não crítico, só deixa a próxima revisão começar do zero */ }
+
     const botaoConfirmar = document.getElementById('btnConfirmarPedido');
     if (botaoConfirmar) botaoConfirmar.classList.remove('d-none');
 

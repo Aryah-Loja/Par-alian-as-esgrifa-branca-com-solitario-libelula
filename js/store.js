@@ -9,6 +9,13 @@
 
 const pedido = { tamMasc: '', tamFem: '', tamSolitario: '', gravMasc: '', gravFem: '' };
 
+/* Flag global: true enquanto a pessoa está revivendo a lojinha depois que
+   o pedido real já aconteceu (ver abrirLojaSomenteVisualizacao em
+   js/romance.js). Enquanto ativa, js/suspense.js reaproveita a assinatura
+   e o vídeo já salvos em vez de pedir um novo, e nenhuma função de save
+   roda de novo — os dados já estão salvos, é só pra relembrar. */
+let modoVisualizacaoLojaAtiva = false;
+
 /* ---------------- Vinheta de abertura (uma vez por sessão) ---------------- */
 function iniciarVinheta() {
     const tela = document.getElementById('vinhetaAbertura');
