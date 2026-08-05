@@ -1098,20 +1098,140 @@ function pausarMusicaFundoImediatamente() {
  * tempo, lembranças, mensagens pro futuro etc. — várias leituras no
  * IndexedDB) e escondida assim que tudo estiver pronto.
  */
+// Frases que revezam na tela de carregamento de "Nossa História" (ver
+// mostrarLoadingRomance/esconderLoadingRomance abaixo), só pra dar mais
+// vida à espera — sem custar nada tecnicamente, já que o progresso real
+// continua vindo da barra (ver executarComBarraDeProgresso).
+const HISTORIA_LOADING_FRASES = [
+    'preparando nossa história...',
+    'juntando as estrelas...',
+    'contando os dias...'
+];
+let __historiaLoadingIntervalo = null;
+
 function mostrarLoadingRomance() {
     const overlay = document.getElementById('romanceLoadingOverlay');
     const barra = document.getElementById('romanceLoadingBarra');
+    const textoEl = document.getElementById('romanceLoadingTexto');
     if (barra) barra.style.width = '6%';
     if (overlay) { overlay.style.opacity = '1'; overlay.classList.remove('d-none'); }
     bloquearScrollFundoLembranca(); // mesma trava usada no lightbox — consistente em todo o site
+
+    if (textoEl) {
+        let indice = 0;
+        textoEl.textContent = HISTORIA_LOADING_FRASES[0];
+        if (__historiaLoadingIntervalo) clearInterval(__historiaLoadingIntervalo);
+        __historiaLoadingIntervalo = setInterval(() => {
+            indice = (indice + 1) % HISTORIA_LOADING_FRASES.length;
+            textoEl.textContent = HISTORIA_LOADING_FRASES[indice];
+        }, 1400);
+    }
 }
 
 function esconderLoadingRomance() {
     const overlay = document.getElementById('romanceLoadingOverlay');
     desbloquearScrollFundoLembranca();
+    if (__historiaLoadingIntervalo) { clearInterval(__historiaLoadingIntervalo); __historiaLoadingIntervalo = null; }
     if (!overlay) return;
     overlay.style.opacity = '0';
     setTimeout(() => overlay.classList.add('d-none'), 300);
+}
+
+/* ---------------- Botão flutuante: navegar entre seções de "Nossa
+ * História" ----------------
+ * Mesmo padrão visual/estrutural do botão flutuante da checklist (ver
+ * .historia-nav-flutuante em css/style.css, clonado de
+ * .checklist-nav-flutuante, e iniciarNavegacaoCategoriasChecklist em
+ * js/checklist.js), só que pulando entre os grandes blocos fixos da
+ * página (timeline, quiz, bichos, mapa, playlist, cápsula, previsões,
+ * mensagem pro futuro, mural) em vez de categorias de uma lista
+ * dinâmica. Chamado uma vez só, depois que a página termina de montar
+ * (ver goToRomancePage). Alguns alvos (cápsula, previsões) só existem
+ * de fato quando desbloqueados — o filtro abaixo garante que o menu só
+ * lista o que existe na página nesse momento. */
+const HISTORIA_SECOES_NAV = [
+    { id: 'secaoTimelineHistoria', emoji: '🌌', nome: 'Nossa linha do tempo' },
+    { id: 'secaoMomentosHistoria', emoji: '🖼️', nome: 'Nossos momentos' },
+    { id: 'quizWrap', emoji: '❓', nome: 'Quiz do casal' },
+    { id: 'secaoBichosHistoria', emoji: '🐾', nome: 'Seus bichos' },
+    { id: 'secaoMapaHistoria', emoji: '🗺️', nome: 'Nosso mapa' },
+    { id: 'secaoPlaylistHistoria', emoji: '🎵', nome: 'Nossa playlist' },
+    { id: 'capsulaTempoWrap', emoji: '⏳', nome: 'Cápsula do tempo' },
+    { id: 'previsoesWrap', emoji: '🔮', nome: 'Quadro de previsões' },
+    { id: 'secaoMensagemFuturoHistoria', emoji: '💌', nome: 'Mensagem pro futuro' },
+    { id: 'secaoMuralHistoria', emoji: '📓', nome: 'Seu mural' }
+];
+
+function iniciarNavegacaoSecoesHistoria() {
+    const wrap = document.getElementById('historiaNavFlutuante');
+    const botao = document.getElementById('btnHistoriaNavToggle');
+    const menu = document.getElementById('historiaNavMenu');
+    if (!wrap || !botao || !menu) return;
+
+    const itensDisponiveis = HISTORIA_SECOES_NAV.filter(item => document.getElementById(item.id));
+    menu.innerHTML = itensDisponiveis.map(item => `
+        <button type="button" class="historia-nav-item" data-ir-para-secao="${item.id}">
+            <span class="historia-nav-item-emoji">${item.emoji}</span>${item.nome}
+        </button>
+    `).join('') + `
+        <button type="button" class="historia-nav-item" data-ir-para-checklist="1">
+            <span class="historia-nav-item-emoji">✅</span>Nosso checklist
+        </button>
+    `;
+
+    const fechar = () => {
+        wrap.classList.remove('aberto');
+        botao.setAttribute('aria-expanded', 'false');
+    };
+    const alternar = () => {
+        const abrindo = !wrap.classList.contains('aberto');
+        wrap.classList.toggle('aberto', abrindo);
+        botao.setAttribute('aria-expanded', String(abrindo));
+    };
+
+    botao.addEventListener('click', (evt) => { evt.stopPropagation(); alternar(); });
+
+    menu.querySelectorAll('[data-ir-para-secao]').forEach(item => {
+        item.addEventListener('click', () => {
+            const secao = document.getElementById(item.getAttribute('data-ir-para-secao'));
+            fechar();
+            if (!secao) return;
+            const topoComFolga = secao.getBoundingClientRect().top + window.scrollY - 24;
+            window.scrollTo({ top: topoComFolga, behavior: 'smooth' });
+        });
+    });
+
+    const btnChecklist = menu.querySelector('[data-ir-para-checklist]');
+    if (btnChecklist) btnChecklist.addEventListener('click', () => { window.location.href = 'checklist.html'; });
+
+    // Clicar fora fecha o menu; ESC também, pra quem usa teclado/leitor de tela.
+    document.addEventListener('click', (evt) => { if (!wrap.contains(evt.target)) fechar(); });
+    document.addEventListener('keydown', (evt) => { if (evt.key === 'Escape') fechar(); });
+
+    wrap.classList.remove('d-none');
+}
+
+/* ---------------- Barrinha fina de progresso de scroll (topo) ----------------
+ * Um traço dourado que enche conforme a pessoa rola "Nossa História" —
+ * só pra dar noção de quanto falta da página, sem números nem texto.
+ * Atualiza no scroll e no resize (a altura da página muda bastante
+ * conforme seções condicionais aparecem/somem — cápsula, previsões
+ * etc.). Chamado uma vez só, junto com iniciarNavegacaoSecoesHistoria. */
+function iniciarBarraProgressoScrollHistoria() {
+    const barra = document.getElementById('historiaProgressoScrollBarra');
+    const wrap = document.getElementById('historiaProgressoScroll');
+    if (!barra || !wrap) return;
+
+    const atualizar = () => {
+        const alturaTotal = document.documentElement.scrollHeight - window.innerHeight;
+        const percentual = alturaTotal > 0 ? Math.min(100, Math.max(0, (window.scrollY / alturaTotal) * 100)) : 0;
+        barra.style.width = `${percentual}%`;
+    };
+
+    window.addEventListener('scroll', atualizar, { passive: true });
+    window.addEventListener('resize', atualizar);
+    wrap.classList.remove('d-none');
+    atualizar();
 }
 
 /**
@@ -1293,6 +1413,8 @@ async function goToRomancePage(primeiraVez) {
 
     await executarComBarraDeProgresso(tarefas);
     esconderLoadingRomance();
+    rodarIsolado(iniciarNavegacaoSecoesHistoria, 'navegação flutuante entre seções');
+    rodarIsolado(iniciarBarraProgressoScrollHistoria, 'barra de progresso de scroll');
 
     // Mesma correção do "espaço vazio/roxo no fim da tela" (ver
     // forcarRecalculoDeLayout() em js/utils.js): essa é a maior troca de
@@ -1894,6 +2016,13 @@ function abrirLojaSomenteVisualizacao() {
     document.body.classList.add('modo-visualizacao-ativo'); // reserva espaço pra barra fixa não cobrir o fim da loja
     window.scrollTo(0, 0);
 
+    // O FAB de navegação e a barra de progresso de scroll são filhos
+    // diretos do body (mesmo motivo do indicador de presença, ver
+    // comentário acima), então esconder #romancePage não os esconde de
+    // graça — sem isso, os dois ficariam flutuando por cima da lojinha.
+    document.getElementById('historiaNavFlutuante')?.classList.add('d-none');
+    document.getElementById('historiaProgressoScroll')?.classList.add('d-none');
+
     // Mesma correção do "espaço vazio/roxo no fim da tela" usada ao voltar
     // da lojinha (ver forcarRecalculoDeLayout() em js/utils.js): troca
     // entre #romancePage e #lojaScreen também muda a altura real do
@@ -1915,6 +2044,10 @@ function fecharLojaSomenteVisualizacao() {
     romancePage.style.display = '';
     definirFundoBody(CORES_FUNDO.escuro);
     window.scrollTo(0, 0);
+
+    // Reverte o esconderijo feito em abrirLojaSomenteVisualizacao.
+    document.getElementById('historiaNavFlutuante')?.classList.remove('d-none');
+    document.getElementById('historiaProgressoScroll')?.classList.remove('d-none');
     try { if (typeof refrescarIndicadorPresenca === 'function') refrescarIndicadorPresenca(); } catch (e) { /* indicador é só um extra, nunca deve travar a navegação */ }
 
     // Alternar display:none -> '' reinicia as animações de entrada
@@ -2538,7 +2671,12 @@ async function renderizarMural() {
     const itens = await obterMural();
 
     if (!itens.length) {
-        lista.innerHTML = '<p class="small" style="color: rgba(43,37,35,0.6);">Nada por aqui ainda. Escreva o que quiser acima.</p>';
+        lista.innerHTML = `
+            <div class="mural-vazio">
+                <i class="bi bi-journal-plus mural-vazio-icone" aria-hidden="true"></i>
+                <p class="mural-vazio-texto">Ainda não tem nada aqui, mas vai ter. Escreva o que quiser, sem pressa.</p>
+            </div>
+        `;
         return;
     }
 

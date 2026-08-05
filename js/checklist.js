@@ -22,6 +22,14 @@ let __checklistEstadoAtual = null;
 // Itens customizados em memória, mesmo princípio do estado acima.
 let __checklistItensCustomizados = null;
 
+// Último percentual visto pela barra de progresso geral, pra detectar o
+// INSTANTE em que ela cruza 25/50/75/100% (ver checklistAtualizarProgresso)
+// e disparar celebrarMomento() só nessa hora, não a cada item marcado.
+// Começa null: a primeira chamada (ao montar a página) só define a
+// baseline, sem celebrar nada — senão abriria a tela de "checklist
+// completo" toda vez que alguém já com 100% desse F5 na página.
+let __checklistPercentualAnterior = null;
+
 function checklistTotalItens() {
     const totalOriginal = CHECKLIST_ENCONTROS.reduce((soma, cat) => soma + cat.itens.length, 0);
     return totalOriginal + (__checklistItensCustomizados ? __checklistItensCustomizados.length : 0);
@@ -85,6 +93,23 @@ function checklistAtualizarProgresso(estado) {
         const feitosCustom = customizadosDaCategoria.filter(item => estado[item.id]).length;
         el.textContent = `${feitosOriginais + feitosCustom} de ${totalCategoria}`;
     });
+
+    // Dispara a "comemoração" (som + vibração já existentes, ver
+    // celebrarMomento em js/utils.js) só no INSTANTE em que a barra cruza
+    // 25/50/75/100%, não a cada item marcado. Na primeiríssima chamada
+    // (ao montar a página) __checklistPercentualAnterior ainda é null:
+    // só define a baseline aqui, sem comemorar nada — senão a tela de
+    // "checklist completo" abriria de novo toda vez que alguém com 100%
+    // desse F5 na página.
+    if (__checklistPercentualAnterior !== null) {
+        [25, 50, 75, 100].forEach(marco => {
+            if (percentual >= marco && __checklistPercentualAnterior < marco) {
+                celebrarMomento(marco === 100 ? 1.4 : 1);
+                if (marco === 100) mostrarCelebracaoChecklistCompleto();
+            }
+        });
+    }
+    __checklistPercentualAnterior = percentual;
 }
 
 // Marca/desmarca um item (original ou customizado) pelo id final.
@@ -293,6 +318,28 @@ function iniciarNavegacaoCategoriasChecklist() {
     wrap.classList.remove('d-none');
 }
 
+/** Tela cheia de celebração ao completar 100% do checklist (ver chamada em
+ * checklistAtualizarProgresso). Mesmo espírito visual da vinheta de
+ * abertura do site — ver .checklist-celebracao-overlay em css/style.css. */
+function mostrarCelebracaoChecklistCompleto() {
+    const overlay = document.getElementById('checklistCelebracaoOverlay');
+    if (!overlay) return;
+    overlay.classList.remove('d-none');
+    bloquearScrollFundoLembranca(); // mesma trava usada no lightbox/modais do site
+    // Precisa de um frame pra o navegador registrar o d-none saindo antes
+    // de aplicar a classe que dispara a transição de opacidade — senão o
+    // fade-in não roda (o navegador junta as duas mudanças num só passo).
+    requestAnimationFrame(() => overlay.classList.add('checklist-celebracao-visivel'));
+}
+
+function fecharCelebracaoChecklistCompleto() {
+    const overlay = document.getElementById('checklistCelebracaoOverlay');
+    if (!overlay) return;
+    overlay.classList.remove('checklist-celebracao-visivel');
+    desbloquearScrollFundoLembranca();
+    setTimeout(() => overlay.classList.add('d-none'), 400);
+}
+
 async function montarChecklist() {
     const container = document.getElementById('checklistCategorias');
     if (!container) return;
@@ -333,4 +380,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     await montarChecklist();
     iniciarModalAdicionarItemChecklist();
+
+    const btnFecharCelebracao = document.getElementById('btnFecharCelebracaoChecklist');
+    if (btnFecharCelebracao) btnFecharCelebracao.addEventListener('click', fecharCelebracaoChecklistCompleto);
 });
