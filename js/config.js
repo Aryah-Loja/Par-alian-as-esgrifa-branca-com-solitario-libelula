@@ -885,7 +885,7 @@ const VIDEO_MOMENTO_YOUTUBE_BACKUP_URL = 'https://youtu.be/wVpkkkuqmf8';
 /* Igual a VIDEO_PROCESSO_VERTICAL, mas pro backup acima: `true` se o vídeo
  * do momento foi gravado na VERTICAL (o comum, celular na mão) — controla
  * a proporção da moldura quando o backup do YouTube entra no lugar. */
-const VIDEO_MOMENTO_YOUTUBE_BACKUP_VERTICAL = true;
+const VIDEO_MOMENTO_YOUTUBE_BACKUP_VERTICAL = false;
 
 /* ----------------------------------------------------------------------
    DADOS PERMANENTES DO PEDIDO (fixos — o pedido já aconteceu de verdade)
