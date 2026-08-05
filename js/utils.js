@@ -2,6 +2,19 @@
  * UTILS.JS — Funções utilitárias compartilhadas.
  */
 
+// Data em que este aparelho abriu o site pela primeira vez — usada tanto
+// pelo contador vivo do relacionamento (js/romance.js) quanto pelo
+// backup/sincronização (js/export.js, dataInicioRelacionamento). Mora
+// aqui (não em romance.js) porque export.js também é carregado em
+// diagnostico.html e checklist.html, que não carregam romance.js —
+// antes disso causava "obterOuCriarDataPrimeiroAcesso is not defined" e
+// quebrava a sincronização/backup em silêncio nessas duas páginas.
+async function obterOuCriarDataPrimeiroAcesso() {
+    let data = await obterConfiguracao('aurora_primeiro_acesso');
+    if (!data) { data = new Date().toISOString(); await salvarConfiguracao('aurora_primeiro_acesso', data); }
+    return data;
+}
+
 // Testa (via HEAD) se um arquivo existe em /assets. Usada por
 // resolverFotoPlaceholder() (js/config.js), entre outras.
 async function arquivoExisteNoServidor(caminho) {

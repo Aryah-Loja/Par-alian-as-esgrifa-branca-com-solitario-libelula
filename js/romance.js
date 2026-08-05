@@ -25,11 +25,9 @@ function calcularDuracaoRelacionamento(inicioIso) {
     return { anos: Math.max(0, anos), meses: Math.max(0, meses), dias: Math.max(0, dias), horas, minutos, segundos };
 }
 
-async function obterOuCriarDataPrimeiroAcesso() {
-    let data = await obterConfiguracao('aurora_primeiro_acesso');
-    if (!data) { data = new Date().toISOString(); await salvarConfiguracao('aurora_primeiro_acesso', data); }
-    return data;
-}
+// obterOuCriarDataPrimeiroAcesso() foi movida pra js/utils.js (carregado
+// nesta página antes de romance.js) — precisa ser compartilhada com
+// diagnostico.html/checklist.html via js/export.js. Ver comentário lá.
 
 let contadorVivoIntervalo = null;
 let contadorVivoDataInicio = null;
