@@ -1668,3 +1668,110 @@ html.checklist-html { background-color: #1c1014; }
 }
 .checklist-nav-item:hover, .checklist-nav-item:active { background: rgba(255,255,255,0.08); }
 .checklist-nav-item-emoji { flex-shrink: 0; }
+
+/* ---------------- Barra fina de progresso de scroll ("Nossa História") ----------------
+   Traço dourado de 3px fixo no topo, acima do conteúdo mas abaixo de
+   qualquer overlay de verdade (o menor z-index de overlay no site é o do
+   FAB da checklist, 500). Cresce de 0% a 100% conforme a pessoa rola a
+   página (ver iniciarBarraProgressoScrollHistoria em js/romance.js). */
+.historia-progresso-scroll {
+    position: fixed !important; top: 0; left: 0; width: 100%; height: 3px; z-index: 400;
+    background: rgba(255,255,255,0.06); pointer-events: none;
+}
+.historia-progresso-scroll-barra {
+    height: 100%; width: 0%; background: linear-gradient(90deg, var(--rosegold), var(--gold));
+    transition: width 0.1s linear;
+}
+
+/* ---------------- Botão flutuante: navegar entre seções de "Nossa História" ----------------
+   Mesmo padrão visual/estrutural do botão flutuante da checklist (ver
+   .checklist-nav-flutuante acima), só que pulando entre os grandes blocos
+   da página em vez de categorias de uma lista. Ver
+   iniciarNavegacaoSecoesHistoria em js/romance.js. */
+.historia-nav-flutuante {
+    position: fixed !important; right: 18px; bottom: calc(20px + var(--safe-bottom, 0px)); z-index: 500;
+    display: flex; flex-direction: column; align-items: flex-end; gap: 10px;
+}
+.historia-nav-botao {
+    width: 52px; height: 52px; border-radius: 50%; border: 1px solid rgba(216,185,120,0.4);
+    background: linear-gradient(160deg, var(--rosegold), var(--rosegold-dark));
+    color: #fff; font-size: 1.3rem; display: flex; align-items: center; justify-content: center;
+    box-shadow: var(--shadow-deep); transition: transform 0.25s var(--ease-premium);
+}
+.historia-nav-flutuante.aberto .historia-nav-botao { transform: rotate(180deg); }
+.historia-nav-menu {
+    max-height: 0; opacity: 0; pointer-events: none; overflow: hidden;
+    display: flex; flex-direction: column; gap: 6px;
+    background: rgba(28,16,20,0.92); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%);
+    border: 1px solid rgba(216,185,120,0.3); border-radius: 16px; padding: 0 6px;
+    transition: max-height 0.3s var(--ease-premium), opacity 0.25s ease, padding 0.3s ease;
+    width: min(72vw, 260px);
+}
+.historia-nav-flutuante.aberto .historia-nav-menu {
+    max-height: 60vh; opacity: 1; pointer-events: auto; padding: 8px 6px; overflow-y: auto;
+}
+.historia-nav-item {
+    background: transparent; border: none; text-align: left; color: #f0d9dd;
+    font-family: 'Jost', sans-serif; font-size: 0.85rem; padding: 9px 10px; border-radius: 10px;
+    display: flex; align-items: center; gap: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    width: 100%;
+}
+.historia-nav-item:hover, .historia-nav-item:active { background: rgba(255,255,255,0.08); }
+.historia-nav-item-emoji { flex-shrink: 0; }
+
+/* ---------------- Celebração ao completar o checklist (100%) ----------------
+   Mesmo espírito visual da vinheta de abertura (.vinheta-abertura): fundo
+   radial escuro, brilho pulsante, partículas soltas. Só aparece uma vez
+   por sessão, exatamente no instante em que a barra chega a 100% (ver
+   checklistAtualizarProgresso em js/checklist.js), nunca ao recarregar a
+   página já completa. */
+.checklist-celebracao-overlay {
+    position: fixed; inset: 0; z-index: 12800;
+    background: radial-gradient(circle at 50% 40%, #3a2029 0%, #1a0f13 75%);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 32px; overflow: hidden;
+    opacity: 0; transition: opacity 0.5s ease;
+}
+.checklist-celebracao-overlay.checklist-celebracao-visivel { opacity: 1; }
+.checklist-celebracao-brilho {
+    position: absolute; width: 340px; height: 340px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(183,110,121,0.55) 0%, transparent 70%);
+    animation: vinhetaBrilhoPulse 2.4s ease-in-out infinite;
+}
+.checklist-celebracao-particula {
+    position: absolute; width: 4px; height: 4px; border-radius: 50%; background: var(--rosegold);
+    opacity: 0; z-index: 1; animation: vinhetaParticulaFlutuar 3.2s ease-in-out infinite;
+}
+.checklist-celebracao-particula.p1 { top: 28%; left: 22%; animation-delay: 0s; }
+.checklist-celebracao-particula.p2 { top: 68%; left: 72%; animation-delay: 0.5s; }
+.checklist-celebracao-particula.p3 { top: 38%; left: 80%; animation-delay: 1s; }
+.checklist-celebracao-particula.p4 { top: 72%; left: 28%; animation-delay: 1.5s; }
+.checklist-celebracao-particula.p5 { top: 18%; left: 55%; animation-delay: 2s; }
+.checklist-celebracao-icone { font-size: 2.4rem; color: var(--rosegold); z-index: 2; animation: vinhetaLogoEntra 1.4s ease forwards; opacity: 0; }
+.checklist-celebracao-titulo {
+    font-family: 'Cormorant Garamond', Georgia, serif; color: #FAF9F6; font-size: 2rem; font-weight: 600;
+    z-index: 2; margin: 14px 0 0; animation: vinhetaLogoEntra 1.4s ease 0.15s forwards; opacity: 0;
+}
+.checklist-celebracao-texto {
+    font-family: 'Jost', sans-serif; color: rgba(240,217,221,0.85); font-size: 0.95rem; max-width: 340px;
+    z-index: 2; margin-top: 10px; animation: vinhetaLogoEntra 1.4s ease 0.3s forwards; opacity: 0;
+}
+.checklist-celebracao-overlay .btn {
+    z-index: 2; animation: vinhetaLogoEntra 1.4s ease 0.45s forwards; opacity: 0;
+}
+
+/* ---------------- Estados vazios com ilustração (mensagem pro futuro / mural) ---------------- */
+.mensagens-futuro-vazio {
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    color: rgba(255,255,255,0.5); margin-top: 16px; padding: 20px 12px;
+    border: 1px dashed rgba(255,255,255,0.15); border-radius: 14px;
+}
+.mensagens-futuro-vazio-icone { font-size: 1.6rem; color: var(--rosegold); opacity: 0.8; }
+.mensagens-futuro-vazio-texto { font-size: 0.85rem; margin: 0; max-width: 280px; line-height: 1.5; }
+
+.mural-vazio {
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    padding: 22px 12px; border: 1px dashed rgba(43,37,35,0.25); border-radius: 14px;
+}
+.mural-vazio-icone { font-size: 1.6rem; color: var(--rosegold); }
+.mural-vazio-texto { font-size: 0.85rem; margin: 0; max-width: 280px; line-height: 1.5; color: rgba(43,37,35,0.6); text-align: center; }
