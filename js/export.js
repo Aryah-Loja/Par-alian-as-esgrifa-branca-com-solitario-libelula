@@ -58,8 +58,8 @@ async function gerarConstelacao() {
             const tamanhoEsteItem = marco.ehPedido ? tamanhoFoto * 1.18 : tamanhoFoto;
             item.innerHTML = `
                 <span class="constelacao-item-estrela" aria-hidden="true">✦</span>
-                <img src="${fotoSrc}" alt="${marco.ehPedido ? 'Hoje' : marco.data}" style="width:${tamanhoEsteItem}px; height:${tamanhoEsteItem}px;">
-                <p class="constelacao-item-data" style="font-size:${fonteData}px;">${marco.ehPedido ? 'Hoje' : (marco.data || '')}</p>`;
+                <img src="${fotoSrc}" alt="${marco.data || ''}" style="width:${tamanhoEsteItem}px; height:${tamanhoEsteItem}px;">
+                <p class="constelacao-item-data" style="font-size:${fonteData}px;">${marco.data || ''}</p>`;
             lista.appendChild(item);
         }
 

@@ -340,20 +340,25 @@ function contarToquesRepetidos(elemento, quantidadeNecessaria, aoCompletar) {
 
 // Marca um easter egg como encontrado (persistido, sem duplicar) e
 // atualiza o contador discreto no canto da tela (só o total, não quais).
-async function marcarEasterEggEncontrado(id) {
-    let encontrados = [];
-    try { encontrados = JSON.parse(await obterConfiguracao('easterEggsEncontrados') || '[]'); } catch (e) { /* trata como nenhum encontrado ainda */ }
-    if (!Array.isArray(encontrados)) encontrados = [];
+let filaMarcacaoEasterEgg = Promise.resolve();
 
-    // Em modo "rever a lojinha" (ver modoVisualizacaoLojaAtiva, js/store.js)
-    // os easter eggs já foram todos descobertos de verdade antes; a tela
-    // ainda aparece de novo, mas nada é gravado no banco.
-    const emRevivida = typeof modoVisualizacaoLojaAtiva !== 'undefined' && modoVisualizacaoLojaAtiva;
-    if (!encontrados.includes(id) && !emRevivida) {
-        encontrados.push(id);
-        try { await salvarConfiguracao('easterEggsEncontrados', encontrados, false, false); } catch (e) { /* não crítico se falhar salvar */ }
-    }
-    atualizarContadorEasterEggs(encontrados.length);
+function marcarEasterEggEncontrado(id) {
+    filaMarcacaoEasterEgg = filaMarcacaoEasterEgg.then(async () => {
+        let encontrados = [];
+        try { encontrados = JSON.parse(await obterConfiguracao('easterEggsEncontrados') || '[]'); } catch (e) { /* trata como nenhum encontrado ainda */ }
+        if (!Array.isArray(encontrados)) encontrados = [];
+
+        // Segredos descobertos ao usar "Rever a lojinha" também precisam
+        // entrar na coleção. Esse é justamente o momento em que a pessoa
+        // pode voltar com calma para procurar os girassóis que deixou passar.
+        if (IDS_TODOS_OS_EASTER_EGGS.includes(id) && !encontrados.includes(id)) {
+            encontrados.push(id);
+            try { await salvarConfiguracao('easterEggsEncontrados', encontrados, false, false); } catch (e) { /* não crítico se falhar salvar */ }
+        }
+        atualizarContadorEasterEggs(encontrados.filter(item => IDS_TODOS_OS_EASTER_EGGS.includes(item)).length);
+    }).catch((e) => console.error('Falha ao contabilizar easter egg:', e));
+
+    return filaMarcacaoEasterEgg;
 }
 
 // O contador visível só aparece dentro de "Nossa História" (nunca na loja
@@ -391,7 +396,7 @@ async function iniciarContadorEasterEggs() {
     let encontrados = [];
     try { encontrados = JSON.parse(await obterConfiguracao('easterEggsEncontrados') || '[]'); } catch (e) { /* nenhum ainda */ }
     if (!Array.isArray(encontrados)) encontrados = [];
-    atualizarContadorEasterEggs(encontrados.length);
+    atualizarContadorEasterEggs(encontrados.filter(id => IDS_TODOS_OS_EASTER_EGGS.includes(id)).length);
 }
 
 // Força o navegador a recalcular o layout (lendo offsetHeight, que obriga

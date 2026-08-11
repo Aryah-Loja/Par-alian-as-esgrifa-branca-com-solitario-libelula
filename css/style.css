@@ -849,6 +849,18 @@ body {
 .aniversario-topo { font-family: 'Jost', sans-serif; font-size: 0.72rem; letter-spacing: 2px; text-transform: uppercase; color: #ffc478; margin: 0 0 10px; }
 .aniversario-texto { font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; font-size: 0.95rem; color: #fff0dd; line-height: 1.7; margin: 0; white-space: pre-wrap; }
 
+/* Álbum permanente dos aniversários — cresce um cartão por ano. */
+.registro-aniversario-intro { max-width: 360px; margin: -8px auto 20px; color: rgba(255,255,255,0.62); font-size: 0.82rem; line-height: 1.55; text-align: center; }
+.registro-aniversarios-lista { display: grid; gap: 18px; }
+.registro-aniversario-card { position: relative; overflow: hidden; border-radius: 22px; background: linear-gradient(155deg, rgba(255,196,120,0.14), rgba(183,110,121,0.1) 52%, rgba(255,255,255,0.04)); border: 1px solid rgba(255,196,120,0.3); box-shadow: 0 14px 35px rgba(0,0,0,0.2); }
+.registro-aniversario-foto-wrap { position: relative; aspect-ratio: 16 / 10; overflow: hidden; background: rgba(255,255,255,0.05); }
+.registro-aniversario-foto { width: 100%; height: 100%; object-fit: cover; display: block; }
+.registro-aniversario-ano { position: absolute; right: 14px; bottom: 12px; min-width: 58px; padding: 6px 12px; border-radius: 999px; background: rgba(20,10,14,0.82); border: 1px solid rgba(255,196,120,0.45); color: #ffc478; font: 600 0.74rem 'Jost', sans-serif; letter-spacing: 1.5px; text-align: center; backdrop-filter: blur(8px); }
+.registro-aniversario-conteudo { padding: 20px 19px 22px; }
+.registro-aniversario-data { margin: 0 0 5px; color: #ffc478; font: 500 0.68rem 'Jost', sans-serif; letter-spacing: 1.7px; text-transform: uppercase; }
+.registro-aniversario-titulo { margin: 0 0 10px; color: #fff5e8; font: italic 600 1.35rem 'Cormorant Garamond', Georgia, serif; }
+.registro-aniversario-texto { margin: 0; color: rgba(255,255,255,0.78); font-size: 0.84rem; line-height: 1.7; white-space: pre-wrap; }
+
 /* Vídeo dentro do bloco de aniversário (mesmo espírito visual do
    momento-lento-container, mas com controles visíveis, já que aqui o
    áudio do próprio vídeo importa). */

@@ -262,7 +262,7 @@ function renderizarTimeline() {
         estrela.className = 'ceu-estrela' + (marco.ehPedido ? ' ceu-estrela-pedido' : '');
         estrela.style.left = `${PADRAO_X[i % PADRAO_X.length]}%`;
         estrela.style.top = `${i * ESPACO_VERTICAL_PX + 30}px`;
-        estrela.innerHTML = `<span class="ceu-estrela-brilho"></span><span class="ceu-estrela-label">${marco.ehPedido ? 'Hoje' : (marco.data || '')}</span>`;
+        estrela.innerHTML = `<span class="ceu-estrela-brilho"></span><span class="ceu-estrela-label">${marco.data || ''}</span>`;
         estrela.addEventListener('click', () => abrirEstrelaModal(i));
         constelacao.appendChild(estrela);
     });
@@ -454,7 +454,7 @@ async function abrirEstrelaModal(indice) {
     };
     foto.src = fotoSrc;
 
-    const nomeEstrela = marco.ehPedido ? (document.getElementById('dataPedidoTimeline')?.textContent || 'Hoje') : (marco.data || '');
+    const nomeEstrela = marco.data || '';
     dataEl.textContent = nomeEstrela;
     textoEl.textContent = marco.texto || '';
     overlay.classList.remove('d-none');
@@ -463,7 +463,7 @@ async function abrirEstrelaModal(indice) {
 
     foto.onclick = async () => {
         const todasFotos = await Promise.all(TIMELINE_MARCOS.map(m => resolverFotoPlaceholderOuAsset(m.foto)));
-        const todasLegendas = TIMELINE_MARCOS.map(m => m.ehPedido ? (document.getElementById('dataPedidoTimeline')?.textContent || 'Hoje') : (m.data || ''));
+        const todasLegendas = TIMELINE_MARCOS.map(m => m.data || '');
         abrirLightboxGaleria(todasFotos, indice, todasLegendas);
     };
 }
@@ -1148,6 +1148,7 @@ function esconderLoadingRomance() {
  * de fato quando desbloqueados — o filtro abaixo garante que o menu só
  * lista o que existe na página nesse momento. */
 const HISTORIA_SECOES_NAV = [
+    { id: 'secaoAniversariosHistoria', emoji: '🎂', nome: 'Seus aniversários' },
     { id: 'secaoTimelineHistoria', emoji: '🌌', nome: 'Nossa linha do tempo' },
     { id: 'secaoMomentosHistoria', emoji: '🖼️', nome: 'Nossos momentos' },
     { id: 'quizWrap', emoji: '❓', nome: 'Quiz do casal' },
@@ -1357,6 +1358,7 @@ async function goToRomancePage(primeiraVez) {
     const rodarIsolado = (fn, nome) => { try { fn(); } catch (e) { console.error(`Falha ao iniciar "${nome}" (não deve afetar o resto da página):`, e); } };
     rodarIsolado(iniciarQuiz, 'quiz');
     rodarIsolado(renderizarTimeline, 'timeline/estrelas');
+    rodarIsolado(() => renderizarRegistroAnualAniversarios().catch(e => console.error('Falha ao montar registro anual de aniversários:', e)), 'registro anual de aniversários');
     rodarIsolado(iniciarFechamentoEstrelaModal, 'fechamento do modal da estrela');
     rodarIsolado(exibirEasterEggSobrenome, 'easter egg do sobrenome');
     rodarIsolado(renderizarCoisasQueElaAma, 'coisas que ela ama');
@@ -1528,6 +1530,51 @@ async function iniciarMomentoLento() {
         };
         mostrarFrase();
         setInterval(mostrarFrase, TEMPO_POR_FRASE_MS);
+    }
+}
+
+/* ---------------- Registro anual dos aniversários ---------------- */
+async function renderizarRegistroAnualAniversarios() {
+    const lista = document.getElementById('registroAniversariosLista');
+    const secao = document.getElementById('secaoAniversariosHistoria');
+    if (!lista || !secao) return;
+
+    const registros = Array.isArray(REGISTRO_ANUAL_ANIVERSARIOS)
+        ? REGISTRO_ANUAL_ANIVERSARIOS.slice().sort((a, b) => Number(b.ano) - Number(a.ano))
+        : [];
+    secao.classList.toggle('d-none', registros.length === 0);
+    lista.innerHTML = '';
+
+    for (const registro of registros) {
+        const card = document.createElement('article');
+        card.className = 'registro-aniversario-card';
+
+        const fotoWrap = document.createElement('div');
+        fotoWrap.className = 'registro-aniversario-foto-wrap';
+        const foto = document.createElement('img');
+        foto.className = 'registro-aniversario-foto';
+        foto.alt = `Aniversário de ${registro.ano || ''}`;
+        aplicarImagemPlaceholder(foto, registro.foto, `Aniversário de ${registro.ano || ''}`);
+        const ano = document.createElement('span');
+        ano.className = 'registro-aniversario-ano';
+        ano.textContent = registro.ano || '';
+        fotoWrap.append(foto, ano);
+
+        const conteudo = document.createElement('div');
+        conteudo.className = 'registro-aniversario-conteudo';
+        const data = document.createElement('p');
+        data.className = 'registro-aniversario-data';
+        data.textContent = registro.data || `8 de agosto de ${registro.ano || ''}`;
+        const titulo = document.createElement('h3');
+        titulo.className = 'registro-aniversario-titulo';
+        titulo.textContent = registro.titulo || 'Mais um aniversário juntos';
+        const texto = document.createElement('p');
+        texto.className = 'registro-aniversario-texto';
+        texto.textContent = registro.texto || '';
+        conteudo.append(data, titulo, texto);
+
+        card.append(fotoWrap, conteudo);
+        lista.appendChild(card);
     }
 }
 

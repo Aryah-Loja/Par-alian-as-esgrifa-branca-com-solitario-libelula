@@ -103,7 +103,9 @@ const PLACEHOLDERS = {
     imagem_timeline_7: { arquivoBase: 'timeline-7', tipo: 'imagem', descricao: 'Timeline — 20/07, apresentação pros avós em Santa Rosa de Viterbo, Parque Curupira e o balanço em Sales de Oliveira' },
     imagem_timeline_8: { arquivoBase: 'timeline-8', tipo: 'imagem', descricao: 'Timeline — 12/07, o dia em Nuporanga que acabei conhecendo o tio e a tia dela' },
     imagem_timeline_9: { arquivoBase: 'timeline-9', tipo: 'imagem', descricao: 'Timeline — 26/07, o dia que ela conheceu minha casa de verdade e eu voltei na casa do tio dela' },
-    imagem_timeline_hoje: { arquivoBase: 'timeline-hoje', tipo: 'imagem', descricao: 'Timeline — foto de hoje, marcando o dia do pedido' },
+    imagem_timeline_hoje: { arquivoBase: 'timeline-hoje', tipo: 'imagem', descricao: 'Timeline — 01/08, dia do pedido de namoro' },
+    imagem_timeline_10: { arquivoBase: 'timeline-10', tipo: 'imagem', descricao: 'Timeline — 08/08, aniversário dela e a primeira noite juntos em Ribeirão Preto' },
+    imagem_aniversario_2026: { arquivoBase: 'aniversario-2026', tipo: 'imagem', descricao: 'Registro anual — aniversário de 2026' },
 
     // ---- Nossos momentos (mesa de fotos) ----
     // "imagem_momento_1..4" foram removidos daqui: "Nossos momentos" não usa
@@ -460,6 +462,11 @@ Mesmo com pouco tempo juntos, parece que a gente se conhece há anos. É uma sen
 Talvez hoje, quando você estiver lendo isso, eu já saiba como foi esse momento que tanto imaginei, talvez tenha sido exatamente como planejei ou talvez tenha sido completamente diferente, mas espero que, independente de qualquer coisa, você consiga sentir o principal: o quanto eu amo você. Porque antes mesmo de saber o resultado desse pedido, antes mesmo de saber como seria esse dia, eu já sabia de uma coisa... eu queria viver a minha história ao seu lado.`,
         foto: 'imagem_timeline_hoje',
         ehPedido: true
+    },
+    {
+        data: '08 de agosto',
+        texto: `O dia 8 de agosto já seria especial por ser o seu aniversário, mas acabou se tornando ainda mais inesquecível para nós dois. Foi o primeiro aniversário seu que pude viver ao seu lado e também a nossa primeira vez dormindo juntos, em Ribeirão Preto, naquele lugar que sequer tinha portão kkkkk. Entre o improviso, as risadas e aquele cenário que parecia saído de uma história que só poderia acontecer com a gente, o que mais ficou em mim foi a felicidade de poder terminar o seu dia pertinho de você. Foi uma noite simples, meio maluca e completamente nossa — daquelas lembranças que a gente conta rindo, mas guarda com um carinho enorme no coração.`,
+        foto: 'imagem_timeline_10'
     }
 ];
 
@@ -1027,6 +1034,20 @@ const MOMENTO_LENTO_FRASES = [
    ---------------------------------------------------------------------- */
 const ANIVERSARIO_DIA = 8;
 const ANIVERSARIO_MES = 8; // agosto
+
+/* Registro permanente dos aniversários dela. Para acrescentar um novo ano,
+ * copie uma entrada, altere os textos e crie o placeholder correspondente
+ * acima. A foto de 2026 deve ser salva como assets/img/aniversario-2026.jpg. */
+const REGISTRO_ANUAL_ANIVERSARIOS = [
+    {
+        ano: 2026,
+        data: '08 de agosto de 2026',
+        titulo: 'O primeiro aniversário ao seu lado',
+        texto: `Nosso primeiro aniversário juntos também virou uma das lembranças mais nossas. Comemoramos o seu dia em Ribeirão Preto e, naquela noite, dormimos juntos pela primeira vez — justamente em um lugar que sequer tinha portão kkkkk. Foi improvisado, engraçado e inesquecível. Mais importante que qualquer plano perfeito foi terminar o seu aniversário pertinho de você, com a certeza de que eu queria estar presente em muitos outros 8 de agosto da sua vida.`,
+        foto: 'imagem_aniversario_2026'
+    }
+];
+
 function textoAniversario() {
     return `Hoje é diferente de todos os outros dias: hoje é o seu dia.
 

@@ -95,7 +95,8 @@ A lista completa e atualizável está em `js/config.js`, no objeto
 | casal-1.jpg / casal-2.jpg / casal-3.jpg | Galeria de polaroids durante o suspense |
 | foto-final.jpg | Foto grande após "identidade confirmada" |
 | flashback-1.jpg … flashback-5.jpg | Flashback cinematográfico antes de "Nossa História" |
-| timeline-1.jpg … timeline-9.jpg, timeline-hoje.jpg | Linha do tempo |
+| timeline-1.jpg … timeline-10.jpg, timeline-hoje.jpg | Linha do tempo |
+| aniversario-2026.jpg | Primeiro cartão do registro anual de aniversários |
 
 > **"Nossos momentos" (mesa de 4 fotos em "Nossa História") não usa
 > arquivo próprio** — ele sorteia automaticamente 4 fotos reais de dentro
@@ -399,5 +400,3 @@ do aparelho) e impede abrir o console do navegador e forçar a revelação
 direto, mas não impede alguém tecnicamente capaz de abrir os arquivos-
 fonte do site (`js/config.js`) de ler o texto antes da data — isso é uma
 limitação de qualquer site que roda 100% no navegador, sem exceção.
-
-
