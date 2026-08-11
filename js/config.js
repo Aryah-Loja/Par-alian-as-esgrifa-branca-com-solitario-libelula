@@ -165,7 +165,7 @@ function getAsset(id) {
 
 /**
  * Resolve a foto de um placeholder "por nome" (arquivoBase, sem extensão
- * fixa) — o arquivo precisa estar salvo como .jpg em assets/img/.
+ * flexível) — aceita formatos comuns e também HEIC/HEIF de iPhone.
  * Usada hoje pelas fotos de "Seus bichos" (ver PLACEHOLDERS acima).
  * Se o arquivo não existir, devolve um SVG de espaço reservado (com a
  * legenda do item) em vez de quebrar como imagem ausente.
@@ -180,10 +180,14 @@ async function resolverFotoPlaceholder(id) {
         return gerarSvgPlaceholderComLegenda(item ? item.descricao : id);
     }
 
-    const caminho = `assets/img/${item.arquivoBase}.jpg`;
-    if (await arquivoExisteNoServidor(caminho)) {
-        __cacheResolverFotoPlaceholder[id] = caminho;
-        return caminho;
+    for (const extensao of EXTENSOES_FOTO_PLACEHOLDERS) {
+        for (const variante of [extensao.toLowerCase(), extensao.toUpperCase()]) {
+            const caminho = `assets/img/${item.arquivoBase}.${variante}`;
+            if (await arquivoExisteNoServidor(caminho)) {
+                __cacheResolverFotoPlaceholder[id] = caminho;
+                return caminho;
+            }
+        }
     }
 
     // Arquivo ainda não foi adicionado na pasta. Não guarda esse "não
@@ -199,17 +203,21 @@ async function resolverFotoPlaceholder(id) {
  * mapa" adicionados pelo painel (diagnostico.html → "Adicionar local ao
  * mapa"), que não passam por PLACEHOLDERS — o nome do arquivo é gerado
  * automaticamente a partir do nome do local, e o Gabriel só precisa
- * salvar a foto em assets/img/ com esse nome, no formato .jpg.
+ * salvar a foto em assets/img/ com esse nome, em qualquer formato aceito.
  */
 const __cacheResolverFotoPorBase = {};
 async function resolverFotoPorBase(arquivoBase, legenda) {
     if (!arquivoBase) return gerarSvgPlaceholderComLegenda(legenda);
     if (arquivoBase in __cacheResolverFotoPorBase) return __cacheResolverFotoPorBase[arquivoBase];
 
-    const caminho = `assets/img/${arquivoBase}.jpg`;
-    if (await arquivoExisteNoServidor(caminho)) {
-        __cacheResolverFotoPorBase[arquivoBase] = caminho;
-        return caminho;
+    for (const extensao of EXTENSOES_FOTO_PLACEHOLDERS) {
+        for (const variante of [extensao.toLowerCase(), extensao.toUpperCase()]) {
+            const caminho = `assets/img/${arquivoBase}.${variante}`;
+            if (await arquivoExisteNoServidor(caminho)) {
+                __cacheResolverFotoPorBase[arquivoBase] = caminho;
+                return caminho;
+            }
+        }
     }
 
     return gerarSvgPlaceholderComLegenda(legenda);
@@ -383,6 +391,9 @@ function extrairIdYoutube(valor) {
  * js/galeria.js. Fotos sempre em .jpg (minúsculo) e vídeos sempre em .mp4
  * (minúsculo) — nenhuma outra extensão nem variação de maiúscula/minúscula
  * é testada. */
+// Fotos fixas (timeline, aniversários, bichos e mapa) podem vir direto do
+// iPhone. HEIC/HEIF são recuperados e convertidos pelo fallback de utils.js.
+const EXTENSOES_FOTO_PLACEHOLDERS = ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'];
 const EXTENSOES_FOTO_ACEITAS = ['jpg'];
 const GALERIA_EXTENSOES_FOTO = EXTENSOES_FOTO_ACEITAS;
 const GALERIA_EXTENSOES_VIDEO = ['mp4'];

@@ -1556,7 +1556,7 @@ async function renderizarRegistroAnualAniversarios() {
         const foto = document.createElement('img');
         foto.className = 'registro-aniversario-foto';
         foto.alt = `Aniversário de ${registro.ano || ''}`;
-        aplicarImagemPlaceholder(foto, registro.foto, `Aniversário de ${registro.ano || ''}`);
+        foto.src = await resolverFotoPlaceholderOuAsset(registro.foto);
         const ano = document.createElement('span');
         ano.className = 'registro-aniversario-ano';
         ano.textContent = registro.ano || '';
