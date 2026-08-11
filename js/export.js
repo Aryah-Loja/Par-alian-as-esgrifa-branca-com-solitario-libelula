@@ -397,6 +397,7 @@ async function gerarBackupZipBlob() {
         termometroLista: await obterConfigJSON('aurora_termometro_lista'),
         cartasCondicionaisLiberadas: await obterConfigJSON('aurora_cartas_condicionais_liberadas'),
         muralAna: await obterConfigJSON('aurora_mural_ana'),
+        primeirasVezes: await obterConfigJSON('aurora_primeiras_vezes'),
         contratoFechado: await obterConfiguracao('aurora_contrato_fechado') || null,
         medias: []
     };
@@ -527,6 +528,7 @@ async function aplicarBackupDeZip(zipDados) {
     if (manifest.termometroLista) await salvarConfiguracao('aurora_termometro_lista', JSON.stringify(manifest.termometroLista));
     if (manifest.cartasCondicionaisLiberadas) await salvarConfiguracao('aurora_cartas_condicionais_liberadas', JSON.stringify(manifest.cartasCondicionaisLiberadas));
     if (manifest.muralAna) await salvarConfiguracao('aurora_mural_ana', JSON.stringify(manifest.muralAna));
+    if (manifest.primeirasVezes) await salvarConfiguracao('aurora_primeiras_vezes', JSON.stringify(manifest.primeirasVezes));
     if (manifest.contratoFechado) await salvarConfiguracao('aurora_contrato_fechado', manifest.contratoFechado);
 
     // O backup é a "fotografia completa": listas locais são substituídas
@@ -540,6 +542,16 @@ async function aplicarBackupDeZip(zipDados) {
         const antigasLembrancas = await obterMediaPorTipo('lembranca');
         for (const antiga of antigasLembrancas) await db.media.delete(antiga.id);
     } catch (e) { console.error('Falha ao limpar lembranças antigas antes de restaurar', e); }
+
+    try {
+        const antigasPrimeirasVezes = await obterMediaPorTipo('primeira_vez_foto');
+        for (const antiga of antigasPrimeirasVezes) await db.media.delete(antiga.id);
+    } catch (e) { console.error('Falha ao limpar fotos antigas de primeiras vezes antes de restaurar', e); }
+
+    try {
+        const antigasFotosMapa = await obterMediaPorTipo('mapa_local_foto');
+        for (const antiga of antigasFotosMapa) await db.media.delete(antiga.id);
+    } catch (e) { console.error('Falha ao limpar fotos antigas do mapa antes de restaurar', e); }
 
     for (const entrada of (manifest.medias || [])) {
         try {

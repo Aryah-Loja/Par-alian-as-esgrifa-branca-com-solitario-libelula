@@ -69,6 +69,7 @@ js/store.js             → lógica da "loja" (home falsa)
 js/suspense.js          → perguntas → assinatura → rastreio → vídeo → carta final
 js/futuro.js            → "mensagem para nós do futuro"
 js/romance.js           → página "Nossa História" (timeline, quiz, contrato, playlist, senha, rever lojinha...)
+js/primeiras-vezes.js    → registros com texto e fotos enviados pelo casal e sincronizados na nuvem
 js/galeria.js           → monta a Galeria de lembranças (galeria.html) — fotos, vídeos locais e do YouTube
 js/export.js            → exportar carta/certificado/polaroid + backup (.zip) + lembrete de backup + reset
 js/sync.js              → sincronização entre aparelhos (opcional, ver abaixo) + marcador de reset

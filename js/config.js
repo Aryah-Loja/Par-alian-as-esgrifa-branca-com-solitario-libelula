@@ -465,7 +465,7 @@ Talvez hoje, quando você estiver lendo isso, eu já saiba como foi esse momento
     },
     {
         data: '08 de agosto',
-        texto: `O dia 8 de agosto já seria especial por ser o seu aniversário, mas acabou se tornando ainda mais inesquecível para nós dois. Foi o primeiro aniversário seu que pude viver ao seu lado e também a nossa primeira vez dormindo juntos, em Ribeirão Preto, naquele lugar que sequer tinha portão kkkkk. Entre o improviso, as risadas e aquele cenário que parecia saído de uma história que só poderia acontecer com a gente, o que mais ficou em mim foi a felicidade de poder terminar o seu dia pertinho de você. Foi uma noite simples, meio maluca e completamente nossa — daquelas lembranças que a gente conta rindo, mas guarda com um carinho enorme no coração.`,
+        texto: `O dia 8 de agosto já seria especial por ser o seu aniversário, mas acabou se tornando ainda mais inesquecível para nós dois. Assistimos ao novo filme do Homem-Aranha e, depois, começou uma aventura que a gente não tinha planejado: andamos de “h”otel em “h”otel, procurando um quarto, e parecia que não encontraríamos lugar nenhum. No fim, fomos parar justamente naquele que, à primeira vista, parecia ser a pior opção — nem portão tinha kkkkk — mas que acabou sendo muito melhor do que imaginávamos. Foi também a nossa primeira vez dormindo juntos, em Ribeirão Preto. Entre o improviso, as risadas e tudo saindo diferente do planejado, o que mais ficou em mim foi a felicidade de terminar o seu dia pertinho de você. Aquilo que parecia que daria errado virou uma noite simples, meio maluca e completamente nossa. Vai ser para sempre uma daquelas memórias que a gente conta rindo e guarda com um carinho enorme no coração.`,
         foto: 'imagem_timeline_10'
     }
 ];
@@ -1043,7 +1043,7 @@ const REGISTRO_ANUAL_ANIVERSARIOS = [
         ano: 2026,
         data: '08 de agosto de 2026',
         titulo: 'O primeiro aniversário ao seu lado',
-        texto: `Nosso primeiro aniversário juntos também virou uma das lembranças mais nossas. Comemoramos o seu dia em Ribeirão Preto e, naquela noite, dormimos juntos pela primeira vez — justamente em um lugar que sequer tinha portão kkkkk. Foi improvisado, engraçado e inesquecível. Mais importante que qualquer plano perfeito foi terminar o seu aniversário pertinho de você, com a certeza de que eu queria estar presente em muitos outros 8 de agosto da sua vida.`,
+        texto: `Nosso primeiro aniversário juntos também virou uma das lembranças mais nossas. Assistimos ao novo filme do Homem-Aranha e depois andamos de “h”otel em “h”otel por Ribeirão Preto, sem encontrar um quarto. No fim, aquilo que parecia ser a pior opção — um lugar que sequer tinha portão kkkkk — acabou sendo muito melhor do que imaginávamos. Foi ali que dormimos juntos pela primeira vez. O improviso, a procura e as risadas transformaram uma situação que parecia dar errado em uma memória que vai ficar para sempre. Mais importante que qualquer plano perfeito foi terminar o seu aniversário pertinho de você, com a certeza de que eu queria estar presente em muitos outros 8 de agosto da sua vida.`,
         foto: 'imagem_aniversario_2026'
     }
 ];

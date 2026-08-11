@@ -2,8 +2,8 @@
  * MAPA-ADMIN.JS — Painel "Adicionar local ao mapa" (diagnostico.html).
  * Salva locais extras do "Nosso mapa" via salvarConfiguracao() (chave
  * 'aurora_mapa_lugares_extra'), sincronizados com a nuvem como qualquer
- * config pequena. A foto continua manual: salvar o arquivo em assets/img/
- * com o nome gerado no campo "Nome do arquivo da foto".
+ * config pequena. Fotos escolhidas no formulário são comprimidas e salvas
+ * como mídia, entrando no mesmo backup sincronizado pelo Supabase.
  */
 
 const CHAVE_MAPA_LUGARES_EXTRA_ADMIN = 'aurora_mapa_lugares_extra';
@@ -50,14 +50,6 @@ function mapaAdminGerarFotoBaseUnico(nome, listaAtual, idIgnorar) {
 
 let mapaAdminEditandoId = null;
 
-async function mapaAdminAtualizarPreviaFotoBase() {
-    const nomeInput = document.getElementById('mapaAdminNome');
-    const fotoBaseInput = document.getElementById('mapaAdminFotoBase');
-    if (!nomeInput || !fotoBaseInput) return;
-    const lista = await mapaAdminObterLista();
-    fotoBaseInput.value = mapaAdminGerarFotoBaseUnico(nomeInput.value, lista, mapaAdminEditandoId);
-}
-
 function mapaAdminAtualizarIconePreview() {
     const input = document.getElementById('mapaAdminIcone');
     const preview = document.getElementById('mapaAdminIconePreview');
@@ -85,7 +77,7 @@ async function mapaAdminRenderizarLista() {
             <div class="flex-grow-1">
                 <strong>${lugar.nome}</strong>
                 <p class="mb-1">${lugar.cidade || ''}${lugar.texto ? ', ' + lugar.texto : ''}</p>
-                <p class="mb-0">Foto: <code>assets/img/${lugar.fotoBase}.jpg</code> (ou .jpeg/.png/.webp)</p>
+                <p class="mb-0">${lugar.mediaId ? 'Foto enviada e sincronizada' : (lugar.fotoBase ? `Foto antiga: assets/img/${lugar.fotoBase}.jpg` : 'Sem foto')}</p>
             </div>
             <div class="d-flex flex-column gap-1">
                 <button type="button" class="btn btn-outline-light btn-sm rounded-pill" data-editar="${lugar.id}"><i class="bi bi-pencil"></i></button>
@@ -112,7 +104,10 @@ async function mapaAdminCarregarParaEdicao(id) {
     document.getElementById('mapaAdminCidade').value = lugar.cidade || '';
     document.getElementById('mapaAdminTexto').value = lugar.texto || '';
     document.getElementById('mapaAdminIcone').value = lugar.icon || 'bi-geo-alt-fill';
-    document.getElementById('mapaAdminFotoBase').value = lugar.fotoBase || '';
+    const fotoInput = document.getElementById('mapaAdminFotoInput');
+    if (fotoInput) fotoInput.value = '';
+    const fotoAtual = document.getElementById('mapaAdminFotoAtual');
+    if (fotoAtual) fotoAtual.textContent = lugar.mediaId ? 'Este local já tem uma foto. Escolha outra apenas se quiser substituí-la.' : 'Este local ainda não tem foto.';
     mapaAdminAtualizarIconePreview();
 
     document.getElementById('btnMapaAdminSalvar').innerHTML = '<i class="bi bi-check-circle me-1"></i>Salvar edição';
@@ -127,7 +122,10 @@ function mapaAdminCancelarEdicao() {
     document.getElementById('mapaAdminCidade').value = '';
     document.getElementById('mapaAdminTexto').value = '';
     document.getElementById('mapaAdminIcone').value = 'bi-geo-alt-fill';
-    document.getElementById('mapaAdminFotoBase').value = '';
+    const fotoInput = document.getElementById('mapaAdminFotoInput');
+    if (fotoInput) fotoInput.value = '';
+    const fotoAtual = document.getElementById('mapaAdminFotoAtual');
+    if (fotoAtual) fotoAtual.textContent = 'Você pode adicionar agora ou editar o local depois.';
     mapaAdminAtualizarIconePreview();
     document.getElementById('btnMapaAdminSalvar').innerHTML = '<i class="bi bi-plus-circle me-1"></i>Adicionar local';
     document.getElementById('btnMapaAdminCancelar').classList.add('d-none');
@@ -136,8 +134,10 @@ function mapaAdminCancelarEdicao() {
 async function mapaAdminExcluir(id) {
     if (!confirm('Excluir este local? Ele também some do mapa em qualquer outro aparelho na próxima sincronização.')) return;
     const lista = await mapaAdminObterLista();
+    const removido = lista.find(l => l.id === id);
     const novaLista = lista.filter(l => l.id !== id);
     await mapaAdminSalvarLista(novaLista);
+    if (removido && removido.mediaId) await excluirMedia(removido.mediaId);
     if (mapaAdminEditandoId === id) mapaAdminCancelarEdicao();
     await mapaAdminRenderizarLista();
     if (typeof renderizarMapaDaRelacao === 'function') await renderizarMapaDaRelacao();
@@ -148,7 +148,7 @@ async function mapaAdminSalvar() {
     const cidadeInput = document.getElementById('mapaAdminCidade');
     const textoInput = document.getElementById('mapaAdminTexto');
     const iconeInput = document.getElementById('mapaAdminIcone');
-    const fotoBaseInput = document.getElementById('mapaAdminFotoBase');
+    const fotoInput = document.getElementById('mapaAdminFotoInput');
     const status = document.getElementById('mapaAdminStatus');
 
     const nome = nomeInput.value.trim();
@@ -160,15 +160,34 @@ async function mapaAdminSalvar() {
     }
 
     const lista = await mapaAdminObterLista();
-    const fotoBase = fotoBaseInput.value.trim() || mapaAdminGerarFotoBaseUnico(nome, lista, mapaAdminEditandoId);
+    const anterior = mapaAdminEditandoId ? lista.find(l => l.id === mapaAdminEditandoId) : null;
+    const id = mapaAdminEditandoId || gerarIdUnico('mapa_extra');
+    let mediaId = anterior?.mediaId || null;
+    const arquivo = fotoInput?.files?.[0];
+
+    if (arquivo) {
+        status.textContent = 'Comprimindo e guardando a foto...';
+        status.classList.remove('ok', 'err');
+        status.classList.add('pending');
+        const comprimida = await comprimirImagem(arquivo);
+        mediaId = `${id}_foto`;
+        const salvou = await salvarMedia({ id: mediaId, tipo: 'mapa_local_foto', blob: comprimida.blob, mimeType: comprimida.mimeType });
+        if (!salvou) {
+            status.textContent = 'Não foi possível salvar a foto. Tente novamente.';
+            status.classList.remove('ok', 'pending');
+            status.classList.add('err');
+            return;
+        }
+    }
 
     const lugar = {
-        id: mapaAdminEditandoId || gerarIdUnico('mapa_extra'),
+        id,
         nome,
         cidade: cidadeInput.value.trim(),
         texto: textoInput.value.trim(),
         icon: iconeInput.value.trim() || 'bi-geo-alt-fill',
-        fotoBase
+        mediaId,
+        fotoBase: anterior?.fotoBase || null
     };
 
     const novaLista = mapaAdminEditandoId
@@ -179,7 +198,7 @@ async function mapaAdminSalvar() {
 
     status.classList.remove('err');
     status.classList.add('ok');
-    status.textContent = `Local salvo! Agora salve a foto em assets/img/${fotoBase}.jpg (ou .jpeg/.png/.webp).`;
+    status.textContent = mediaId ? 'Local e foto salvos! A sincronização com a nuvem foi iniciada.' : 'Local salvo! Você pode adicionar uma foto ao editar.';
 
     mapaAdminCancelarEdicao();
     await mapaAdminRenderizarLista();
@@ -199,7 +218,6 @@ function iniciarPainelMapaAdmin() {
     const botaoCancelar = document.getElementById('btnMapaAdminCancelar');
     if (!nomeInput || !botaoSalvar) return;
 
-    nomeInput.addEventListener('input', mapaAdminAtualizarPreviaFotoBase);
     iconeInput.addEventListener('input', mapaAdminAtualizarIconePreview);
     botaoSalvar.addEventListener('click', mapaAdminSalvar);
     botaoCancelar.addEventListener('click', mapaAdminCancelarEdicao);

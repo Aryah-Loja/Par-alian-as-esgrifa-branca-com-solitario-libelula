@@ -1149,6 +1149,7 @@ function esconderLoadingRomance() {
  * lista o que existe na página nesse momento. */
 const HISTORIA_SECOES_NAV = [
     { id: 'secaoAniversariosHistoria', emoji: '🎂', nome: 'Seus aniversários' },
+    { id: 'secaoPrimeirasVezesHistoria', emoji: '✨', nome: 'Nossas primeiras vezes' },
     { id: 'secaoTimelineHistoria', emoji: '🌌', nome: 'Nossa linha do tempo' },
     { id: 'secaoMomentosHistoria', emoji: '🖼️', nome: 'Nossos momentos' },
     { id: 'quizWrap', emoji: '❓', nome: 'Quiz do casal' },
@@ -1359,6 +1360,7 @@ async function goToRomancePage(primeiraVez) {
     rodarIsolado(iniciarQuiz, 'quiz');
     rodarIsolado(renderizarTimeline, 'timeline/estrelas');
     rodarIsolado(() => renderizarRegistroAnualAniversarios().catch(e => console.error('Falha ao montar registro anual de aniversários:', e)), 'registro anual de aniversários');
+    rodarIsolado(() => { if (typeof iniciarPrimeirasVezes === 'function') iniciarPrimeirasVezes(); }, 'nossas primeiras vezes');
     rodarIsolado(iniciarFechamentoEstrelaModal, 'fechamento do modal da estrela');
     rodarIsolado(exibirEasterEggSobrenome, 'easter egg do sobrenome');
     rodarIsolado(renderizarCoisasQueElaAma, 'coisas que ela ama');
@@ -1817,8 +1819,10 @@ const MAPA_QUANTIDADE_PREVIA = 4;
 // a foto já foi adicionada, ou um SVG gerado na hora (data:image/svg+xml...)
 // quando ainda não existe — assim dá pra saber qual dos dois caso a caso.
 function lugarTemFotoReal(caminho) {
-    return typeof caminho === 'string' && caminho.startsWith('assets/img/');
+    return typeof caminho === 'string' && (caminho.startsWith('assets/img/') || caminho.startsWith('blob:'));
 }
+
+let mapaFotosBlobUrls = [];
 
 async function preencherGridDoMapa(grid, lugares) {
     if (!grid) return;
@@ -1829,6 +1833,12 @@ async function preencherGridDoMapa(grid, lugares) {
     // verdade e quais ainda caem no ícone.
     const fotosResolvidas = await Promise.all(lugares.map(lugar => {
         if (lugar.foto) return resolverFotoPlaceholder(lugar.foto); // lugares fixos (js/config.js)
+        if (lugar.mediaId) return obterMedia(lugar.mediaId).then(media => {
+            if (!media?.blob) return null;
+            const url = URL.createObjectURL(media.blob);
+            mapaFotosBlobUrls.push(url);
+            return url;
+        });
         if (lugar.fotoBase) return resolverFotoPorBase(lugar.fotoBase, lugar.nome); // lugares adicionados pelo painel
         return Promise.resolve(null);
     }));
@@ -1887,6 +1897,8 @@ async function renderizarMapaDaRelacao() {
     const verTodosWrap = document.getElementById('mapaVerTodosWrap');
     if (!gridPrevia || !Array.isArray(MAPA_LUGARES)) return;
 
+    mapaFotosBlobUrls.forEach(url => URL.revokeObjectURL(url));
+    mapaFotosBlobUrls = [];
     const extras = await obterLugaresExtrasDoMapa();
     // Separa o(s) card(s) marcados como "futuro" (ex.: "Próximo destino")
     // e os mantém sempre no final, para que locais novos (fixos ou

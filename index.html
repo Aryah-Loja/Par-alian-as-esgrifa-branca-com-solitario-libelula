@@ -44,9 +44,9 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=20260811135445">
+    <link rel="stylesheet" href="css/style.css?v=20260811150641">
     <!-- CSS exclusivo do sistema de Códigos Secretos (isolado, ver /secret/) -->
-    <link rel="stylesheet" href="secret/secret.css?v=20260811135445">
+    <link rel="stylesheet" href="secret/secret.css?v=20260811150641">
 
     <!-- Bibliotecas de terceiros via CDN. `defer` baixa sem travar a leitura
          do resto do HTML, mantendo a ordem de execução. -->
@@ -872,6 +872,19 @@
             <div id="registroAniversariosLista" class="registro-aniversarios-lista"></div>
         </div>
 
+        <div id="secaoPrimeirasVezesHistoria" class="mt-5 reveal-up" style="max-width: 440px; margin: 0 auto;">
+            <p class="romance-section-title"><i class="bi bi-stars me-2"></i>Nossas primeiras vezes</p>
+            <p class="primeiras-vezes-intro">Cada começo merece um lugar só dele: a primeira viagem, a primeira noite juntos, a primeira conquista e tudo que ainda vamos viver.</p>
+            <div id="primeirasVezesLista" class="primeiras-vezes-lista"></div>
+            <div id="primeirasVezesVazio" class="primeiras-vezes-vazio">
+                <i class="bi bi-camera-fill"></i>
+                <p>A próxima primeira vez pode começar por aqui.</p>
+            </div>
+            <div class="text-center mt-3">
+                <button type="button" id="btnAdicionarPrimeiraVez" class="btn btn-outline-light btn-sm rounded-pill"><i class="bi bi-plus-lg me-1"></i>Adicionar uma primeira vez</button>
+            </div>
+        </div>
+
         <div id="secaoTimelineHistoria" style="max-width: 420px; margin: 0 auto;" class="reveal-up">
             <p class="romance-section-title">Nosso céu</p>
             <p class="ceu-subtitulo">Assim como não consigo contar as estrelas, quero não conseguir contar todos os momentos bons que a gente ainda vai ter. Toque em uma pra reviver esse aqui, e que os que faltam sejam infinitos.</p>
@@ -1436,6 +1449,26 @@ Se existe uma certeza que eu tenho, é esta: enquanto eu puder, vou continuar es
         </div>
     </div>
 
+    <div id="primeirasVezesOverlay" class="carta-discussao-overlay d-none">
+        <button id="btnFecharPrimeirasVezes" class="modo-vela-fechar" aria-label="Fechar"><i class="bi bi-x-lg"></i></button>
+        <div class="carta-discussao-papel primeiras-vezes-form-papel">
+            <p class="letter-eyebrow visivel">Uma primeira vez nossa</p>
+            <p class="primeiras-vezes-form-intro">A lembrança e a foto serão sincronizadas pela nuvem para aparecerem nos outros aparelhos.</p>
+            <label class="checklist-form-label" for="primeirasVezesTituloInput">O que fizemos pela primeira vez?</label>
+            <input id="primeirasVezesTituloInput" type="text" maxlength="120" placeholder="Ex.: Nossa primeira viagem juntos">
+            <label class="checklist-form-label" for="primeirasVezesDataInput">Data</label>
+            <input id="primeirasVezesDataInput" type="date">
+            <label class="checklist-form-label" for="primeirasVezesLocalInput">Lugar (opcional)</label>
+            <input id="primeirasVezesLocalInput" type="text" maxlength="120" placeholder="Ex.: Ribeirão Preto">
+            <label class="checklist-form-label" for="primeirasVezesTextoInput">Como foi?</label>
+            <textarea id="primeirasVezesTextoInput" rows="5" maxlength="3000" placeholder="Conte um pouco dessa lembrança..."></textarea>
+            <label class="checklist-form-label" for="primeirasVezesFotoInput">Foto (opcional)</label>
+            <input id="primeirasVezesFotoInput" type="file" accept="image/*">
+            <button id="btnSalvarPrimeiraVez" type="button" class="btn btn-rosegold w-100 rounded-pill fw-bold mt-3"><i class="bi bi-cloud-arrow-up-fill me-1"></i>Guardar e sincronizar</button>
+            <p id="primeirasVezesStatus" class="save-status mt-2"></p>
+        </div>
+    </div>
+
     <!-- Modal de uma estrela: foto + texto do marco tocado — fica fora de
          #romancePage de propósito (que tem overflow:hidden e quebrava o
          position:fixed no Safari do iPhone, fazendo parecer que o toque
@@ -1465,7 +1498,7 @@ Se existe uma certeza que eu tenho, é esta: enquanto eu puder, vou continuar es
         <button id="btnFecharMapaAdicionarModal" class="modo-vela-fechar" aria-label="Fechar"><i class="bi bi-x-lg"></i></button>
         <div class="mapa-modal-caixa">
             <p class="mapa-modal-titulo"><i class="bi bi-signpost-split-fill me-2"></i>Adicionar um local novo</p>
-            <p class="small text-white-50 text-center mb-3">Fica salvo na nuvem, então aparece em qualquer aparelho que abrir o site. Depois de salvar aqui, falta só colocar a foto na pasta <code>assets/img/</code> com o nome indicado abaixo.</p>
+                <p class="small text-white-50 text-center mb-3">O local e a foto ficam salvos na nuvem e aparecem nos outros aparelhos depois da sincronização.</p>
 
             <form id="mapaFormAdicionar" class="checklist-form-adicionar" onsubmit="return false;">
                 <label class="checklist-form-label" for="mapaAdminNome">Nome do local</label>
@@ -1484,9 +1517,9 @@ Se existe uma certeza que eu tenho, é esta: enquanto eu puder, vou continuar es
                 </div>
                 <p class="small text-white-50 mt-1 mb-0">Nome do ícone em <a href="https://icons.getbootstrap.com" target="_blank" rel="noopener" class="text-rosegold">icons.getbootstrap.com</a> (ex.: bi-heart-fill, bi-cup-hot-fill, bi-tree-fill).</p>
 
-                <label class="checklist-form-label" for="mapaAdminFotoBase">Nome do arquivo da foto (gerado sozinho)</label>
-                <input type="text" id="mapaAdminFotoBase" readonly>
-                <p class="small text-white-50 mt-1 mb-0">Salve a foto em <code>assets/img/</code> com esse nome + <code>.jpg</code>, <code>.jpeg</code>, <code>.png</code> ou <code>.webp</code>.</p>
+                <label class="checklist-form-label" for="mapaAdminFotoInput">Foto do local (opcional)</label>
+                <input type="file" id="mapaAdminFotoInput" accept="image/*">
+                <p id="mapaAdminFotoAtual" class="small text-white-50 mt-1 mb-0">Você pode adicionar agora ou editar o local depois.</p>
 
                 <div class="checklist-form-botoes">
                     <button type="button" id="btnMapaAdminCancelar" class="checklist-form-btn checklist-form-btn-cancelar d-none">Cancelar edição</button>
@@ -1569,23 +1602,24 @@ Se existe uma certeza que eu tenho, é esta: enquanto eu puder, vou continuar es
     </audio>
 
     <!-- ===================== SCRIPTS DO PROJETO (ordem importa) ===================== -->
-    <script defer src="js/config.js?v=20260811135445"></script>
-    <script defer src="js/db.js?v=20260811135445"></script>
-    <script defer src="js/preservacao.js?v=20260811135445"></script>
-    <script defer src="js/utils.js?v=20260811135445"></script>
-    <script defer src="js/desktop-block.js?v=20260811135445"></script>
-    <script defer src="js/store.js?v=20260811135445"></script>
-    <script defer src="js/futuro.js?v=20260811135445"></script>
-    <script defer src="js/romance.js?v=20260811135445"></script>
-    <script defer src="js/mapa-admin.js?v=20260811135445"></script>
-    <script defer src="js/export.js?v=20260811135445"></script>
-    <script defer src="js/sync.js?v=20260811135445"></script>
-    <script defer src="js/presenca.js?v=20260811135445"></script>
-    <script defer src="js/suspense.js?v=20260811135445"></script>
-    <script defer src="js/main.js?v=20260811135445"></script>
+    <script defer src="js/config.js?v=20260811150641"></script>
+    <script defer src="js/db.js?v=20260811150641"></script>
+    <script defer src="js/preservacao.js?v=20260811150641"></script>
+    <script defer src="js/utils.js?v=20260811150641"></script>
+    <script defer src="js/desktop-block.js?v=20260811150641"></script>
+    <script defer src="js/store.js?v=20260811150641"></script>
+    <script defer src="js/futuro.js?v=20260811150641"></script>
+    <script defer src="js/romance.js?v=20260811150641"></script>
+    <script defer src="js/mapa-admin.js?v=20260811150641"></script>
+    <script defer src="js/export.js?v=20260811150641"></script>
+    <script defer src="js/sync.js?v=20260811150641"></script>
+    <script defer src="js/presenca.js?v=20260811150641"></script>
+    <script defer src="js/primeiras-vezes.js?v=20260811150641"></script>
+    <script defer src="js/suspense.js?v=20260811150641"></script>
+    <script defer src="js/main.js?v=20260811150641"></script>
 
     <!-- Sistema de Códigos Secretos: 100% isolado, não depende de nenhum
          script acima nem é usado por eles. Ver /secret/secret.js. -->
-    <script defer src="secret/secret.js?v=20260811135445"></script>
+    <script defer src="secret/secret.js?v=20260811150641"></script>
 </body>
 </html>

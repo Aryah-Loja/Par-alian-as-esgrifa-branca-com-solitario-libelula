@@ -861,6 +861,28 @@ body {
 .registro-aniversario-titulo { margin: 0 0 10px; color: #fff5e8; font: italic 600 1.35rem 'Cormorant Garamond', Georgia, serif; }
 .registro-aniversario-texto { margin: 0; color: rgba(255,255,255,0.78); font-size: 0.84rem; line-height: 1.7; white-space: pre-wrap; }
 
+/* Nossas primeiras vezes — cards criados pelos dois e sincronizados. */
+.primeiras-vezes-intro { max-width: 370px; margin: -8px auto 20px; color: rgba(255,255,255,0.62); font-size: 0.82rem; line-height: 1.6; text-align: center; }
+.primeiras-vezes-lista { display: grid; gap: 18px; }
+.primeira-vez-card { overflow: hidden; border-radius: 20px; background: linear-gradient(155deg, rgba(183,110,121,0.14), rgba(255,255,255,0.05)); border: 1px solid rgba(183,110,121,0.34); box-shadow: 0 12px 30px rgba(0,0,0,0.2); }
+.primeira-vez-foto { width: 100%; aspect-ratio: 4 / 3; display: block; object-fit: cover; background: rgba(255,255,255,0.05); }
+.primeira-vez-conteudo { padding: 18px 18px 20px; }
+.primeira-vez-topo { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+.primeira-vez-data { color: var(--gold); font: 500 0.68rem 'Jost', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; }
+.primeira-vez-excluir { width: 34px; height: 34px; flex: none; border: 0; border-radius: 50%; background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.55); }
+.primeira-vez-excluir:active { color: #fff; background: rgba(183,110,121,0.25); }
+.primeira-vez-titulo { color: #fff5f1; font: italic 600 1.38rem 'Cormorant Garamond', Georgia, serif; margin: 0 0 7px; }
+.primeira-vez-local { color: var(--rosegold); font-size: 0.76rem; margin: 0 0 9px; }
+.primeira-vez-texto { color: rgba(255,255,255,0.76); font-size: 0.84rem; line-height: 1.65; white-space: pre-wrap; margin: 0; }
+.primeiras-vezes-vazio { display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 24px 16px; border: 1px dashed rgba(216,185,120,0.28); border-radius: 16px; color: rgba(255,255,255,0.55); text-align: center; }
+.primeiras-vezes-vazio i { color: var(--gold); font-size: 1.7rem; }
+.primeiras-vezes-vazio p { max-width: 280px; margin: 0; font-size: 0.84rem; }
+.primeiras-vezes-form-papel { max-width: 440px; }
+.primeiras-vezes-form-intro { color: rgba(43,37,35,0.62); font-size: 0.82rem; line-height: 1.5; text-align: center; margin-bottom: 18px; }
+.primeiras-vezes-form-papel input, .primeiras-vezes-form-papel textarea { width: 100%; border: 1px solid rgba(43,37,35,0.22); border-radius: 10px; background: rgba(255,255,255,0.52); color: #2b2523; padding: 11px 12px; font-family: 'Jost', sans-serif; font-size: 0.88rem; outline: none; }
+.primeiras-vezes-form-papel input:focus, .primeiras-vezes-form-papel textarea:focus { border-color: var(--rosegold); box-shadow: 0 0 0 3px rgba(183,110,121,0.12); }
+.primeiras-vezes-form-papel input[type="file"] { font-size: 0.78rem; }
+
 /* Vídeo dentro do bloco de aniversário (mesmo espírito visual do
    momento-lento-container, mas com controles visíveis, já que aqui o
    áudio do próprio vídeo importa). */
