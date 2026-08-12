@@ -47,6 +47,16 @@ async function renderizarPrimeirasVezes() {
                 img.className = 'primeira-vez-foto';
                 img.src = url;
                 img.alt = registro.titulo || 'Uma das nossas primeiras vezes';
+                img.tabIndex = 0;
+                img.setAttribute('role', 'button');
+                img.setAttribute('aria-label', `Abrir foto: ${img.alt}`);
+                img.addEventListener('click', () => abrirFotoPrimeiraVez(url, img.alt));
+                img.addEventListener('keydown', evt => {
+                    if (evt.key === 'Enter' || evt.key === ' ') {
+                        evt.preventDefault();
+                        abrirFotoPrimeiraVez(url, img.alt);
+                    }
+                });
                 card.appendChild(img);
             }
         }
@@ -88,6 +98,30 @@ async function renderizarPrimeirasVezes() {
         card.appendChild(conteudo);
         listaEl.appendChild(card);
     }
+}
+
+function abrirFotoPrimeiraVez(url, legenda) {
+    const lightbox = document.getElementById('primeiraVezFotoLightbox');
+    const imagem = document.getElementById('primeiraVezFotoAmpliada');
+    const texto = document.getElementById('primeiraVezFotoLegenda');
+    if (!lightbox || !imagem || !texto || !url) return;
+    imagem.src = url;
+    imagem.alt = legenda || 'Foto ampliada de uma primeira vez';
+    texto.textContent = legenda || '';
+    texto.classList.toggle('d-none', !legenda);
+    lightbox.classList.remove('d-none');
+    bloquearScrollFundoLembranca();
+    document.getElementById('btnFecharPrimeiraVezFoto')?.focus();
+}
+
+function fecharFotoPrimeiraVez() {
+    const lightbox = document.getElementById('primeiraVezFotoLightbox');
+    const imagem = document.getElementById('primeiraVezFotoAmpliada');
+    if (!lightbox || lightbox.classList.contains('d-none')) return;
+    lightbox.classList.add('d-none');
+    if (imagem) imagem.src = '';
+    desbloquearScrollFundoLembranca();
+    forcarRecalculoDeLayout();
 }
 
 function formatarDataPrimeiraVez(valor) {
@@ -191,12 +225,19 @@ function iniciarPrimeirasVezes() {
     const fechar = document.getElementById('btnFecharPrimeirasVezes');
     const salvar = document.getElementById('btnSalvarPrimeiraVez');
     const overlay = document.getElementById('primeirasVezesOverlay');
+    const fotoLightbox = document.getElementById('primeiraVezFotoLightbox');
+    const fecharFoto = document.getElementById('btnFecharPrimeiraVezFoto');
     if (!abrir || abrir.dataset.iniciado) return;
     abrir.dataset.iniciado = '1';
     abrir.addEventListener('click', abrirPrimeirasVezesFormulario);
     fechar?.addEventListener('click', fecharPrimeirasVezesFormulario);
     salvar?.addEventListener('click', salvarPrimeiraVez);
     overlay?.addEventListener('click', evt => { if (evt.target === overlay) fecharPrimeirasVezesFormulario(); });
+    fecharFoto?.addEventListener('click', fecharFotoPrimeiraVez);
+    fotoLightbox?.addEventListener('click', evt => { if (evt.target === fotoLightbox) fecharFotoPrimeiraVez(); });
+    document.addEventListener('keydown', evt => {
+        if (evt.key === 'Escape' && !fotoLightbox?.classList.contains('d-none')) fecharFotoPrimeiraVez();
+    });
     renderizarPrimeirasVezes();
 }
 

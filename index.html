@@ -44,9 +44,9 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=20260811160940">
+    <link rel="stylesheet" href="css/style.css?v=20260811162106">
     <!-- CSS exclusivo do sistema de Códigos Secretos (isolado, ver /secret/) -->
-    <link rel="stylesheet" href="secret/secret.css?v=20260811160940">
+    <link rel="stylesheet" href="secret/secret.css?v=20260811162106">
 
     <!-- Bibliotecas de terceiros via CDN. `defer` baixa sem travar a leitura
          do resto do HTML, mantendo a ordem de execução. -->
@@ -1473,6 +1473,14 @@ Se existe uma certeza que eu tenho, é esta: enquanto eu puder, vou continuar es
          #romancePage de propósito (que tem overflow:hidden e quebrava o
          position:fixed no Safari do iPhone, fazendo parecer que o toque
          não fazia nada) -->
+    <!-- Foto ampliada de "Nossas primeiras vezes". Mantida diretamente no
+         body para o position:fixed continuar correto no Safari do iPhone. -->
+    <div id="primeiraVezFotoLightbox" class="primeira-vez-lightbox d-none" role="dialog" aria-modal="true" aria-label="Foto ampliada de uma primeira vez">
+        <button id="btnFecharPrimeiraVezFoto" class="primeira-vez-lightbox-fechar" type="button" aria-label="Fechar foto"><i class="bi bi-x-lg"></i></button>
+        <img id="primeiraVezFotoAmpliada" src="" alt="Foto ampliada">
+        <p id="primeiraVezFotoLegenda" class="primeira-vez-lightbox-legenda"></p>
+    </div>
+
     <div id="estrelaModalOverlay" class="carta-discussao-overlay d-none">
         <button id="btnFecharEstrelaModal" class="modo-vela-fechar" aria-label="Fechar"><i class="bi bi-x-lg"></i></button>
         <button id="btnEstrelaAnterior" class="lightbox-nav-btn lightbox-nav-prev d-none" aria-label="Data anterior"><i class="bi bi-chevron-left"></i></button>
@@ -1602,24 +1610,24 @@ Se existe uma certeza que eu tenho, é esta: enquanto eu puder, vou continuar es
     </audio>
 
     <!-- ===================== SCRIPTS DO PROJETO (ordem importa) ===================== -->
-    <script defer src="js/config.js?v=20260811160940"></script>
-    <script defer src="js/db.js?v=20260811160940"></script>
-    <script defer src="js/preservacao.js?v=20260811160940"></script>
-    <script defer src="js/utils.js?v=20260811160940"></script>
-    <script defer src="js/desktop-block.js?v=20260811160940"></script>
-    <script defer src="js/store.js?v=20260811160940"></script>
-    <script defer src="js/futuro.js?v=20260811160940"></script>
-    <script defer src="js/romance.js?v=20260811160940"></script>
-    <script defer src="js/mapa-admin.js?v=20260811160940"></script>
-    <script defer src="js/export.js?v=20260811160940"></script>
-    <script defer src="js/sync.js?v=20260811160940"></script>
-    <script defer src="js/presenca.js?v=20260811160940"></script>
-    <script defer src="js/primeiras-vezes.js?v=20260811160940"></script>
-    <script defer src="js/suspense.js?v=20260811160940"></script>
-    <script defer src="js/main.js?v=20260811160940"></script>
+    <script defer src="js/config.js?v=20260811162106"></script>
+    <script defer src="js/db.js?v=20260811162106"></script>
+    <script defer src="js/preservacao.js?v=20260811162106"></script>
+    <script defer src="js/utils.js?v=20260811162106"></script>
+    <script defer src="js/desktop-block.js?v=20260811162106"></script>
+    <script defer src="js/store.js?v=20260811162106"></script>
+    <script defer src="js/futuro.js?v=20260811162106"></script>
+    <script defer src="js/romance.js?v=20260811162106"></script>
+    <script defer src="js/mapa-admin.js?v=20260811162106"></script>
+    <script defer src="js/export.js?v=20260811162106"></script>
+    <script defer src="js/sync.js?v=20260811162106"></script>
+    <script defer src="js/presenca.js?v=20260811162106"></script>
+    <script defer src="js/primeiras-vezes.js?v=20260811162106"></script>
+    <script defer src="js/suspense.js?v=20260811162106"></script>
+    <script defer src="js/main.js?v=20260811162106"></script>
 
     <!-- Sistema de Códigos Secretos: 100% isolado, não depende de nenhum
          script acima nem é usado por eles. Ver /secret/secret.js. -->
-    <script defer src="secret/secret.js?v=20260811160940"></script>
+    <script defer src="secret/secret.js?v=20260811162106"></script>
 </body>
 </html>

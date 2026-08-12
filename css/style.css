@@ -865,7 +865,29 @@ body {
 .primeiras-vezes-intro { max-width: 370px; margin: -8px auto 20px; color: rgba(255,255,255,0.62); font-size: 0.82rem; line-height: 1.6; text-align: center; }
 .primeiras-vezes-lista { display: grid; gap: 18px; }
 .primeira-vez-card { overflow: hidden; border-radius: 20px; background: linear-gradient(155deg, rgba(183,110,121,0.14), rgba(255,255,255,0.05)); border: 1px solid rgba(183,110,121,0.34); box-shadow: 0 12px 30px rgba(0,0,0,0.2); }
-.primeira-vez-foto { width: 100%; aspect-ratio: 4 / 3; display: block; object-fit: cover; background: rgba(255,255,255,0.05); }
+.primeira-vez-foto { width: 100%; aspect-ratio: 4 / 3; display: block; object-fit: cover; background: rgba(255,255,255,0.05); cursor: zoom-in; transition: filter .25s ease, transform .35s var(--ease-premium); }
+.primeira-vez-foto:hover { filter: brightness(1.06); transform: scale(1.015); }
+.primeira-vez-foto:focus-visible { outline-offset: -5px; }
+.primeira-vez-lightbox {
+    position: fixed; inset: 0; z-index: 12500; padding: 70px 20px 34px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: rgba(12, 7, 9, .96); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    overscroll-behavior: contain;
+}
+.primeira-vez-lightbox img {
+    display: block; max-width: min(100%, 980px); max-height: calc(100dvh - 150px);
+    width: auto; height: auto; object-fit: contain; border-radius: 14px;
+    box-shadow: 0 28px 85px rgba(0,0,0,.55);
+}
+.primeira-vez-lightbox-fechar {
+    position: absolute; top: max(18px, env(safe-area-inset-top)); right: max(18px, env(safe-area-inset-right));
+    width: 46px; height: 46px; border: 1px solid rgba(255,255,255,.2); border-radius: 50%;
+    display: grid; place-items: center; background: rgba(255,255,255,.08); color: #fff; font-size: 1.15rem;
+}
+.primeira-vez-lightbox-legenda {
+    max-width: 720px; margin: 16px auto 0; color: rgba(255,248,238,.78);
+    font: italic 1rem 'Cormorant Garamond', Georgia, serif; text-align: center;
+}
 .primeira-vez-conteudo { padding: 18px 18px 20px; }
 .primeira-vez-topo { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
 .primeira-vez-data { color: var(--gold); font: 500 0.68rem 'Jost', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; }
@@ -1942,3 +1964,334 @@ html.checklist-html { background-color: #1c1014; }
 }
 .mural-vazio-icone { font-size: 1.6rem; color: var(--rosegold); }
 .mural-vazio-texto { font-size: 0.85rem; margin: 0; max-width: 280px; line-height: 1.5; color: rgba(43,37,35,0.6); text-align: center; }
+
+/* ============================================================================
+   NOVA DIRECAO VISUAL 2026
+   A loja funciona como uma joalheria editorial; Nossa Historia, como um
+   arquivo afetivo vivo. Esta camada preserva toda a estrutura e os IDs usados
+   pelo JavaScript, alterando apenas apresentacao, ritmo e responsividade.
+   ============================================================================ */
+:root {
+    --aurora-ink: #261a1d;
+    --aurora-wine: #45252d;
+    --aurora-rose: #a65d69;
+    --aurora-rose-soft: #d8a7aa;
+    --aurora-champagne: #d9be82;
+    --aurora-paper: #fbf7ef;
+    --aurora-paper-deep: #eee4d5;
+    --aurora-sage: #65705c;
+    --aurora-line: rgba(84, 52, 57, 0.14);
+    --aurora-shadow: 0 24px 70px rgba(49, 28, 33, 0.14);
+}
+
+html { scroll-padding-top: 86px; }
+body { background: var(--aurora-paper); color: var(--aurora-ink); }
+button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+button, .btn, a { touch-action: manipulation; }
+:focus-visible { outline: 3px solid rgba(217,190,130,.8) !important; outline-offset: 3px; }
+
+/* Loja: luxo sereno, com bastante respiro e hierarquia editorial. */
+#lojaScreen {
+    min-height: 100vh;
+    background:
+        radial-gradient(circle at 90% 4%, rgba(216,167,170,.22), transparent 24rem),
+        linear-gradient(180deg, #fffdf9 0%, #f6efe5 100%);
+}
+#lojaScreen > .bg-dark {
+    background: var(--aurora-ink) !important;
+    color: #f5e9d2 !important;
+    padding: 9px 16px !important;
+    font-size: .67rem !important;
+    font-weight: 500 !important;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+}
+#lojaScreen .navbar {
+    min-height: 72px;
+    padding: 0 5vw !important;
+    background: rgba(255,253,249,.9) !important;
+    border-bottom: 1px solid rgba(84,52,57,.08);
+    box-shadow: 0 10px 35px rgba(51,31,35,.06) !important;
+    backdrop-filter: blur(18px) saturate(130%);
+    -webkit-backdrop-filter: blur(18px) saturate(130%);
+}
+#lojaScreen .navbar-brand {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    color: var(--aurora-wine) !important;
+    font-size: 1.5rem;
+    font-weight: 600 !important;
+    letter-spacing: .22em;
+}
+#lojaScreen .navbar i { color: var(--aurora-wine) !important; }
+.promo-carousel {
+    width: min(100% - 24px, 1180px);
+    min-height: 310px;
+    margin: 18px auto 0;
+    border-radius: 28px;
+    overflow: hidden;
+    box-shadow: var(--aurora-shadow);
+    background: var(--aurora-wine);
+}
+.promo-slide {
+    min-height: 310px;
+    padding: 58px clamp(28px, 7vw, 90px) 70px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    text-align: left;
+    isolation: isolate;
+}
+.promo-slide::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+        radial-gradient(circle at 82% 30%, rgba(217,190,130,.28), transparent 22%),
+        linear-gradient(110deg, rgba(25,13,17,.3), rgba(69,37,45,.72));
+}
+.promo-eyebrow { letter-spacing: .25em; font-size: .7rem; color: #eedaa9; }
+.promo-title {
+    max-width: 650px;
+    margin: 8px 0 10px;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: clamp(2.25rem, 6vw, 4.4rem);
+    font-weight: 500;
+    line-height: .95;
+    text-wrap: balance;
+}
+.promo-sub { max-width: 560px; color: rgba(255,255,255,.78); font-size: .95rem; }
+.carousel-indicators-custom { bottom: 25px; justify-content: flex-start; left: clamp(28px, 7vw, 90px); right: auto; }
+.carousel-indicators-custom button { width: 28px; height: 3px; border-radius: 999px; }
+
+#lojaScreen > .container-fluid {
+    width: min(100% - 24px, 1180px);
+    margin: 0 auto 80px !important;
+    padding: 26px clamp(16px, 4vw, 52px) 50px !important;
+    background: rgba(255,253,249,.78);
+    border: 1px solid var(--aurora-line);
+    border-radius: 0 0 30px 30px;
+    box-shadow: 0 25px 75px rgba(62,35,41,.08);
+}
+#lojaScreen .breadcrumb { letter-spacing: .04em; }
+.featured-ribbon { border-radius: 999px; padding: 7px 13px; letter-spacing: .06em; }
+.product-image-container {
+    overflow: hidden;
+    border-radius: 24px;
+    background: #f0e9df;
+    box-shadow: none;
+}
+.product-image-container img { max-height: 660px; min-height: 330px; border-radius: 24px !important; }
+.thumb-strip { gap: 10px; margin: 15px 0 22px; }
+.thumb-item { width: 68px; height: 68px; border-radius: 14px; overflow: hidden; border-color: transparent; background: #eee5d9; }
+.thumb-item.active { border-color: var(--aurora-rose); box-shadow: 0 0 0 3px rgba(166,93,105,.12); }
+#lojaScreen h1, #lojaScreen h2, #lojaScreen h3, #lojaScreen h4, #lojaScreen h5 { font-family: 'Cormorant Garamond', Georgia, serif; }
+#lojaScreen h1.fs-4 { font-size: clamp(1.65rem, 4vw, 2.35rem) !important; font-weight: 600 !important; }
+#lojaScreen h2.fs-1 { font-size: clamp(2.3rem, 6vw, 3.3rem) !important; font-weight: 600 !important; }
+.trust-badges { border-color: var(--aurora-line) !important; color: #5e4b4f; gap: 10px; }
+.trust-badges > div { flex: 1; }
+.btn-rosegold, #lojaScreen .btn-dark {
+    min-height: 48px;
+    border: 1px solid var(--aurora-wine) !important;
+    border-radius: 999px !important;
+    background: var(--aurora-wine) !important;
+    color: #fffaf1 !important;
+    box-shadow: 0 12px 28px rgba(69,37,45,.2);
+    letter-spacing: .02em;
+}
+.btn-rosegold:hover, #lojaScreen .btn-dark:hover { transform: translateY(-2px); background: #57313a !important; }
+#lojaScreen input, #lojaScreen select, #lojaScreen textarea {
+    min-height: 48px;
+    border-color: rgba(84,52,57,.2);
+    border-radius: 13px;
+    background-color: rgba(255,255,255,.72);
+}
+#lojaScreen .card { border: 1px solid var(--aurora-line) !important; border-radius: 20px !important; box-shadow: 0 12px 38px rgba(55,34,38,.07) !important; }
+#lojaScreen footer { background: var(--aurora-ink) !important; color: rgba(255,255,255,.72); }
+
+/* Nossa Historia: um arquivo afetivo, noturno e acolhedor. */
+.romance-page {
+    padding: clamp(70px, 9vw, 116px) max(18px, env(safe-area-inset-left)) calc(100px + env(safe-area-inset-bottom));
+    background:
+        radial-gradient(circle at 8% 4%, rgba(166,93,105,.2), transparent 28rem),
+        radial-gradient(circle at 94% 35%, rgba(217,190,130,.12), transparent 25rem),
+        linear-gradient(180deg, #211419 0%, #321c23 42%, #1c1115 100%);
+}
+.romance-page::before, .romance-page::after { filter: blur(120px); opacity: .12; }
+.romance-page > .text-center.mb-4 {
+    min-height: min(70vh, 680px);
+    max-width: 760px;
+    margin: 0 auto 28px !important;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+.romance-title {
+    font-family: 'Alex Brush', cursive;
+    font-size: clamp(4.5rem, 18vw, 8.5rem);
+    font-weight: 400;
+    line-height: .8;
+    color: #fff8ed;
+    text-shadow: 0 14px 40px rgba(0,0,0,.28);
+}
+.romance-divider { width: 90px; margin: 28px auto; background: linear-gradient(90deg, transparent, var(--aurora-champagne), transparent); }
+.romance-date-badge { color: #dfc98f; letter-spacing: .16em; text-transform: uppercase; font-size: .82rem; }
+.counter-badge { border-color: rgba(217,190,130,.24); background: rgba(255,255,255,.045); }
+.live-counter-wrap {
+    width: min(100%, 650px);
+    padding: 20px;
+    border: 1px solid rgba(217,190,130,.18);
+    border-radius: 24px;
+    background: rgba(19,10,13,.24);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+.live-counter-grid { gap: 7px; }
+.lc-unit { min-width: 0; padding: 10px 4px; border-radius: 12px; background: rgba(255,255,255,.035); }
+.lc-num { font-family: 'Cormorant Garamond', Georgia, serif; color: #fff5e6; font-size: clamp(1.25rem, 4vw, 1.75rem); }
+
+.romance-page > .mt-5, .romance-page > [id^="secao"], .romance-page > #quizWrap,
+.romance-page > #regrasSelecaoWrap, .romance-page > #contratoWrap,
+.romance-page > #contratoSeladoWrap, .romance-page > #capsulaTempoWrap,
+.romance-page > #previsoesWrap, .romance-page > #termometroWrap,
+.romance-page > #cartasCondicionaisWrap, .romance-page > #romanceVideoWrap,
+.romance-page > #videoProcessoWrap, .romance-page > #momentoLentoWrap,
+.romance-page > #romanceSignatureWrap {
+    width: min(100%, 760px) !important;
+    max-width: 760px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    margin-top: clamp(72px, 11vw, 124px) !important;
+}
+.romance-section-title {
+    margin-bottom: 24px;
+    padding-top: 42px;
+    font-size: clamp(1.9rem, 6vw, 2.8rem);
+    font-weight: 500;
+    line-height: 1.05;
+    color: #fff7eb;
+    letter-spacing: -.01em;
+    text-wrap: balance;
+}
+.romance-section-title::before { width: 1px; height: 26px; left: 50%; top: 0; background: linear-gradient(transparent, var(--aurora-champagne)); }
+.romance-section-title::after { content: '✦'; top: 22px; color: var(--aurora-champagne); font-size: .65rem; }
+.romance-page .text-white-50, .romance-page .ceu-subtitulo,
+.registro-aniversario-intro, .primeiras-vezes-intro { color: rgba(245,231,220,.66) !important; line-height: 1.75; }
+
+.aniversario-card, .registro-aniversario-card, .primeira-vez-card,
+.playlist-card, .quiz-card, .contract-box, .capsula-bloqueada,
+.previsoes-card, .termometro-historico, .mural-cta-card,
+.checklist-resumo-card, .mensagens-futuro-vazio {
+    border: 1px solid rgba(217,190,130,.18) !important;
+    border-radius: 24px !important;
+    background: linear-gradient(145deg, rgba(255,250,242,.09), rgba(255,255,255,.035)) !important;
+    box-shadow: 0 24px 65px rgba(7,3,5,.2) !important;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+}
+.registro-aniversario-card, .primeira-vez-card { overflow: hidden; }
+.registro-aniversario-card img, .primeira-vez-card img { aspect-ratio: 4 / 3; object-fit: cover; }
+.ceu-estrelado { min-height: 520px; border-radius: 30px; border: 1px solid rgba(217,190,130,.2); box-shadow: 0 35px 90px rgba(0,0,0,.32); overflow: hidden; }
+.table-gallery { width: min(100%, 680px); margin-inline: auto; gap: 18px; }
+.table-photo { border-radius: 5px; padding: 10px 10px 34px; box-shadow: 0 22px 50px rgba(0,0,0,.3); }
+.table-photo img { min-height: 170px; max-height: 360px; object-fit: cover; }
+.romance-video-wrap video, .momento-lento-container, .galeria-youtube-wrap { border-radius: 24px !important; border: 1px solid rgba(217,190,130,.25) !important; overflow: hidden; }
+.btn-share, .romance-page .btn-outline-light, .romance-page .btn-rosegold {
+    min-height: 46px;
+    padding: 10px 20px;
+    border-radius: 999px !important;
+    border-color: rgba(217,190,130,.42) !important;
+}
+.romance-page .btn-rosegold { background: linear-gradient(135deg, #a65d69, #77404a) !important; }
+.mural-cta-card { padding: 22px; text-align: left; }
+.sentimentos-texto {
+    padding: clamp(28px, 7vw, 54px);
+    border-radius: 4px 28px 28px 4px;
+    background: linear-gradient(90deg, rgba(217,190,130,.08) 0 2px, rgba(255,250,240,.94) 2px);
+    color: #443238;
+    box-shadow: 0 30px 80px rgba(0,0,0,.28);
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: clamp(1.1rem, 3.3vw, 1.3rem);
+    line-height: 1.8;
+    text-align: left;
+}
+.historia-nav-botao, .checklist-nav-botao { background: var(--aurora-champagne); color: var(--aurora-ink); border-color: rgba(255,255,255,.3); }
+.historia-nav-menu, .checklist-nav-menu { background: rgba(31,18,23,.94); border-color: rgba(217,190,130,.28); border-radius: 20px; }
+
+/* Galeria e checklist: paginas-irmas do mesmo arquivo de memorias. */
+.galeria-body {
+    background:
+        radial-gradient(circle at 90% 4%, rgba(166,93,105,.2), transparent 26rem),
+        linear-gradient(180deg, #211419 0%, #321c23 55%, #1d1216 100%);
+}
+.galeria-header { padding: clamp(88px, 12vw, 138px) 24px 46px; }
+.galeria-header::after { content: ''; display: block; width: 90px; height: 1px; margin: 28px auto 0; background: linear-gradient(90deg, transparent, var(--aurora-champagne), transparent); }
+.galeria-header .voltar-link { top: 24px; left: max(20px, calc((100vw - 1180px)/2)); min-height: 44px; padding: 10px 14px; border: 1px solid rgba(217,190,130,.2); border-radius: 999px; color: rgba(255,248,238,.75); }
+.galeria-eyebrow { color: var(--aurora-champagne); letter-spacing: .28em; }
+.galeria-titulo { font-size: clamp(4rem, 13vw, 7.5rem); color: #fff7eb; text-shadow: 0 18px 40px rgba(0,0,0,.24); }
+.galeria-sub { max-width: 560px; font-size: clamp(1rem, 3vw, 1.2rem); line-height: 1.65; }
+.galeria-wrap { max-width: 1180px; padding: 0 clamp(16px, 4vw, 40px) 100px; }
+.galeria-masonry { gap: clamp(14px, 2.5vw, 28px); }
+.galeria-item { margin-bottom: clamp(14px, 2.5vw, 28px); padding: 10px 10px 34px; border-radius: 5px; box-shadow: 0 20px 55px rgba(0,0,0,.3); }
+.galeria-item img, .galeria-item video { border-radius: 2px; }
+.galeria-item .galeria-legenda { color: #514147; font-size: .78rem; }
+.galeria-lightbox { background: rgba(16,8,11,.96); backdrop-filter: blur(12px); }
+.galeria-lightbox img, .galeria-lightbox video { border-radius: 14px; }
+
+.checklist-wrap { max-width: 850px; padding: 0 clamp(16px, 4vw, 36px) 100px; }
+.checklist-progresso-card { padding: clamp(22px, 5vw, 34px); border-radius: 24px; border-color: rgba(217,190,130,.2); background: rgba(255,255,255,.06); }
+.checklist-progresso-barra-fundo { height: 6px; }
+.checklist-progresso-barra-preenchida { background: linear-gradient(90deg, var(--aurora-rose), var(--aurora-champagne)); }
+.checklist-categoria { margin-bottom: 42px; }
+.checklist-categoria-header { margin-bottom: 14px; padding-bottom: 12px; border-color: rgba(217,190,130,.2); }
+.checklist-categoria-titulo { font-size: clamp(1.35rem, 4vw, 1.7rem); color: #fff5e8; }
+.checklist-categoria-itens { gap: 9px; }
+.checklist-item { min-height: 56px; padding: 13px 14px; border-radius: 16px; background: rgba(255,255,255,.035); border: 1px solid rgba(255,255,255,.05); }
+.checklist-item:hover { background: rgba(255,255,255,.07); }
+.checklist-item-check { width: 28px; height: 28px; flex: 0 0 28px; border-color: rgba(217,190,130,.36); }
+
+/* Telas e modais acompanham o mesmo material visual sem comprometer scroll. */
+.maintenance-overlay, .cupom-overlay, .modal-overlay, .carta-discussao-overlay,
+.modal-mapa-overlay, .modal-primeira-vez-overlay {
+    background: rgba(24,13,17,.82) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+.maintenance-box, .cupom-box, .modal-box, .modal-mapa-box,
+.modal-primeira-vez-box, .checklist-modal-caixa {
+    border-radius: 24px !important;
+    border: 1px solid rgba(217,190,130,.2) !important;
+    box-shadow: 0 32px 90px rgba(0,0,0,.35) !important;
+}
+
+@media (min-width: 768px) {
+    #lojaScreen > .container-fluid { max-width: 880px; }
+    .romance-page > #secaoMomentosHistoria { max-width: 920px !important; }
+    .table-gallery { grid-template-columns: repeat(4, 1fr); }
+    .galeria-masonry { align-items: flex-start; }
+}
+
+@media (max-width: 767.98px) {
+    #lojaScreen .navbar { min-height: 62px; padding: 0 16px !important; }
+    #lojaScreen .navbar-brand { font-size: 1.18rem; }
+    #lojaScreen .navbar .d-flex { gap: 12px !important; }
+    .promo-carousel { min-height: 360px; border-radius: 22px; }
+    .promo-slide { min-height: 360px; padding: 50px 26px 70px; }
+    .promo-title { font-size: clamp(2.15rem, 13vw, 3.25rem); }
+    #lojaScreen > .container-fluid { border-radius: 0 0 22px 22px; padding-inline: 12px !important; }
+    .trust-badges { display: grid !important; grid-template-columns: 1fr 1fr; row-gap: 18px; }
+    .romance-page > .text-center.mb-4 { min-height: 72vh; }
+    .live-counter-wrap { padding: 12px 8px; }
+    .live-counter-grid { grid-template-columns: repeat(3, 1fr); }
+    .ceu-estrelado { min-height: 430px; border-radius: 22px; }
+    .table-gallery { gap: 12px; }
+    .galeria-item:hover { transform: translateY(0) rotate(var(--tilt, 0deg)); }
+    .galeria-lightbox-nav { top: auto; bottom: 22px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto !important; }
+    *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
