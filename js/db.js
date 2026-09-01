@@ -175,28 +175,80 @@ async function marcarAtualizacaoLocal(imediato = false) {
     if (typeof agendarEnvioNuvem === 'function') agendarEnvioNuvem(imediato);
 }
 
-// Salva um item de mídia e relê do banco para confirmar a integridade.
+async function hashBlobParaIntegridade(blob) {
+    if (!(blob instanceof Blob)) return null;
+    const bytes = await blob.arrayBuffer();
+    const cryptoDisponivel = typeof globalThis !== 'undefined' && globalThis.crypto && globalThis.crypto.subtle;
+    if (cryptoDisponivel) {
+        const hash = await globalThis.crypto.subtle.digest('SHA-256', bytes);
+        return [...new Uint8Array(hash)].map(byte => byte.toString(16).padStart(2, '0')).join('');
+    }
+
+    // Compatibilidade defensiva com navegadores muito antigos: ainda compara
+    // todos os bytes, sem considerar apenas o tamanho do arquivo.
+    return [...new Uint8Array(bytes)].map(byte => byte.toString(16).padStart(2, '0')).join('');
+}
+
+async function conteudoMediaIgual(a, b) {
+    const blobA = a && a.blob instanceof Blob ? a.blob : null;
+    const blobB = b && b.blob instanceof Blob ? b.blob : null;
+    if (blobA || blobB) {
+        if (!blobA || !blobB || blobA.size !== blobB.size) return false;
+        return (await hashBlobParaIntegridade(blobA)) === (await hashBlobParaIntegridade(blobB));
+    }
+    const temTextoA = a && typeof a.texto === 'string';
+    const temTextoB = b && typeof b.texto === 'string';
+    if (temTextoA || temTextoB) return temTextoA && temTextoB && a.texto === b.texto;
+    return true;
+}
+
+// Salva um item de mídia e relê do banco para confirmar byte a byte. Quando
+// um id já existe com outro conteúdo, a versão anterior é mantida como um
+// registro alternativo na mesma transação: uma nova gravação nunca destrói a
+// anterior antes de o backup remoto também poder preservá-la.
 // Sincroniza imediatamente (sem agrupar), já que mídia é uma ação rara.
 async function salvarMedia(registro) {
     if (!registro || !registro.id) throw new Error('salvarMedia requer um id');
-    registro.criadoEm = registro.criadoEm || Date.now();
-    registro.atualizadoEm = Date.now();
+    const paraSalvar = Object.assign({}, registro, {
+        criadoEm: registro.criadoEm || Date.now(),
+        atualizadoEm: Date.now()
+    });
 
     try {
-        await db.media.put(registro);
+        await db.transaction('rw', db.media, async () => {
+            const existente = await db.media.get(paraSalvar.id);
+            const conteudoIgual = existente
+                ? await Dexie.waitFor(conteudoMediaIgual(existente, paraSalvar))
+                : false;
+            if (existente && existente.tipo !== 'diagnostico' && !conteudoIgual) {
+                const hashAnterior = existente.blob instanceof Blob
+                    ? (await Dexie.waitFor(hashBlobParaIntegridade(existente.blob))).slice(0, 16)
+                    : String(existente.texto || '').length.toString(36);
+                const sufixo = `${existente.atualizadoEm || existente.criadoEm || Date.now()}_${hashAnterior}`;
+                let idPreservado = `${paraSalvar.id}__preservado_${sufixo}`;
+                let contador = 1;
+                while (await db.media.get(idPreservado)) idPreservado = `${paraSalvar.id}__preservado_${sufixo}_${contador++}`;
+                await db.media.put(Object.assign({}, existente, {
+                    id: idPreservado,
+                    idOriginal: existente.idOriginal || paraSalvar.id,
+                    preservadoEm: Date.now()
+                }));
+            }
+            await db.media.put(paraSalvar);
+        });
     } catch (err) {
-        console.error(`Falha ao salvar mídia "${registro.id}" no IndexedDB:`, err);
+        console.error(`Falha ao salvar mídia "${paraSalvar.id}" no IndexedDB:`, err);
         return false;
     }
 
     try {
-        const confere = await db.media.get(registro.id);
+        const confere = await db.media.get(paraSalvar.id);
         if (!confere) return false;
-        if (registro.blob && (!confere.blob || confere.blob.size !== registro.blob.size)) return false;
+        if (!(await conteudoMediaIgual(paraSalvar, confere))) return false;
         await marcarAtualizacaoLocal(true);
         return true;
     } catch (err) {
-        console.error(`Falha ao confirmar mídia "${registro.id}":`, err);
+        console.error(`Falha ao confirmar mídia "${paraSalvar.id}":`, err);
         return false;
     }
 }

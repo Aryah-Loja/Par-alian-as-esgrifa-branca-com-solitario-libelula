@@ -173,6 +173,23 @@ teste('partes do backup ficam abaixo do limite recomendado para upload padrão',
     assert.ok(Number(correspondencia[1]) < 6, 'parte deve ter menos de 6 MB');
 });
 
+teste('automação diária falha em HTTP ruim e valida uma geração real', () => {
+    const workflow = fs.readFileSync(path.join(raiz, '.github/workflows/manter-supabase-ativo.yml'), 'utf8');
+    assert.ok(workflow.includes('--fail-with-body'), 'curl precisa falhar em HTTP 4xx/5xx');
+    assert.ok(workflow.includes('geracaoAtual') && workflow.includes('revisao'), 'workflow precisa validar o meta do backup');
+    assert.equal(workflow.includes('SUPABASE_ANON_KEY'), false, 'chave pública duplicada não é necessária no keepalive');
+});
+
+teste('páginas móveis permitem zoom e evitam carregar o áudio grande antes da hora', () => {
+    for (const html of ['index.html', 'checklist.html', 'galeria.html']) {
+        const conteudo = fs.readFileSync(path.join(raiz, html), 'utf8');
+        assert.equal(conteudo.includes('user-scalable=no'), false, `${html}: zoom não pode ser bloqueado`);
+        assert.equal(conteudo.includes('maximum-scale=1'), false, `${html}: escala máxima não pode ser travada`);
+    }
+    const index = fs.readFileSync(path.join(raiz, 'index.html'), 'utf8');
+    assert.match(index, /id="musicaFundo"\s+preload="none"/);
+});
+
 teste('dependências críticas locais existem e CDNs sem versão não voltaram', () => {
     for (const nome of ['dexie-4.4.5.min.js', 'jszip-3.10.1.min.js', 'supabase-2.112.4.js']) {
         assert.ok(fs.statSync(path.join(raiz, 'vendor', nome)).size > 1000, `dependência inválida: ${nome}`);

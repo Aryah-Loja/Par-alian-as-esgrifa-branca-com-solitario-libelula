@@ -1795,7 +1795,7 @@ html.checklist-html { background-color: #1c1014; }
 .checklist-form-adicionar textarea { resize: vertical; min-height: 60px; }
 .checklist-form-adicionar option { background: #1c1014; color: #f8e9ec; }
 .checklist-form-botoes { display: flex; gap: 10px; margin-top: 18px; }
-.checklist-form-btn { flex: 1 1 0; padding: 10px 14px; border-radius: 999px; font-family: 'Jost', sans-serif; font-size: 0.85rem; border: 1px solid rgba(183,110,121,0.4); background: transparent; color: #f0d9dd; }
+.checklist-form-btn { flex: 1 1 0; min-height: 44px; padding: 10px 14px; border-radius: 999px; font-family: 'Jost', sans-serif; font-size: 0.85rem; border: 1px solid rgba(183,110,121,0.4); background: transparent; color: #f0d9dd; }
 .checklist-form-btn-confirmar { background: var(--rosegold); border-color: var(--rosegold); color: #fff; }
 .checklist-form-btn-confirmar:hover, .checklist-form-btn-confirmar:active { background: #a05d67; }
 .checklist-form-btn-cancelar:hover, .checklist-form-btn-cancelar:active { background: rgba(255,255,255,0.06); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); }
@@ -2062,8 +2062,27 @@ button, .btn, a { touch-action: manipulation; }
     text-wrap: balance;
 }
 .promo-sub { max-width: 560px; color: rgba(255,255,255,.78); font-size: .95rem; }
-.carousel-indicators-custom { bottom: 25px; justify-content: flex-start; left: clamp(28px, 7vw, 90px); right: auto; }
-.carousel-indicators-custom button { width: 28px; height: 3px; border-radius: 999px; }
+.carousel-indicators-custom { bottom: 5px; justify-content: flex-start; left: clamp(20px, 5vw, 82px); right: auto; gap: 0; }
+.carousel-indicators-custom button,
+.carousel-indicators-custom button.active {
+    position: relative;
+    width: 44px;
+    height: 44px;
+    border-radius: 0;
+    background: transparent;
+}
+.carousel-indicators-custom button::before {
+    content: '';
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    top: 50%;
+    height: 3px;
+    transform: translateY(-50%);
+    border-radius: 999px;
+    background: rgba(255,255,255,.4);
+}
+.carousel-indicators-custom button.active::before { background: #fff; }
 
 #lojaScreen > .container-fluid {
     width: min(100% - 24px, 1180px);
@@ -2281,6 +2300,7 @@ button, .btn, a { touch-action: manipulation; }
     .promo-slide { min-height: 360px; padding: 50px 26px 70px; }
     .promo-title { font-size: clamp(2.15rem, 13vw, 3.25rem); }
     #lojaScreen > .container-fluid { border-radius: 0 0 22px 22px; padding-inline: 12px !important; }
+    #lojaScreen .breadcrumb a { display: inline-flex; align-items: center; min-height: 44px; }
     .trust-badges { display: grid !important; grid-template-columns: 1fr 1fr; row-gap: 18px; }
     .romance-page > .text-center.mb-4 { min-height: 72vh; }
     .live-counter-wrap { padding: 12px 8px; }
@@ -2289,6 +2309,18 @@ button, .btn, a { touch-action: manipulation; }
     .table-gallery { gap: 12px; }
     .galeria-item:hover { transform: translateY(0) rotate(var(--tilt, 0deg)); }
     .galeria-lightbox-nav { top: auto; bottom: 22px; }
+    #freteCepInput,
+    .polaroid-legenda-input,
+    .primeiras-vezes-form-papel input:not([type="file"]),
+    .primeiras-vezes-form-papel textarea,
+    .futuro-textarea,
+    .checklist-form-adicionar input,
+    .checklist-form-adicionar select,
+    .checklist-form-adicionar textarea { font-size: 1rem; }
+}
+
+@media (max-width: 479.98px) {
+    .galeria-masonry { padding-inline: 10px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

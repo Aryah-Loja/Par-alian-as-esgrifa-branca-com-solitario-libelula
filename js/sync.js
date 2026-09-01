@@ -58,7 +58,7 @@ function validarFormatoAnonKey(chave) {
 const TAMANHO_MAXIMO_PARTE_BYTES = 5 * 1024 * 1024;
 const AVISO_QUOTA_TOTAL_BYTES = 900 * 1024 * 1024; // aviso perto do 1GB de quota total
 
-const POLONI_RETENCAO_GERACOES = 3;
+const POLONI_RETENCAO_GERACOES = 5;
 
 // Compatibilidade com o formato remoto antigo.
 function caminhoParteZip(codigo, indice, totalPartes) {

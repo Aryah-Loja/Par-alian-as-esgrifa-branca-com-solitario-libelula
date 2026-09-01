@@ -2,7 +2,7 @@ name: Manter projeto Supabase ativo
 
 # O plano gratuito do Supabase pausa projetos depois de um tempo sem
 # nenhuma atividade real na API. Este workflow roda sozinho a cada 5 dias
-# e faz uma chamada leve e real (lista os arquivos do bucket de backup),
+# e faz uma chamada leve e real (lê o arquivo de controle do backup),
 # só pra contar como atividade e evitar a pausa automática.
 on:
   schedule:
@@ -18,14 +18,14 @@ jobs:
   ping-supabase:
     runs-on: ubuntu-latest
     steps:
-      - name: Chamar a API do Supabase (lista o bucket de backup)
+      - name: Confirmar que o backup do Supabase responde
         env:
           SUPABASE_URL: "https://mdiohswwximmsggmrzue.supabase.co"
-          SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kaW9oc3d3eGltbXNnZ21yenVlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxNTYzNjgsImV4cCI6MjA5ODczMjM2OH0.maRn6Wax6uIEyVo8ETXxOGQ5Mi61B6rafl7CCC1fGcs"
         run: |
-          curl -s -o /dev/null -w "Status HTTP: %{http_code}\n" \
-            -X POST "$SUPABASE_URL/storage/v1/object/list/aurora-backups" \
-            -H "apikey: $SUPABASE_ANON_KEY" \
-            -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
-            -H "Content-Type: application/json" \
-            -d '{"limit": 1}'
+          set -euo pipefail
+          ARQUIVO_META="$SUPABASE_URL/storage/v1/object/public/aurora-backups/aurora-ana-gabriel-namoro-meta.json?keepalive=$(date +%s)"
+          curl --fail-with-body --show-error --silent \
+            --retry 3 --retry-all-errors \
+            --connect-timeout 15 --max-time 60 \
+            "$ARQUIVO_META" -o /tmp/aurora-meta.json
+          node -e 'const m=require("/tmp/aurora-meta.json"); if (!Number.isFinite(Number(m.revisao)) || !m.geracaoAtual?.id) { throw new Error("Metadados do backup inválidos"); } console.log(`Supabase respondeu com backup na revisão ${m.revisao}.`);'

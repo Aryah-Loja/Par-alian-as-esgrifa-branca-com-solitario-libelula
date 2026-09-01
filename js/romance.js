@@ -491,22 +491,31 @@ async function iniciarGaleriaMomentos() {
     if (!galeria) return;
     const cartoes = Array.from(galeria.querySelectorAll('.table-photo'));
 
-    // Usa o cache local primeiro (evita varrer a rede do zero em toda
-    // abertura); só varre de verdade se não existir cache neste aparelho.
+    // O manifesto do deploy é a fonte autoritativa. Antes o cache local era
+    // usado primeiro e podia apontar para fotos removidas/renomeadas, deixando
+    // alguns cartões vazios de forma aparentemente aleatória.
     let fotos = [];
     const cacheExistente = galeriaLerCache(); // aceita parcial ou completo
-    if (cacheExistente) {
-        fotos = cacheExistente
+    const fotosEmCache = cacheExistente
+        ? cacheExistente
             .filter(item => item.tipo === 'foto')
-            .map(item => ({ numero: item.numero, caminho: item.caminho }));
-    }
+            .map(item => ({ numero: item.numero, caminho: item.caminho }))
+        : [];
 
-    if (fotos.length === 0) {
-        try {
+    try {
+        const manifesto = await galeriaCarregarManifesto();
+        if (manifesto !== null) {
+            fotos = manifesto
+                .filter(item => item.tipo === 'foto')
+                .map(item => ({ numero: item.numero, caminho: item.caminho }));
+            galeriaSalvarCacheSeMelhor(manifesto, true);
+        } else if (fotosEmCache.length) {
+            fotos = fotosEmCache;
+        } else {
             fotos = await descobrirFotosParaDestaque();
-        } catch (e) {
-            fotos = [];
         }
+    } catch (e) {
+        fotos = fotosEmCache;
     }
 
     // Se nenhuma foto foi achada (ex.: instabilidade de rede), refaz com a
@@ -543,7 +552,7 @@ async function iniciarGaleriaMomentos() {
     // Só considera a mesa "pronta" quando cada <img> escolhida terminar de
     // carregar de verdade (não só confirmar via HEAD que o arquivo existe),
     // com um limite de tempo de segurança para nunca travar a experiência.
-    const LIMITE_ESPERA_FOTO_MS = 6000;
+    const LIMITE_ESPERA_FOTO_MS = 15000;
     const promessasDeCarregamento = [];
 
     cartoes.forEach((cartao, i) => {
@@ -555,17 +564,29 @@ async function iniciarGaleriaMomentos() {
 
             promessasDeCarregamento.push(new Promise((resolve) => {
                 let jaResolveu = false;
-                const finalizar = () => { if (jaResolveu) return; jaResolveu = true; resolve(); };
+                let timeoutGeral = null;
+                const finalizar = () => {
+                    if (jaResolveu) return;
+                    jaResolveu = true;
+                    if (timeoutGeral) clearTimeout(timeoutGeral);
+                    resolve();
+                };
 
-                const tentarCarregar = (caminho) => {
+                const tentarCarregar = (caminho, tentativa = 0) => {
                     img.onload = finalizar;
                     img.onerror = () => {
+                        // Uma falha isolada de CDN/rede não invalida a foto.
+                        // Repete a mesma URL uma vez sem cache antes de trocar.
+                        if (tentativa < 1) {
+                            tentarCarregar(caminho, tentativa + 1);
+                            return;
+                        }
                         // Não carregou de verdade — tenta a próxima reserva.
                         const proxima = reservas.shift();
                         if (proxima) {
                             escolhidas[i] = proxima;
                             cartao.onclick = () => abrirLightboxGaleria(escolhidas, i);
-                            tentarCarregar(proxima);
+                            tentarCarregar(proxima, 0);
                             return;
                         }
                         aplicarImagemPlaceholder(img, null, 'Foto do casal'); // sem mais reservas: cai no placeholder
@@ -574,12 +595,22 @@ async function iniciarGaleriaMomentos() {
                         finalizar();
                     };
                     img.alt = 'Foto do casal';
-                    img.src = caminho;
+                    img.dataset.fallbackControlado = '1';
+                    const separador = caminho.includes('?') ? '&' : '?';
+                    img.src = tentativa > 0 ? `${caminho}${separador}recarregar=${Date.now()}` : caminho;
                     if (img.complete && img.naturalWidth > 0) finalizar(); // já estava no cache do navegador — não precisa esperar evento nenhum
                 };
 
                 tentarCarregar(escolhidas[i]);
-                setTimeout(finalizar, LIMITE_ESPERA_FOTO_MS); // trava de segurança
+                timeoutGeral = setTimeout(() => {
+                    if (jaResolveu) return;
+                    img.onload = null;
+                    img.onerror = null;
+                    aplicarImagemPlaceholder(img, null, 'Foto do casal');
+                    cartao.style.cursor = '';
+                    cartao.onclick = null;
+                    finalizar();
+                }, LIMITE_ESPERA_FOTO_MS);
             }));
         } else {
             // Só chega aqui se a galeria não tiver NENHUMA foto real ainda

@@ -73,6 +73,10 @@ const backup = require('../js/export.js');
     await banco.salvarMedia({ id: 'video_pedido', tipo: 'video_pedido', blob: new Blob(['versao-nova'], { type: 'video/webm' }) });
     await banco.salvarMedia({ id: 'foto_nova', tipo: 'lembranca', blob: new Blob(['foto'], { type: 'image/jpeg' }) });
 
+    const versoesAntesDoRestore = (await banco.db.media.toArray()).filter(item => item.idOriginal === 'video_pedido');
+    assert.equal(versoesAntesDoRestore.length, 1, 'sobrescrever mídia deve preservar a versão anterior imediatamente');
+    assert.equal(await versoesAntesDoRestore[0].blob.text(), 'versao-antiga', 'a cópia preservada deve manter todos os bytes anteriores');
+
     await backup.aplicarBackupDeZip(await zip.arrayBuffer());
 
     const mural = JSON.parse(await banco.obterConfiguracao('aurora_mural_ana'));

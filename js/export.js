@@ -824,7 +824,26 @@ async function aplicarBackupDeZip(zipDados) {
         const manterComoAlternativo = remotoEhMaisNovo ? local : remoto;
         const sufixo = manterComoAlternativo.blob ? (await sha256BlobSeguro(manterComoAlternativo.blob) || gerarIdUnico('hash')).slice(0, 10) : gerarIdUnico('texto').slice(-10);
         if (remotoEhMaisNovo) mediasParaGravar.push(remoto);
-        mediasParaGravar.push(Object.assign({}, manterComoAlternativo, { id: `${remoto.id}__preservado_${sufixo}`, idOriginal: remoto.id }));
+
+        // A gravação local já preserva a versão substituída imediatamente.
+        // Ao mesclar um backup, não duplica essa mesma cópia com outro id.
+        const alternativasExistentes = [...mediasAtuais.values()].filter(item => item.idOriginal === remoto.id);
+        let jaPreservada = false;
+        for (const alternativa of alternativasExistentes) {
+            if (alternativa.blob && manterComoAlternativo.blob && alternativa.blob.size === manterComoAlternativo.blob.size) {
+                const [hashAlternativa, hashPreservar] = await Promise.all([
+                    sha256BlobSeguro(alternativa.blob),
+                    sha256BlobSeguro(manterComoAlternativo.blob)
+                ]);
+                if (hashAlternativa && hashAlternativa === hashPreservar) { jaPreservada = true; break; }
+            } else if (!alternativa.blob && !manterComoAlternativo.blob && alternativa.texto === manterComoAlternativo.texto) {
+                jaPreservada = true;
+                break;
+            }
+        }
+        if (!jaPreservada) {
+            mediasParaGravar.push(Object.assign({}, manterComoAlternativo, { id: `${remoto.id}__preservado_${sufixo}`, idOriginal: remoto.id }));
+        }
     }
 
     await db.transaction('rw', db.configuracoes, db.media, async () => {

@@ -154,7 +154,10 @@ async function montarGaleria() {
             return;
         }
         const fracao = totalCarregados / totalEncontrados;
-        atualizarBarra(fracao, `Carregando fotos: ${totalCarregados}/${totalEncontrados}`);
+        const mensagem = varreduraTerminou && totalCarregados < totalEncontrados
+            ? `${totalEncontrados} fotos disponíveis — carregando conforme você rola`
+            : `Carregando fotos: ${totalCarregados}/${totalEncontrados}`;
+        atualizarBarra(fracao, mensagem);
         if (varreduraTerminou && totalCarregados >= totalEncontrados && barraWrap) {
             __galeriaFotosAindaCarregando = false;
             setTimeout(() => barraWrap.classList.add('d-none'), 400);
@@ -170,21 +173,28 @@ async function montarGaleria() {
         atualizarProgresso();
     };
 
-    // A abertura da página monta só as fotos (vídeos são mais pesados);
-    // eles só entram na grade quando a pessoa aperta "Ver vídeos" (ver
-    // carregarVideosDaGaleria). Um cache parcial (só fotos) já é
-    // suficiente aqui, sem exigir o cache completo.
+    // O manifesto atual é consultado antes do cache local. Isso impede que
+    // caminhos antigos continuem aparecendo depois de fotos serem trocadas.
     const itensEmCache = galeriaLerCache(false);
     const fotosEmCache = itensEmCache
         ? itensEmCache.filter(item => item.tipo === 'foto').sort((a, b) => a.numero - b.numero)
         : null;
-    if (fotosEmCache && fotosEmCache.length) {
+    const manifesto = await galeriaCarregarManifesto();
+    const fotosDoManifesto = manifesto !== null
+        ? manifesto.filter(item => item.tipo === 'foto').sort((a, b) => a.numero - b.numero)
+        : null;
+    if (fotosDoManifesto !== null) {
+        fotosDoManifesto.forEach(aoEncontrarItem);
+        galeriaSalvarCacheSeMelhor(manifesto, true);
+        varreduraTerminou = true;
+        if (totalEncontrados === 0 && barraWrap) {
+            __galeriaFotosAindaCarregando = false;
+            barraWrap.classList.add('d-none');
+        }
+        atualizarProgresso();
+    } else if (fotosEmCache && fotosEmCache.length) {
         fotosEmCache.forEach(aoEncontrarItem);
         varreduraTerminou = true;
-        // Conhecer os itens do cache não é o mesmo que as fotos já terem
-        // carregado de verdade (cada <img> ainda precisa baixar) — chamar
-        // atualizarProgresso() deixa a mesma lógica decidir quando esconder
-        // a barra, só depois que totalCarregados alcançar totalEncontrados.
         atualizarProgresso();
     } else {
         await galeriaEscanearFotos(null, aoEncontrarItem);

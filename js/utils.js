@@ -309,7 +309,7 @@ async function tentarRecuperarComoHeic(url) {
 function iniciarFallbackImagensGlobais() {
     document.addEventListener('error', async (e) => {
         const el = e.target;
-        if (el && el.tagName === 'IMG' && !el.dataset.fallbackAplicado && el.src !== SVG_PLACEHOLDER_GENERICO) {
+        if (el && el.tagName === 'IMG' && !el.dataset.fallbackControlado && !el.dataset.fallbackAplicado && el.src !== SVG_PLACEHOLDER_GENERICO) {
             el.dataset.fallbackAplicado = '1';
             const urlOriginal = el.src;
             const urlRecuperada = await tentarRecuperarComoHeic(urlOriginal);
@@ -473,36 +473,55 @@ const GALERIA_LACUNA_PARA_PARAR = 6;  // depois de 6 números seguidos sem nada,
    varredura por HEAD — ver CONTEXTO-PROJETO.md para o raciocínio completo.
    ---------------------------------------------------------------------- */
 let __galeriaManifestoPromise = null;
+const GALERIA_MANIFESTO_TIMEOUT_MS = 4500;
+const GALERIA_MANIFESTO_TENTATIVAS = 2;
 
 // Busca e valida o manifesto.json; devolve a lista de itens pronta, ou
 // `null` se não existir/estiver inválido (usa a varredura por HEAD nesse caso).
 function galeriaCarregarManifesto() {
     if (__galeriaManifestoPromise) return __galeriaManifestoPromise;
 
-    __galeriaManifestoPromise = (async () => {
-        try {
-            // 'no-cache': permite guardar a resposta mas obriga revalidar com
-            // o servidor antes de usá-la (evita servir um manifesto desatualizado).
-            const resposta = await fetch(`${PASTA_GALERIA}/manifesto.json`, { cache: 'no-cache' });
-            if (!resposta.ok) return null;
-            const dados = await resposta.json();
-            if (!dados || !Array.isArray(dados.itens)) return null;
+    const tentativaAtual = (async () => {
+        for (let tentativa = 1; tentativa <= GALERIA_MANIFESTO_TENTATIVAS; tentativa++) {
+            const controlador = new AbortController();
+            const timeout = setTimeout(() => controlador.abort(), GALERIA_MANIFESTO_TIMEOUT_MS);
+            try {
+                // O parâmetro variável evita uma resposta antiga do CDN.
+                // O manifesto é pequeno; aqui consistência vale mais que cache.
+                const resposta = await fetch(`${PASTA_GALERIA}/manifesto.json?t=${Date.now()}-${tentativa}`, {
+                    cache: 'no-store',
+                    signal: controlador.signal
+                });
+                if (resposta.status === 404) return null;
+                if (!resposta.ok) throw new Error(`Manifesto da galeria indisponível (${resposta.status})`);
+                const dados = await resposta.json();
+                if (!dados || !Array.isArray(dados.itens)) throw new Error('Manifesto da galeria inválido');
 
-            // Array vazio é um resultado válido (galeria realmente vazia);
-            // só `null` significa "sem manifesto, tenta o jeito antigo".
-            return dados.itens
-                .filter(item => item && Number.isFinite(item.numero) && (item.tipo === 'foto' || item.tipo === 'video') && item.ext)
-                .map(item => ({
-                    numero: item.numero,
-                    tipo: item.tipo,
-                    caminho: `${PASTA_GALERIA}/galeria_${item.numero}.${item.ext}`
-                }));
-        } catch (e) {
-            return null; // sem manifesto (404), JSON inválido, ou rede falhou — segue com a varredura antiga
+                return dados.itens
+                    .filter(item => item && Number.isFinite(item.numero) && (item.tipo === 'foto' || item.tipo === 'video') && item.ext)
+                    .map(item => ({
+                        numero: item.numero,
+                        tipo: item.tipo,
+                        caminho: `${PASTA_GALERIA}/galeria_${item.numero}.${item.ext}`
+                    }));
+            } catch (e) {
+                if (tentativa === GALERIA_MANIFESTO_TENTATIVAS) return null;
+            } finally {
+                clearTimeout(timeout);
+            }
         }
+        return null;
     })();
 
-    return __galeriaManifestoPromise;
+    __galeriaManifestoPromise = tentativaAtual;
+    // Sucesso fica memoizado nesta abertura. Falha temporária não: outra
+    // ida à home pode tentar novamente em vez de reutilizar `null` para sempre.
+    tentativaAtual.then((resultado) => {
+        if (resultado === null && __galeriaManifestoPromise === tentativaAtual) __galeriaManifestoPromise = null;
+    }, () => {
+        if (__galeriaManifestoPromise === tentativaAtual) __galeriaManifestoPromise = null;
+    });
+    return tentativaAtual;
 }
 
 /* ---------------- Cache local da descoberta (localStorage) ---------------- */
@@ -820,48 +839,9 @@ function escolherFotosEspalhadas(fotos, quantidade) {
 }
 
 function bloquearZoom() {
-    // Pinça em iOS Safari dispara eventos "gesture*" que ignoram o
-    // user-scalable=no do viewport — precisam ser bloqueados manualmente.
-    document.addEventListener('gesturestart', (e) => e.preventDefault());
-    document.addEventListener('gesturechange', (e) => e.preventDefault());
-    document.addEventListener('gestureend', (e) => e.preventDefault());
-
-    // Pinça em navegadores baseados em Chromium chega como touchmove
-    // com 2+ toques simultâneos.
-    document.addEventListener('touchmove', (e) => {
-        if (e.touches && e.touches.length > 1) e.preventDefault();
-    }, { passive: false });
-
-    // Duplo toque para zoom: só conta como duplo toque de verdade se as
-    // duas batidas caírem no MESMO elemento e bem pertinho uma da outra —
-    // do contrário, qualquer sequência de toques rápidos em lugares
-    // diferentes (ex.: os easter eggs de 5 toques) tinha o clique
-    // suprimido sem querer, porque preventDefault() aqui impede o clique
-    // sintético de disparar depois.
-    let ultimoToque = 0;
-    let ultimoToqueAlvo = null;
-    let ultimoToqueX = 0;
-    let ultimoToqueY = 0;
-    document.addEventListener('touchend', (e) => {
-        const agora = Date.now();
-        const toque = e.changedTouches && e.changedTouches[0];
-        const x = toque ? toque.clientX : 0;
-        const y = toque ? toque.clientY : 0;
-        const distancia = Math.hypot(x - ultimoToqueX, y - ultimoToqueY);
-
-        if (agora - ultimoToque <= 300 && e.target === ultimoToqueAlvo && distancia < 30) {
-            e.preventDefault();
-        }
-        ultimoToque = agora;
-        ultimoToqueAlvo = e.target;
-        ultimoToqueX = x;
-        ultimoToqueY = y;
-    }, { passive: false });
-
-    document.addEventListener('wheel', (e) => { if (e.ctrlKey) e.preventDefault(); }, { passive: false });
-    document.addEventListener('keydown', (e) => {
-        if ((e.ctrlKey || e.metaKey) && ['+', '-', '=', '0'].includes(e.key)) e.preventDefault();
-    });
+    // Mantida por compatibilidade com as páginas que já chamam esta função.
+    // O bloqueio real foi removido: pinça e zoom são recursos essenciais de
+    // acessibilidade e campos com 16px evitam o zoom involuntário do iOS.
 }
 
 /* ---------------- Orientação de tela ---------------- */

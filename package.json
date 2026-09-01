@@ -3,7 +3,8 @@
   "private": true,
   "scripts": {
     "test": "node tests/auditoria-preservacao.test.js && node tests/migracao-legada.test.js && node tests/backup-integracao.test.js",
-    "manifesto": "node scripts/gerar-manifesto-galeria.js"
+    "manifesto": "node scripts/gerar-manifesto-galeria.js",
+    "backup:verificar": "node scripts/verificar-backup-remoto.js"
   },
   "devDependencies": {
     "fake-indexeddb": "6.0.1"
