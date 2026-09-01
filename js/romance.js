@@ -2463,6 +2463,7 @@ function segundosRestantesCooldownTermometro(lista) {
 }
 
 let termometroCooldownIntervalo = null;
+let termometroSalvando = false;
 
 function aplicarEstadoCooldownTermometro(segundosRestantes) {
     const opcoesWrap = document.getElementById('termometroOpcoes');
@@ -2495,32 +2496,37 @@ function iniciarRelogioCooldownTermometro(segundosRestantes) {
 }
 
 async function registrarTermometroDoDia(valor) {
+    if (termometroSalvando) return;
+    termometroSalvando = true;
     const notaInput = document.getElementById('termometroNotaInput');
     const status = document.getElementById('termometroStatus');
+    try {
+        const lista = await obterTermometroLista();
 
-    const lista = await obterTermometroLista();
+        // Ainda dentro do intervalo mínimo (TERMOMETRO_COOLDOWN_SEGUNDOS, js/config.js) — não registra de novo, só atualiza a contagem regressiva.
+        const restante = segundosRestantesCooldownTermometro(lista);
+        if (restante > 0) {
+            iniciarRelogioCooldownTermometro(restante);
+            return;
+        }
 
-    // Ainda dentro do intervalo mínimo (TERMOMETRO_COOLDOWN_SEGUNDOS, js/config.js) — não registra de novo, só atualiza a contagem regressiva.
-    const restante = segundosRestantesCooldownTermometro(lista);
-    if (restante > 0) {
-        iniciarRelogioCooldownTermometro(restante);
-        return;
+        const texto = notaInput ? notaInput.value.trim() : '';
+        lista.push({ id: gerarIdUnico('termometro'), data: new Date().toISOString(), valor, texto });
+        while (lista.length > 60) lista.shift(); // guarda só os últimos 60 — suficiente pro histórico visual
+        await salvarConfiguracao('aurora_termometro_lista', JSON.stringify(lista));
+
+        if (notaInput) notaInput.value = '';
+        celebrarMomento(0.7);
+        if (status) {
+            status.textContent = 'Registrado!';
+            status.className = 'save-status ok';
+            setTimeout(() => { status.textContent = ''; }, 2500);
+        }
+        await renderizarTermometroDoDia();
+        iniciarRelogioCooldownTermometro(TERMOMETRO_COOLDOWN_SEGUNDOS);
+    } finally {
+        termometroSalvando = false;
     }
-
-    const texto = notaInput ? notaInput.value.trim() : '';
-    lista.push({ data: new Date().toISOString(), valor, texto });
-    while (lista.length > 60) lista.shift(); // guarda só os últimos 60 — suficiente pro histórico visual
-    await salvarConfiguracao('aurora_termometro_lista', JSON.stringify(lista));
-
-    if (notaInput) notaInput.value = '';
-    celebrarMomento(0.7);
-    if (status) {
-        status.textContent = 'Registrado!';
-        status.className = 'save-status ok';
-        setTimeout(() => { status.textContent = ''; }, 2500);
-    }
-    await renderizarTermometroDoDia();
-    iniciarRelogioCooldownTermometro(TERMOMETRO_COOLDOWN_SEGUNDOS);
 }
 
 // Média simples dos registros feitos no mês corrente (ano+mês local do
@@ -2749,23 +2755,33 @@ async function obterMural() {
     return salvo ? JSON.parse(salvo) : [];
 }
 
+let muralSalvando = false;
+
 async function salvarNovoTextoMural() {
+    if (muralSalvando) return;
     const input = document.getElementById('muralTextoInput');
     const status = document.getElementById('muralStatus');
+    const botao = document.getElementById('btnSalvarMural');
     const texto = input ? input.value.trim() : '';
     if (!texto) return;
+    muralSalvando = true;
+    if (botao) botao.disabled = true;
+    try {
+        const lista = await obterMural();
+        lista.push({ id: gerarIdUnico('mural'), data: new Date().toISOString(), texto });
+        await salvarConfiguracao('aurora_mural_ana', JSON.stringify(lista));
 
-    const lista = await obterMural();
-    lista.push({ id: `mural_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`, data: new Date().toISOString(), texto });
-    await salvarConfiguracao('aurora_mural_ana', JSON.stringify(lista));
-
-    if (input) input.value = '';
-    if (status) {
-        status.textContent = 'Guardado!';
-        status.className = 'save-status ok';
-        setTimeout(() => { status.textContent = ''; }, 2500);
+        if (input) input.value = '';
+        if (status) {
+            status.textContent = 'Guardado!';
+            status.className = 'save-status ok';
+            setTimeout(() => { status.textContent = ''; }, 2500);
+        }
+        await renderizarMural();
+    } finally {
+        muralSalvando = false;
+        if (botao) botao.disabled = false;
     }
-    await renderizarMural();
 }
 
 async function excluirTextoMural(id) {

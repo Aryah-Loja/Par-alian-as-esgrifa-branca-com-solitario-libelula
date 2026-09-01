@@ -15,7 +15,13 @@ terminar com a versão anterior ainda utilizável.
 - Exclusões de mídia gravam `excluidoEm` em vez de remover o registro.
 - Exclusões de configurações autorizadas gravam um relógio em
   `aurora_config_excluidas_em`; novas gravações atualizam
-  `aurora_config_modificados_em`.
+  `aurora_config_modificados_em` na mesma transação do valor.
+- O schema 4 refaz a migração legada de forma recuperável: registros inválidos
+  são ignorados individualmente, mas uma falha real aborta a transação e não
+  apaga a tabela de origem.
+- Se o espelho do `localStorage` tiver um relógio mais novo que o IndexedDB,
+  ele é usado para reparar o banco em vez de ser sobrescrito por um valor
+  antigo.
 
 ## Backup local
 
@@ -40,9 +46,12 @@ da transação. Depois:
 3. o checklist usa relógio por item, inclusive para propagar uma desmarcação
    posterior; backups antigos sem relógio mantêm a união positiva;
 4. o estágio `final` nunca regride;
-5. conflitos escalares mantêm o valor local e registram o remoto no diário de
-   conflitos preservados;
-6. mídias divergentes mantêm uma versão canônica e outra com sufixo
+5. configurações escalares com relógio usam o valor modificado mais
+   recentemente; backups legados sem relógio mantêm a estratégia conservadora
+   de preservar o local e registrar o remoto no diário;
+6. confirmações das cartas condicionais são combinadas por pessoa, sem uma
+   confirmação apagar a outra;
+7. mídias divergentes mantêm uma versão canônica e outra com sufixo
    `__preservado_...`.
 
 Somente após preparar tudo ocorre uma transação aditiva no IndexedDB.
@@ -69,6 +78,12 @@ trava remota temporária serializa publicações entre aparelhos; seu token é
 confirmado novamente imediatamente antes do commit. A trava expira após dez
 minutos se um navegador for interrompido. A revisão também é relida antes do
 commit; qualquer conflito tenta novamente sem apagar as gerações já enviadas.
+
+O aparelho mantém um marcador durável de alteração pendente. Se algo mudar
+durante um upload, outra geração entra na mesma fila antes de esse marcador ser
+limpo. Falhas transitórias geram novas tentativas progressivas; bloquear a tela
+ou trocar de aplicativo antecipa o envio que ainda aguardava o agrupamento de
+1,2 segundo. Um restore manual também entra nessa fila imediatamente.
 
 ## Limites de segurança e privacidade
 

@@ -9,6 +9,80 @@
 
 const db = new Dexie('AuroraDB');
 
+// Migra a estrutura anterior sem abandonar os registros restantes quando
+// apenas um item legado estiver incompleto. Falhas reais de escrita continuam
+// sendo lançadas para abortar o upgrade inteiro e permitir nova tentativa na
+// próxima abertura; somente entradas sem conteúdo aproveitável são ignoradas.
+async function migrarArquivosLegados(tx) {
+    const tabelaAntiga = tx.table('arquivos');
+    const tabelaMedia = tx.table('media');
+    const antigos = await tabelaAntiga.toArray();
+
+    for (const registro of antigos) {
+        if (!registro || !registro.id) continue;
+
+        if (registro.id === 'video_casal' && registro.data instanceof Blob && registro.data.size) {
+            await tabelaMedia.put({
+                id: 'video_pedido',
+                tipo: 'video_pedido',
+                blob: registro.data,
+                mimeType: registro.data.type || 'video/webm',
+                criadoEm: registro.criadoEm || Date.now(),
+                atualizadoEm: registro.criadoEm || Date.now()
+            });
+        }
+
+        if (registro.id === 'assinatura' && typeof registro.data === 'string' && registro.data) {
+            await tabelaMedia.put({
+                id: 'assinatura',
+                tipo: 'assinatura',
+                texto: registro.data,
+                criadoEm: registro.criadoEm || Date.now(),
+                atualizadoEm: registro.criadoEm || Date.now()
+            });
+        }
+
+        if (registro.id === 'lembrancas' && Array.isArray(registro.data)) {
+            for (let i = 0; i < registro.data.length; i++) {
+                const item = registro.data[i];
+                if (!item || !(item.blob instanceof Blob) || !item.blob.size) continue;
+                const criadoEm = Number(item.criadoEm || registro.criadoEm) || Date.now() + i;
+                await tabelaMedia.put({
+                    id: item.id || `lembranca_legada_${criadoEm}_${i}`,
+                    tipo: 'lembranca',
+                    blob: item.blob,
+                    mimeType: item.mimeType || item.blob.type || null,
+                    criadoEm,
+                    atualizadoEm: criadoEm
+                });
+            }
+        }
+
+        if (registro.id === 'mensagens_futuro' && Array.isArray(registro.data)) {
+            for (let i = 0; i < registro.data.length; i++) {
+                const msg = registro.data[i];
+                if (!msg || (typeof msg.texto !== 'string' && !(msg.blob instanceof Blob))) continue;
+                const dataLegada = msg.criadoEm ? new Date(msg.criadoEm).getTime() : 0;
+                const criadoEm = Number.isFinite(dataLegada) && dataLegada > 0 ? dataLegada : Date.now() + i;
+                await tabelaMedia.put({
+                    id: msg.id || `futuro_legado_${criadoEm}_${i}`,
+                    tipo: 'mensagem_futuro',
+                    subtipo: msg.tipo,
+                    texto: typeof msg.texto === 'string' ? msg.texto : null,
+                    blob: msg.blob instanceof Blob ? msg.blob : null,
+                    mimeType: msg.mimeType || (msg.blob && msg.blob.type) || null,
+                    criadoEm,
+                    atualizadoEm: criadoEm
+                });
+            }
+        }
+    }
+
+    // Só limpa depois que todas as escritas válidas terminaram. Se qualquer
+    // put falhar, a transação inteira reverte e o upgrade será tentado de novo.
+    await tabelaAntiga.clear();
+}
+
 // Coordena múltiplas abas abertas ao mesmo tempo durante um upgrade de schema.
 db.on('blocked', () => {
     console.warn('AuroraDB: upgrade bloqueado por outra aba/página aberta com uma versão mais antiga do banco. Feche as outras abas do site e recarregue esta página.');
@@ -26,42 +100,7 @@ db.version(1).stores({ arquivos: 'id' });
 db.version(2).stores({
     media: 'id, tipo, criadoEm',
     configuracoes: 'chave'
-}).upgrade(async (tx) => {
-    try {
-        const antigos = await tx.table('arquivos').toArray();
-        for (const registro of antigos) {
-            if (registro.id === 'video_casal' && registro.data) {
-                await tx.table('media').put({ id: 'video_pedido', tipo: 'video_pedido', blob: registro.data, mimeType: registro.data.type || 'video/webm', criadoEm: registro.criadoEm || Date.now() });
-            }
-            if (registro.id === 'assinatura' && registro.data) {
-                await tx.table('media').put({ id: 'assinatura', tipo: 'assinatura', texto: registro.data, criadoEm: Date.now() });
-            }
-            if (registro.id === 'lembrancas' && Array.isArray(registro.data)) {
-                for (let i = 0; i < registro.data.length; i++) {
-                    const item = registro.data[i];
-                    await tx.table('media').put({ id: `lembranca_${Date.now()}_${i}`, tipo: 'lembranca', blob: item.blob, mimeType: item.blob && item.blob.type, criadoEm: Date.now() + i });
-                }
-            }
-            if (registro.id === 'mensagens_futuro' && Array.isArray(registro.data)) {
-                for (const msg of registro.data) {
-                    await tx.table('media').put({
-                        id: msg.id || `futuro_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-                        tipo: 'mensagem_futuro',
-                        subtipo: msg.tipo,
-                        texto: msg.texto || null,
-                        blob: msg.blob || null,
-                        mimeType: msg.mimeType || null,
-                        criadoEm: msg.criadoEm ? new Date(msg.criadoEm).getTime() : Date.now()
-                    });
-                }
-            }
-        }
-        // Migração ok: limpa a tabela antiga para não duplicar dados.
-        await tx.table('arquivos').clear();
-    } catch (e) {
-        console.error('Migração da estrutura antiga falhou (não é crítico, o site continua funcionando):', e);
-    }
-});
+}).upgrade(migrarArquivosLegados);
 
 // v3 acrescenta somente um diário técnico local. A migração é aditiva:
 // nenhuma tabela ou registro sentimental é removido ou regravado.
@@ -70,6 +109,16 @@ db.version(3).stores({
     configuracoes: 'chave',
     diagnosticos: '++id, codigo, criadoEm, operacao'
 });
+
+// v4 faz uma varredura de recuperação. Versões anteriores engoliam uma
+// exceção durante a migração v2; isso podia deixar `arquivos` preenchida e o
+// banco já marcado como atualizado. A v4 tenta novamente de forma segura.
+db.version(4).stores({
+    arquivos: 'id',
+    media: 'id, tipo, criadoEm',
+    configuracoes: 'chave',
+    diagnosticos: '++id, codigo, criadoEm, operacao'
+}).upgrade(migrarArquivosLegados);
 
 function gerarCodigoDiagnostico() {
     const data = new Date().toISOString().slice(0, 10).replace(/-/g, '');
@@ -108,11 +157,21 @@ async function registrarDiagnosticoSeguro(operacao, erro, detalhes = {}) {
 // Marca "agora" como última alteração local (usado por js/sync.js para
 // decidir quem tem dados mais novos) e agenda o envio à nuvem.
 async function marcarAtualizacaoLocal(imediato = false) {
+    // Testes do diagnóstico escrevem e removem objetos descartáveis. Eles não
+    // podem deixar o banco marcado como pendente nem provocar aviso ao sair.
+    try { if (typeof window !== 'undefined' && window.__auroraSuprimirSyncDiagnostico) return; } catch (_) { /* ambiente sem window */ }
     const agora = String(Date.now());
     try { localStorage.setItem('aurora_atualizado_em', agora); } catch (e) { /* ignora */ }
-    try { await db.configuracoes.put({ chave: 'aurora_atualizado_em', valor: agora }); } catch (e) { /* ignora */ }
     try { localStorage.setItem('aurora_sync_dirty', '1'); } catch (e) { /* ignora */ }
-    try { await db.configuracoes.put({ chave: 'aurora_sync_dirty', valor: '1' }); } catch (e) { /* ignora */ }
+    try {
+        await db.transaction('rw', db.configuracoes, async () => {
+            await db.configuracoes.put({ chave: 'aurora_atualizado_em', valor: agora });
+            await db.configuracoes.put({ chave: 'aurora_sync_dirty', valor: '1' });
+        });
+    } catch (e) {
+        await registrarDiagnosticoSeguro('db.marcar_atualizacao', e);
+    }
+    try { if (typeof window !== 'undefined') window.__auroraSyncDirtyMemoria = true; } catch (_) { /* ambiente sem window */ }
     if (typeof agendarEnvioNuvem === 'function') agendarEnvioNuvem(imediato);
 }
 
@@ -171,32 +230,49 @@ async function salvarConfiguracao(chave, valor, imediato = false, afetaSincroniz
     // obterConfiguracao() tenha um retorno consistente (string ou null).
     const valorSerializado = typeof valor === 'string' ? valor : JSON.stringify(valor);
 
-    let sucessoLocal = false;
-    try {
-        localStorage.setItem(chave, valorSerializado);
-        sucessoLocal = true;
-    } catch (e) { console.error('localStorage indisponível para', chave, e); }
+    const registraRelogio = afetaSincronizacao && !['aurora_config_modificados_em', 'aurora_config_excluidas_em'].includes(chave);
+    let relogioSerializado = null;
+    let relogioLocal = {};
+    const agoraRelogio = Date.now();
+    if (registraRelogio) {
+        try { relogioLocal = JSON.parse(localStorage.getItem('aurora_config_modificados_em') || '{}'); } catch (_) { relogioLocal = {}; }
+        if (!relogioLocal || typeof relogioLocal !== 'object' || Array.isArray(relogioLocal)) relogioLocal = {};
+    }
 
     let sucessoIndexedDB = false;
     try {
-        await db.configuracoes.put({ chave, valor: valorSerializado });
+        await db.transaction('rw', db.configuracoes, async () => {
+            await db.configuracoes.put({ chave, valor: valorSerializado });
+            if (registraRelogio) {
+                const registro = await db.configuracoes.get('aurora_config_modificados_em');
+                let relogioDb = {};
+                try { relogioDb = JSON.parse(registro?.valor || '{}'); } catch (_) { relogioDb = {}; }
+                if (!relogioDb || typeof relogioDb !== 'object' || Array.isArray(relogioDb)) relogioDb = {};
+                const unido = Object.assign({}, relogioDb);
+                for (const [id, tempo] of Object.entries(relogioLocal)) {
+                    unido[id] = Math.max(Number(unido[id]) || 0, Number(tempo) || 0);
+                }
+                unido[chave] = Math.max(agoraRelogio, (Number(unido[chave]) || 0) + 1);
+                relogioSerializado = JSON.stringify(unido);
+                await db.configuracoes.put({ chave: 'aurora_config_modificados_em', valor: relogioSerializado });
+            }
+        });
         sucessoIndexedDB = true;
-    } catch (e) { console.error('Falha ao salvar configuração no IndexedDB:', chave, e); }
-
-    // Relógio por chave: permite distinguir uma exclusão legítima de um
-    // valor antigo ressurgindo de outro aparelho. É metadado técnico e não
-    // contém o conteúdo da configuração.
-    if (afetaSincronizacao && !['aurora_config_modificados_em', 'aurora_config_excluidas_em'].includes(chave)) {
-        try {
-            const registro = await db.configuracoes.get('aurora_config_modificados_em');
-            let mapa = {};
-            try { mapa = JSON.parse(registro?.valor || localStorage.getItem('aurora_config_modificados_em') || '{}'); } catch (_) { mapa = {}; }
-            mapa[chave] = Date.now();
-            const serializado = JSON.stringify(mapa);
-            await db.configuracoes.put({ chave: 'aurora_config_modificados_em', valor: serializado });
-            try { localStorage.setItem('aurora_config_modificados_em', serializado); } catch (_) { /* IndexedDB basta */ }
-        } catch (e) { console.error('Falha ao registrar versão da configuração:', chave, e); }
+    } catch (e) {
+        console.error('Falha ao salvar configuração e seu relógio no IndexedDB:', chave, e);
+        await registrarDiagnosticoSeguro('db.salvar_configuracao', e, { chave: String(chave).slice(0, 80) });
+        if (registraRelogio && !relogioSerializado) {
+            relogioLocal[chave] = Math.max(agoraRelogio, (Number(relogioLocal[chave]) || 0) + 1);
+            relogioSerializado = JSON.stringify(relogioLocal);
+        }
     }
+
+    let sucessoLocal = false;
+    try {
+        localStorage.setItem(chave, valorSerializado);
+        if (relogioSerializado) localStorage.setItem('aurora_config_modificados_em', relogioSerializado);
+        sucessoLocal = true;
+    } catch (e) { console.error('localStorage indisponível para', chave, e); }
 
     // Evita recursão em 'aurora_atualizado_em'; afetaSincronizacao=false é
     // para configs cosméticas que não devem contar como "dado novo".
@@ -222,23 +298,74 @@ async function excluirConfiguracao(chave, imediato = true) {
         return false;
     }
     const agora = Date.now();
-    try { localStorage.removeItem(chave); } catch (e) { console.error('Falha ao remover do localStorage:', chave, e); }
+    let valorAnterior = null;
+    let mapaLocal = {};
+    try { mapaLocal = JSON.parse(localStorage.getItem('aurora_config_excluidas_em') || '{}'); } catch (_) { mapaLocal = {}; }
+    if (!mapaLocal || typeof mapaLocal !== 'object' || Array.isArray(mapaLocal)) mapaLocal = {};
     try {
-        const registro = await db.configuracoes.get('aurora_config_excluidas_em');
-        let mapa = {};
-        try { mapa = JSON.parse(registro?.valor || localStorage.getItem('aurora_config_excluidas_em') || '{}'); } catch (_) { mapa = {}; }
-        mapa[chave] = agora;
-        const serializado = JSON.stringify(mapa);
+        valorAnterior = await db.configuracoes.get(chave);
+        let serializado = null;
         await db.transaction('rw', db.configuracoes, async () => {
+            const registro = await db.configuracoes.get('aurora_config_excluidas_em');
+            let mapaDb = {};
+            try { mapaDb = JSON.parse(registro?.valor || '{}'); } catch (_) { mapaDb = {}; }
+            if (!mapaDb || typeof mapaDb !== 'object' || Array.isArray(mapaDb)) mapaDb = {};
+            const mapa = Object.assign({}, mapaDb);
+            for (const [id, tempo] of Object.entries(mapaLocal)) {
+                mapa[id] = Math.max(Number(mapa[id]) || 0, Number(tempo) || 0);
+            }
+            mapa[chave] = Math.max(agora, (Number(mapa[chave]) || 0) + 1);
+            serializado = JSON.stringify(mapa);
             await db.configuracoes.delete(chave);
             await db.configuracoes.put({ chave: 'aurora_config_excluidas_em', valor: serializado });
         });
+        try { localStorage.removeItem(chave); } catch (e) { console.error('Falha ao remover do localStorage:', chave, e); }
         try { localStorage.setItem('aurora_config_excluidas_em', serializado); } catch (_) { /* IndexedDB basta */ }
-    } catch (e) { console.error('Falha ao registrar exclusão da configuração:', chave, e); }
+    } catch (e) {
+        console.error('Falha ao registrar exclusão da configuração:', chave, e);
+        // IndexedDB é a fonte de verdade: restaura o espelho para não dar a
+        // impressão de exclusão quando a transação durável falhou.
+        if (valorAnterior) {
+            try { localStorage.setItem(chave, typeof valorAnterior.valor === 'string' ? valorAnterior.valor : JSON.stringify(valorAnterior.valor)); } catch (_) { /* aviso abaixo basta */ }
+        }
+        await registrarDiagnosticoSeguro('db.excluir_configuracao', e, { chave: String(chave).slice(0, 80) });
+        return false;
+    }
     await marcarAtualizacaoLocal(imediato);
+    return true;
 }
 
 async function obterConfiguracao(chave) {
+    // Se uma escrita recente conseguiu chegar ao localStorage mas o
+    // IndexedDB falhou temporariamente (cota/transação interrompida), o
+    // relógio local fica maior que o relógio durável. Nesse caso o valor local
+    // é a cópia mais nova: tenta reparar o banco e nunca o sobrescreve com a
+    // versão antiga.
+    if (!['aurora_config_modificados_em', 'aurora_config_excluidas_em'].includes(chave)) {
+        try {
+            const valorLocal = localStorage.getItem(chave);
+            const mapaLocal = JSON.parse(localStorage.getItem('aurora_config_modificados_em') || '{}');
+            const registroMapaDb = await db.configuracoes.get('aurora_config_modificados_em');
+            let mapaDb = {};
+            try { mapaDb = JSON.parse(registroMapaDb?.valor || '{}'); } catch (_) { mapaDb = {}; }
+            if (valorLocal !== null && Number(mapaLocal[chave] || 0) > Number(mapaDb[chave] || 0)) {
+                const mapaUnido = Object.assign({}, mapaDb);
+                for (const [id, tempo] of Object.entries(mapaLocal)) {
+                    mapaUnido[id] = Math.max(Number(mapaUnido[id]) || 0, Number(tempo) || 0);
+                }
+                try {
+                    await db.transaction('rw', db.configuracoes, async () => {
+                        await db.configuracoes.put({ chave, valor: valorLocal });
+                        await db.configuracoes.put({ chave: 'aurora_config_modificados_em', valor: JSON.stringify(mapaUnido) });
+                    });
+                } catch (e) {
+                    await registrarDiagnosticoSeguro('db.reparar_fallback_local', e, { chave: String(chave).slice(0, 80) });
+                }
+                return valorLocal;
+            }
+        } catch (_) { /* segue para a fonte durável normal */ }
+    }
+
     // IndexedDB é a fonte de verdade. localStorage é apenas um espelho de
     // recuperação rápida; preferi-lo podia ressuscitar um valor antigo após
     // uma restauração concluída no banco.

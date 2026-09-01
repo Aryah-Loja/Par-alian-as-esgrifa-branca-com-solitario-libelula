@@ -49,6 +49,7 @@ function mapaAdminGerarFotoBaseUnico(nome, listaAtual, idIgnorar) {
 }
 
 let mapaAdminEditandoId = null;
+let mapaAdminSalvando = false;
 
 function mapaAdminAtualizarIconePreview() {
     const input = document.getElementById('mapaAdminIcone');
@@ -146,13 +147,18 @@ async function mapaAdminExcluir(id) {
 }
 
 async function mapaAdminSalvar() {
+    if (mapaAdminSalvando) return;
+    mapaAdminSalvando = true;
     const nomeInput = document.getElementById('mapaAdminNome');
     const cidadeInput = document.getElementById('mapaAdminCidade');
     const textoInput = document.getElementById('mapaAdminTexto');
     const iconeInput = document.getElementById('mapaAdminIcone');
     const fotoInput = document.getElementById('mapaAdminFotoInput');
     const status = document.getElementById('mapaAdminStatus');
+    const botaoSalvar = document.getElementById('btnMapaAdminSalvar');
+    if (botaoSalvar) botaoSalvar.disabled = true;
 
+    try {
     const nome = nomeInput.value.trim();
     if (!nome) {
         status.textContent = 'Digite um nome pro local.';
@@ -213,6 +219,10 @@ async function mapaAdminSalvar() {
     // adicionasse um local pelo botão do site só veria o resultado depois
     // de recarregar a página.
     if (typeof renderizarMapaDaRelacao === 'function') await renderizarMapaDaRelacao();
+    } finally {
+        mapaAdminSalvando = false;
+        if (botaoSalvar) botaoSalvar.disabled = false;
+    }
 }
 
 function iniciarPainelMapaAdmin() {

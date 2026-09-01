@@ -384,7 +384,7 @@ async function gerarBackupZipBlob() {
     const manifest = {
         formato: 'poloni-backup',
         versao: 4,
-        schemaBanco: 3,
+        schemaBanco: 4,
         criadoEm: new Date().toISOString(),
         // Última alteração local, usada por js/sync.js para decidir "puxar" ou "empurrar".
         atualizadoEm: parseInt(await obterConfiguracao('aurora_atualizado_em'), 10) || Date.now(),
@@ -428,6 +428,28 @@ async function gerarBackupZipBlob() {
             if (!item || !item.chave || chaveConfigEhTecnica(item.chave)) continue;
             manifest.configuracoes[item.chave] = item.valor;
         }
+
+        // Recuperação do espelho: se uma escrita recente chegou ao
+        // localStorage mas a transação do IndexedDB falhou, o relógio local é
+        // maior. Inclui essa versão no backup para que a nuvem nunca receba o
+        // valor antigo apenas porque o banco estava temporariamente bloqueado.
+        try {
+            const relogiosDb = tentarJSON(manifest.configuracoes.aurora_config_modificados_em || '{}');
+            const relogiosLocal = tentarJSON(localStorage.getItem('aurora_config_modificados_em') || '{}');
+            const relogiosUnidos = Object.assign({}, relogiosDb && typeof relogiosDb === 'object' ? relogiosDb : {});
+            for (const [chave, tempo] of Object.entries(relogiosLocal && typeof relogiosLocal === 'object' ? relogiosLocal : {})) {
+                const tempoLocal = timestampSeguro(tempo);
+                const tempoDb = timestampSeguro(relogiosUnidos[chave]);
+                if (tempoLocal > tempoDb && !chaveConfigEhTecnica(chave)) {
+                    const valorLocal = localStorage.getItem(chave);
+                    if (valorLocal !== null) manifest.configuracoes[chave] = valorLocal;
+                }
+                relogiosUnidos[chave] = Math.max(tempoDb, tempoLocal);
+            }
+            if (Object.keys(relogiosUnidos).length) {
+                manifest.configuracoes.aurora_config_modificados_em = JSON.stringify(relogiosUnidos);
+            }
+        } catch (_) { /* IndexedDB já forneceu a cópia principal */ }
         manifest.estatisticas.configuracoes = Object.keys(manifest.configuracoes).length;
     } catch (e) {
         await registrarDiagnosticoSeguro('backup.listar_configuracoes', e);
@@ -590,6 +612,14 @@ function tentarJSON(valor) {
     try { return JSON.parse(valor); } catch (_) { return valor; }
 }
 
+function timestampSeguro(valor) {
+    if (!valor) return 0;
+    const numero = Number(valor);
+    if (Number.isFinite(numero)) return numero;
+    const data = Date.parse(valor);
+    return Number.isFinite(data) ? data : 0;
+}
+
 function mesclarArrayPreservando(a, b) {
     const resultado = [];
     const posicoesPorId = new Map();
@@ -616,15 +646,10 @@ function mesclarArrayPreservando(a, b) {
         // outro aparelho ainda são incorporados.
         const indice = posicoesPorId.get(item.id);
         const atual = resultado[indice];
-        const paraTempo = valor => {
-            if (!valor) return 0;
-            const numero = Number(valor);
-            return Number.isFinite(numero) ? numero : (Date.parse(valor) || 0);
-        };
-        const tempoAtual = paraTempo(atual.atualizadoEm || atual.criadoEm || atual.data);
-        const tempoItem = paraTempo(item.atualizadoEm || item.criadoEm || item.data);
+        const tempoAtual = timestampSeguro(atual.atualizadoEm || atual.criadoEm || atual.data);
+        const tempoItem = timestampSeguro(item.atualizadoEm || item.criadoEm || item.data);
         const unido = tempoItem > tempoAtual ? Object.assign({}, atual, item) : Object.assign({}, item, atual);
-        const exclusaoMaisNova = Math.max(paraTempo(item.excluidoEm), paraTempo(atual.excluidoEm));
+        const exclusaoMaisNova = Math.max(timestampSeguro(item.excluidoEm), timestampSeguro(atual.excluidoEm));
         if (exclusaoMaisNova > Math.max(tempoAtual, tempoItem)) {
             unido.excluidoEm = new Date(exclusaoMaisNova).toISOString();
         } else if (Math.max(tempoAtual, tempoItem) > exclusaoMaisNova) {
@@ -635,7 +660,7 @@ function mesclarArrayPreservando(a, b) {
     return resultado;
 }
 
-function mesclarConfiguracaoPreservando(chave, local, remoto, conflitos) {
+function mesclarConfiguracaoPreservando(chave, local, remoto, conflitos, relogios = {}) {
     if (local === undefined || local === null || local === '') return remoto;
     if (remoto === undefined || remoto === null || remoto === '' || local === remoto) return local;
     const a = tentarJSON(local);
@@ -652,7 +677,29 @@ function mesclarConfiguracaoPreservando(chave, local, remoto, conflitos) {
         for (const id of new Set([...Object.keys(a), ...Object.keys(b)])) unido[id] = Boolean(a[id] || b[id]);
         return JSON.stringify(unido);
     }
+    if (chave === 'aurora_cartas_condicionais_confirmacoes' && a && b && typeof a === 'object' && typeof b === 'object') {
+        const unido = {};
+        for (const id of new Set([...Object.keys(a), ...Object.keys(b)])) {
+            const localItem = a[id] && typeof a[id] === 'object' ? a[id] : {};
+            const remotoItem = b[id] && typeof b[id] === 'object' ? b[id] : {};
+            unido[id] = {
+                ana: Boolean(localItem.ana || remotoItem.ana),
+                gabriel: Boolean(localItem.gabriel || remotoItem.gabriel)
+            };
+        }
+        return JSON.stringify(unido);
+    }
     if (chave === 'aurora_stage') return (local === 'final' || remoto === 'final') ? 'final' : local;
+
+    // Valores simples (texto, senha hash, estágio intermediário, flags etc.)
+    // precisam convergir para a edição mais recente. Os relógios por chave
+    // são gravados atomicamente com o valor em db.js. Na ausência de relógio
+    // (backup legado), mantém o comportamento conservador: local canônico e
+    // remoto preservado no diário de conflitos.
+    const tempoLocal = timestampSeguro(relogios.modificadosLocal && relogios.modificadosLocal[chave]);
+    const tempoRemoto = timestampSeguro(relogios.modificadosRemotos && relogios.modificadosRemotos[chave]);
+    if (tempoRemoto > tempoLocal) return remoto;
+    if (tempoLocal > tempoRemoto) return local;
     conflitos.push({ chave, valorPreservado: remoto, detectadoEm: new Date().toISOString() });
     return local;
 }
@@ -721,6 +768,8 @@ async function aplicarBackupDeZip(zipDados) {
     const estadoChecklistRemoto = tentarJSON(configuracoesRemotas.aurora_checklist_encontros || '{}');
     const versoesChecklistLocal = tentarJSON(configsAtuais.get('aurora_checklist_alteracoes_em') || '{}');
     const versoesChecklistRemoto = tentarJSON(configuracoesRemotas.aurora_checklist_alteracoes_em || '{}');
+    const modificadosLocal = tentarJSON(configsAtuais.get('aurora_config_modificados_em') || '{}');
+    const modificadosRemotos = tentarJSON(configuracoesRemotas.aurora_config_modificados_em || '{}');
     const estadoChecklistMesclado = mesclarChecklistVersionado(estadoChecklistLocal, estadoChecklistRemoto, versoesChecklistLocal, versoesChecklistRemoto);
 
     for (const [chave, remotoBruto] of Object.entries(configuracoesRemotas)) {
@@ -728,7 +777,7 @@ async function aplicarBackupDeZip(zipDados) {
         const remoto = typeof remotoBruto === 'string' ? remotoBruto : JSON.stringify(remotoBruto);
         const valor = chave === 'aurora_checklist_encontros'
             ? JSON.stringify(estadoChecklistMesclado)
-            : mesclarConfiguracaoPreservando(chave, configsAtuais.get(chave), remoto, conflitosLista);
+            : mesclarConfiguracaoPreservando(chave, configsAtuais.get(chave), remoto, conflitosLista, { modificadosLocal, modificadosRemotos });
         configsMescladas.push({ chave, valor });
     }
     if (conflitosLista.length) configsMescladas.push({ chave: 'aurora_conflitos_preservados', valor: JSON.stringify(conflitosLista.slice(-100)) });
@@ -750,17 +799,17 @@ async function aplicarBackupDeZip(zipDados) {
         const local = mediasAtuais.get(remoto.id);
         if (!local) { mediasParaGravar.push(remoto); continue; }
         if (remoto.excluidoEm && local.excluidoEm) {
-            if (Number(remoto.excluidoEm) > Number(local.excluidoEm)) mediasParaGravar.push(Object.assign({}, local, { excluidoEm: remoto.excluidoEm, atualizadoEm: remoto.excluidoEm }));
+            if (timestampSeguro(remoto.excluidoEm) > timestampSeguro(local.excluidoEm)) mediasParaGravar.push(Object.assign({}, local, { excluidoEm: remoto.excluidoEm, atualizadoEm: remoto.excluidoEm }));
             continue;
         }
         if (remoto.excluidoEm && !local.excluidoEm) {
-            if (Number(remoto.excluidoEm) >= Number(local.atualizadoEm || local.criadoEm || 0)) {
+            if (timestampSeguro(remoto.excluidoEm) >= timestampSeguro(local.atualizadoEm || local.criadoEm || 0)) {
                 mediasParaGravar.push(Object.assign({}, local, { excluidoEm: remoto.excluidoEm, atualizadoEm: remoto.excluidoEm }));
             }
             continue;
         }
         if (local.excluidoEm && !remoto.excluidoEm) {
-            if (Number(remoto.atualizadoEm || remoto.criadoEm || 0) > Number(local.excluidoEm)) mediasParaGravar.push(remoto);
+            if (timestampSeguro(remoto.atualizadoEm || remoto.criadoEm || 0) > timestampSeguro(local.excluidoEm)) mediasParaGravar.push(remoto);
             continue;
         }
         const localTamanho = local.blob ? local.blob.size : String(local.texto || '').length;
@@ -771,7 +820,7 @@ async function aplicarBackupDeZip(zipDados) {
         } else if (!local.blob && !remoto.blob && local.texto === remoto.texto) {
             continue;
         }
-        const remotoEhMaisNovo = Number(remoto.atualizadoEm || remoto.criadoEm || 0) > Number(local.atualizadoEm || local.criadoEm || 0);
+        const remotoEhMaisNovo = timestampSeguro(remoto.atualizadoEm || remoto.criadoEm || 0) > timestampSeguro(local.atualizadoEm || local.criadoEm || 0);
         const manterComoAlternativo = remotoEhMaisNovo ? local : remoto;
         const sufixo = manterComoAlternativo.blob ? (await sha256BlobSeguro(manterComoAlternativo.blob) || gerarIdUnico('hash')).slice(0, 10) : gerarIdUnico('texto').slice(-10);
         if (remotoEhMaisNovo) mediasParaGravar.push(remoto);
@@ -855,6 +904,7 @@ async function restaurarBackupDeArquivo(arquivo) {
     const statusEl = document.getElementById('restaurarStatus');
     statusEl.textContent = 'Lendo arquivo de backup...';
     statusEl.className = 'save-status pending';
+    let restaurado = false;
 
     // Suprime envios à nuvem durante a restauração (cada item restaurado
     // dispararia um envio); a sincronização de verdade acontece uma vez só,
@@ -873,6 +923,8 @@ async function restaurarBackupDeArquivo(arquivo) {
             await aplicarBackupDeZip(dados);
         }
         await salvarConfiguracao('aurora_sync_dirty', '1', false, false);
+        try { window.__auroraSyncDirtyMemoria = true; } catch (_) { /* ambiente sem window */ }
+        restaurado = true;
         statusEl.textContent = 'Backup validado e mesclado com sucesso. Os dados atuais foram preservados.';
         statusEl.className = 'save-status ok';
     } catch (err) {
@@ -883,6 +935,24 @@ async function restaurarBackupDeArquivo(arquivo) {
     } finally {
         __auroraAplicandoBackupRemoto = false;
     }
+
+    // Uma restauração manual é uma alteração local deliberada. Publica a
+    // união imediatamente e só informa conclusão total depois da confirmação
+    // remota; se a rede falhar, o dirty persiste e o retry automático assume.
+    if (restaurado && typeof syncEstaConfigurado === 'function' && syncEstaConfigurado() && typeof publicarComIndicadorVisivel === 'function') {
+        statusEl.textContent = 'Backup restaurado. Confirmando a união na nuvem...';
+        statusEl.className = 'save-status pending';
+        try {
+            await publicarComIndicadorVisivel();
+            statusEl.textContent = 'Backup validado, mesclado e confirmado na nuvem com sucesso.';
+            statusEl.className = 'save-status ok';
+        } catch (err) {
+            if (typeof tratarFalhaEnvioAutomatico === 'function') tratarFalhaEnvioAutomatico(err);
+            statusEl.textContent = 'Backup restaurado neste aparelho. A confirmação na nuvem ficou pendente e será tentada novamente.';
+            statusEl.className = 'save-status err';
+        }
+    }
+    return restaurado;
 }
 
 function iniciarModuloExport() {
@@ -923,6 +993,7 @@ if (typeof module !== 'undefined' && module.exports) {
         mesclarArrayPreservando,
         mesclarConfiguracaoPreservando,
         mesclarChecklistVersionado,
+        timestampSeguro,
         manifestParaConfiguracoes,
         sha256BlobSeguro,
         gerarBackupZipBlob,

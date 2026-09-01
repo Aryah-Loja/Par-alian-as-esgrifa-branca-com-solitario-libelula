@@ -7,7 +7,8 @@ const { execFileSync } = require('node:child_process');
 const {
     mesclarArrayPreservando,
     mesclarConfiguracaoPreservando,
-    mesclarChecklistVersionado
+    mesclarChecklistVersionado,
+    timestampSeguro
 } = require('../js/export.js');
 
 const raiz = path.resolve(__dirname, '..');
@@ -91,6 +92,44 @@ teste('metadados de exclusão usam o maior relógio por chave', () => {
 teste('estágio final nunca regride', () => {
     assert.equal(mesclarConfiguracaoPreservando('aurora_stage', 'final', 'checkout', []), 'final');
     assert.equal(mesclarConfiguracaoPreservando('aurora_stage', 'checkout', 'final', []), 'final');
+});
+
+teste('valor simples remoto mais novo vence pelo relógio por chave', () => {
+    const resultado = mesclarConfiguracaoPreservando(
+        'aurora_contrato_fechado',
+        '0',
+        '1',
+        [],
+        { modificadosLocal: { aurora_contrato_fechado: 10 }, modificadosRemotos: { aurora_contrato_fechado: 20 } }
+    );
+    assert.equal(resultado, '1');
+});
+
+teste('valor simples local mais novo não é regredido', () => {
+    const resultado = mesclarConfiguracaoPreservando(
+        'aurora_video_pedido_youtube',
+        'novo-local',
+        'antigo-remoto',
+        [],
+        { modificadosLocal: { aurora_video_pedido_youtube: 30 }, modificadosRemotos: { aurora_video_pedido_youtube: 20 } }
+    );
+    assert.equal(resultado, 'novo-local');
+});
+
+teste('relógios em ISO e número são comparáveis', () => {
+    assert.equal(timestampSeguro('2026-09-01T12:00:00.000Z'), Date.parse('2026-09-01T12:00:00.000Z'));
+    assert.equal(timestampSeguro(1234), 1234);
+    assert.equal(timestampSeguro('inválido'), 0);
+});
+
+teste('confirmações simultâneas das cartas são unidas por pessoa', () => {
+    const resultado = JSON.parse(mesclarConfiguracaoPreservando(
+        'aurora_cartas_condicionais_confirmacoes',
+        JSON.stringify({ carta_a: { ana: true } }),
+        JSON.stringify({ carta_a: { gabriel: true } }),
+        []
+    ));
+    assert.deepEqual(resultado, { carta_a: { ana: true, gabriel: true } });
 });
 
 teste('todos os JavaScripts do projeto têm sintaxe válida', () => {

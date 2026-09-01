@@ -211,7 +211,6 @@ async function publicarBackupNaNuvem(codigo, lockPublicacao = null) {
         throw new Error('A geração foi enviada, mas o ponteiro remoto não pôde ser confirmado. Os dados locais continuam marcados para nova tentativa.');
     }
     await salvarConfiguracao('aurora_sync_revision', String(geracao.revisao), false, false);
-    await salvarConfiguracao('aurora_sync_dirty', '0', false, false);
     return metaNovo;
 }
 
@@ -320,6 +319,11 @@ async function limparArmazenamentoLocal() {
 let __auroraAplicandoBackupRemoto = false; // suprime auto-envio enquanto aplicamos um backup vindo da nuvem
 let __auroraTimeoutEnvioNuvem = null;
 let __auroraSyncEmAndamento = 0; // contador de envios em voo (pode haver mais de um sobreposto)
+let __auroraSequenciaMudancas = 0;
+let __auroraRetryTimeout = null;
+let __auroraFalhasConsecutivas = 0;
+const POLONI_RETRY_ATRASOS_MS = [5000, 15000, 45000];
+window.__auroraSyncDirtyMemoria = Boolean(window.__auroraSyncDirtyMemoria);
 
 // Banner "Salvando na nuvem": mídia grande dispara o envio imediatamente
 // (sem esperar) e mostra este aviso até terminar, pois o iOS costuma
@@ -336,9 +340,9 @@ function mostrarBannerSync(emAndamento) {
 }
 
 window.addEventListener('beforeunload', (evt) => {
-    if (__auroraSyncEmAndamento > 0) {
+    if (__auroraSyncEmAndamento > 0 || window.__auroraSyncDirtyMemoria) {
         evt.preventDefault();
-        evt.returnValue = 'Ainda estamos salvando na nuvem — se sair agora, o que você acabou de gravar pode não aparecer no outro aparelho.';
+        evt.returnValue = 'Ainda há alterações aguardando confirmação da nuvem — se sair agora, elas continuarão neste aparelho e serão reenviadas na próxima abertura.';
         return evt.returnValue;
     }
 });
@@ -457,10 +461,30 @@ async function publicarComIndicadorVisivel() {
     mostrarBannerSync(true);
     __auroraPublicacaoPromessa = (async () => {
         try {
-            do {
+            while (true) {
+                const sequenciaNoInicio = __auroraSequenciaMudancas;
                 __auroraPublicacaoPendente = false;
                 await executarPublicacaoComLock();
-            } while (__auroraPublicacaoPendente);
+                // Uma mudança pode ter ocorrido enquanto o ZIP era gerado ou
+                // enviado. Nesse caso o primeiro backup continua válido, mas
+                // é obrigatório publicar novamente antes de limpar o dirty.
+                if (sequenciaNoInicio !== __auroraSequenciaMudancas) __auroraPublicacaoPendente = true;
+                if (__auroraPublicacaoPendente) continue;
+
+                // Só limpa o marcador depois que toda a fila terminou. Se
+                // algo mudar durante esta própria escrita, restaura o dirty e
+                // publica outra geração antes de sair do laço.
+                const sequenciaAntesDeLimpar = __auroraSequenciaMudancas;
+                await salvarConfiguracao('aurora_sync_dirty', '0', false, false);
+                if (sequenciaAntesDeLimpar !== __auroraSequenciaMudancas) {
+                    await salvarConfiguracao('aurora_sync_dirty', '1', false, false);
+                    continue;
+                }
+                break;
+            }
+            window.__auroraSyncDirtyMemoria = false;
+            __auroraFalhasConsecutivas = 0;
+            if (__auroraRetryTimeout) { clearTimeout(__auroraRetryTimeout); __auroraRetryTimeout = null; }
         } finally {
             __auroraPublicacaoEmAndamento = false;
             __auroraPublicacaoPromessa = null;
@@ -468,6 +492,31 @@ async function publicarComIndicadorVisivel() {
         }
     })();
     return __auroraPublicacaoPromessa;
+}
+
+function tratarFalhaEnvioAutomatico(err) {
+    console.error('Falha no envio automático para a nuvem:', err);
+    window.__auroraSyncDirtyMemoria = true;
+    const mensagemEspecifica = (err && err.message && err.message.includes('espaço TOTAL')) ? err.message : null;
+    const mensagem = mensagemEspecifica || 'Ainda não foi possível confirmar na nuvem. Os dados continuam seguros neste aparelho e uma nova tentativa será feita automaticamente.';
+    mostrarAvisoPersistente(mensagem);
+
+    const statusEl = document.getElementById('compartilharStatus');
+    if (statusEl) {
+        statusEl.textContent = mensagemEspecifica || 'Sincronização pendente — o site tentará novamente automaticamente.';
+        statusEl.className = 'save-status err';
+    }
+
+    if (__auroraRetryTimeout || __auroraFalhasConsecutivas >= POLONI_RETRY_ATRASOS_MS.length) return;
+    const atraso = POLONI_RETRY_ATRASOS_MS[__auroraFalhasConsecutivas++];
+    __auroraRetryTimeout = setTimeout(() => {
+        __auroraRetryTimeout = null;
+        dispararEnvioAutomatico();
+    }, atraso);
+}
+
+function dispararEnvioAutomatico() {
+    publicarComIndicadorVisivel().catch(tratarFalhaEnvioAutomatico);
 }
 
 // Aviso persistente (mesmo banner do "Salvando na nuvem"), visível em
@@ -499,28 +548,38 @@ function agendarEnvioNuvem(imediato = false) {
     if (__auroraAplicandoBackupRemoto) return; // essa mudança veio de um backup importado, não precisa reenviar
     if (window.__auroraSuprimirSyncDiagnostico) return; // mudança causada por um teste de diagnóstico — não é conteúdo real, não sincroniza
 
+    __auroraSequenciaMudancas++;
+    window.__auroraSyncDirtyMemoria = true;
+    __auroraFalhasConsecutivas = 0;
+    if (__auroraRetryTimeout) { clearTimeout(__auroraRetryTimeout); __auroraRetryTimeout = null; }
     clearTimeout(__auroraTimeoutEnvioNuvem);
-    const disparar = () => {
-        publicarComIndicadorVisivel().catch(err => {
-            console.error('Falha no envio automático para a nuvem:', err);
-            const mensagemEspecifica = (err && err.message && err.message.includes('espaço TOTAL')) ? err.message : null;
-
-            if (mensagemEspecifica) mostrarAvisoPersistente(mensagemEspecifica);
-
-            const statusEl = document.getElementById('compartilharStatus');
-            if (statusEl) {
-                statusEl.textContent = mensagemEspecifica || 'Não sincronizou automaticamente — toque em "Compartilhar" para tentar de novo, ou confira sua internet.';
-                statusEl.className = 'save-status err';
-            }
-        });
-    };
+    if (__auroraPublicacaoEmAndamento) {
+        __auroraPublicacaoPendente = true;
+        return;
+    }
 
     if (imediato) {
-        disparar();
+        dispararEnvioAutomatico();
     } else {
-        __auroraTimeoutEnvioNuvem = setTimeout(disparar, 1200);
+        __auroraTimeoutEnvioNuvem = setTimeout(dispararEnvioAutomatico, 1200);
     }
 }
+
+// No celular, trocar de app ou bloquear a tela pode suspender timers antes
+// dos 1,2 s de agrupamento. Inicia o envio imediatamente ao ocultar a página;
+// o dirty continua persistido caso o sistema encerre o navegador no meio.
+function anteciparEnvioAoSuspender() {
+    if (!window.__auroraSyncDirtyMemoria || __auroraPublicacaoEmAndamento) return;
+    if (__auroraTimeoutEnvioNuvem) {
+        clearTimeout(__auroraTimeoutEnvioNuvem);
+        __auroraTimeoutEnvioNuvem = null;
+    }
+    dispararEnvioAutomatico();
+}
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') anteciparEnvioAoSuspender();
+});
+window.addEventListener('pagehide', anteciparEnvioAoSuspender);
 
 /**
  * Roda uma vez, no carregamento da página. Decide entre "puxar" (a nuvem
@@ -535,6 +594,7 @@ async function sincronizarNaAbertura() {
 
     const revisaoLocal = parseInt(await obterConfiguracao('aurora_sync_revision'), 10) || 0;
     const localSujo = (await obterConfiguracao('aurora_sync_dirty')) === '1';
+    window.__auroraSyncDirtyMemoria = localSujo;
 
     let meta = null;
     try {
@@ -584,6 +644,7 @@ async function sincronizarNaAbertura() {
         } catch (err) {
             console.error('Falha ao publicar dados locais na nuvem ao abrir o site:', err);
             await registrarDiagnosticoSeguro('sync.abertura_upload', err, { revisaoLocal, revisaoNuvem });
+            tratarFalhaEnvioAutomatico(err);
         }
     }
 }
@@ -628,6 +689,7 @@ async function compartilharExperiencia() {
             setStatus('Sincronizado! O link já pode ser aberto em qualquer aparelho.', 'ok');
         } catch (err) {
             console.error('Falha ao sincronizar com a nuvem:', err);
+            tratarFalhaEnvioAutomatico(err);
             setStatus('Não foi possível sincronizar agora. Compartilhando o link local.', 'err');
         }
     } else {

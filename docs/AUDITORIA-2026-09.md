@@ -16,6 +16,15 @@ URLs temporárias, duplicatas e documentação.
 | Crítica | Restore podia destruir dados antes de provar que o arquivo estava íntegro | Validação completa e transação aditiva |
 | Alta | Listas de dois aparelhos podiam perder itens | União por id e tombstones |
 | Alta | Reset parcial podia ressuscitar em outro aparelho | Relógios por chave para modificação/exclusão |
+| Alta | Bancos antigos podiam avançar de versão sem migrar mídias legadas quando um único registro era inválido | Schema 4 recupera os registros válidos e só limpa a origem depois da transação completa |
+| Alta | Um aparelho desatualizado podia republicar uma configuração escalar antiga | Merge passa a respeitar o relógio individual de cada chave |
+| Alta | Datas ISO de mídia eram comparadas como `NaN` | Normalização única aceita timestamps numéricos e ISO antes de decidir a versão canônica |
+| Alta | O marcador de pendência podia ser limpo enquanto outra alteração surgia durante o upload | Fila por geração só limpa o marcador depois de publicar todas as mudanças acumuladas |
+| Alta | Uma falha transitória dependia de recarregar a página para tentar novamente | Retentativas automáticas progressivas e aviso persistente em todas as telas |
+| Alta | Um restore manual ficava somente no aparelho até outra abertura | Restore concluído dispara publicação imediata e mantém a pendência se a nuvem falhar |
+| Média | Um espelho mais novo no `localStorage` podia ser substituído por um registro antigo do IndexedDB | Leitura compara os relógios e repara o IndexedDB de forma atômica |
+| Média | Cliques rápidos no termômetro, mural e mapa podiam executar duas gravações concorrentes | Travas por ação e botões desabilitados durante a gravação |
+| Média | Confirmações simultâneas das cartas condicionais podiam se sobrescrever | Merge específico combina as confirmações de cada pessoa |
 | Alta | Recados tratavam falha de rede como histórico vazio | Leitura obrigatória, união por id, confirmação e repetição |
 | Alta | Duas mídias `.mp4` tinham zero bytes | Removidas; gerador e teste agora rejeitam mídia vazia |
 | Alta | Onze arquivos `.jpg` continham HEIC e doze continham WebP | Convertidos para JPEG real; teste rejeita extensão incompatível |
@@ -35,9 +44,13 @@ URLs temporárias, duplicatas e documentação.
 - bloqueio de publicação de um estado anormalmente menor que o remoto;
 - retenção indexada das três gerações recentes;
 - partes remotas de 5 MB, abaixo do tamanho recomendado para upload padrão;
+- relógio por configuração salvo na mesma transação do valor;
+- aviso ao sair enquanto ainda existir alteração sem confirmação remota;
+- envio antecipado ao bloquear a tela ou trocar de aplicativo;
 - workflow de auditoria em push e pull request;
-- testes de merge, tombstones, checklist, estágio, sintaxe, manifesto, formato
-  real das imagens, tamanho das partes, dependências e duplicatas.
+- testes de merge, tombstones, checklist, estágio, migração legada, falha de
+  rede, retentativa, sintaxe, manifesto, formato real das imagens, tamanho das
+  partes, dependências e duplicatas.
 
 ## Pendências operacionais
 
@@ -61,6 +74,9 @@ URLs temporárias, duplicatas e documentação.
 - Em 01/09/2026, o fluxo real foi executado no projeto
   `mdiohswwximmsggmrzue`: upload de 5 MB, download com SHA-256 idêntico,
   remoção confirmada e ponteiro oficial verificado como inalterado.
+- Na reauditoria de 01/09/2026, o mesmo fluxo foi repetido com um JSON e uma
+  parte binária nova de 5 MB; ambos tiveram download íntegro e remoção
+  confirmada. O backup oficial não foi usado como objeto de teste.
 - O backup remoto oficial ainda está no formato legado. Ele será incorporado
   e migrado para gerações na próxima publicação normal; a auditoria não o
   sobrescreveu apenas para testar a migração.
