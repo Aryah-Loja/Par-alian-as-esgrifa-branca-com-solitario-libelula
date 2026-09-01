@@ -4,6 +4,31 @@ Site interativo (disfarçado de e-commerce de joias) criado para conduzir a
 Poloni até um pedido de namoro. Feito para celular; um computador vê uma
 tela de bloqueio com QR Code apontando de volta para o celular.
 
+## Estado técnico atual
+
+Desde a auditoria de preservação de setembro de 2026, a sincronização usa
+gerações imutáveis e um ponteiro pequeno de commit. Uma geração só vira a
+versão atual depois que todas as partes foram enviadas, relidas e validadas.
+Antes de publicar, o aparelho incorpora a versão remota; restaurações são
+aditivas, em transação, e nunca esvaziam o banco antes da validação.
+
+O backup `.zip` inclui manifesto, versão de schema, contagens, tamanhos e
+checksums SHA-256. As três gerações recentes ficam indexadas no histórico do
+metadado remoto. Conflitos de mídia preservam uma cópia alternativa e listas
+com ids são unidas. Exclusões sincronizáveis usam marcas de exclusão para não
+ressuscitarem em aparelhos desatualizados.
+
+As dependências críticas Dexie, JSZip e Supabase JS estão fixadas e guardadas
+em `vendor/`. Não há etapa de build. O Node é usado apenas nos scripts de
+manutenção e na auditoria automatizada:
+
+```bash
+npm test
+```
+
+Detalhes: `docs/ARQUITETURA-PRESERVACAO.md` e
+`docs/AUDITORIA-2026-09.md`.
+
 ## Como abrir
 
 Basta abrir `index.html` num navegador de celular. Para publicar no
@@ -47,7 +72,7 @@ Sempre que você mudar `css/style.css` ou qualquer arquivo em `js/` (ou os
 equivalentes em `secret/`) e for publicar, rode antes de subir:
 
 ```
-node scripts/atualizar-versao.js
+node js/atualizar-versao.js
 ```
 
 Isso atualiza o número em todas as páginas de uma vez. Depois é só
@@ -131,7 +156,7 @@ Tudo em **`js/config.js`**:
 - `COISAS_QUE_ELA_AMA` (pequena seção com coisas que ela ama, na página de memórias)
 - `CARTA_USAR_TEXTO_TESTE` (liga/desliga o texto de teste da carta final)
 - `SENHA_AREA_MEMORIAS` (senha que protege a área de memórias após o pedido)
-- `SENHA_RESET_SITE` (senha exigida pelo botão "Resetar site", agora em `diagnostico.html` — ver seção própria abaixo)
+- `SENHA_RESET_SITE` (senha exigida pelas ações parciais permitidas em `diagnostico.html`)
 - `CAPSULA_YOUTUBE_ID` (opcional: ID do vídeo do YouTube com a mensagem em vídeo da cápsula do tempo)
 - `VIDEO_PROCESSO_YOUTUBE_URL` (opcional: link do YouTube com o vídeo do processo até o pedido — mostra um botão perto do vídeo do pedido, na página final)
 - `EXPERIENCE_ID` (identificador fixo usado pela sincronização entre aparelhos — troque só se for reaproveitar o projeto para outro casal)
@@ -154,11 +179,10 @@ ver essa página) para rodar verificações reais:
 - Confere se o navegador suporta gravação de câmera/microfone.
 - Se você já configurou a nuvem (ver seção abaixo), testa uma conexão
   real: sobe um arquivo de teste, baixa de volta, confere e apaga.
-- Botão "Testar upload de mídia real (8MB)": sobe um arquivo BINÁRIO de
-  verdade pelo mesmo caminho que fotos/vídeos usam — é o teste que
-  realmente detecta se o bucket do Supabase tem um limite de tamanho
-  baixo demais (o teste de conexão simples usa um JSON minúsculo e pode
-  passar mesmo que vídeos grandes falhem).
+- Botão "Testar uma parte real do backup (5MB)": sobe um arquivo BINÁRIO,
+  baixa, confere tamanho e SHA-256 e remove o objeto temporário. É o teste
+  que realmente detecta se o bucket aceita o mesmo fluxo de cada parte do
+  backup (o teste de conexão simples usa um JSON minúsculo).
 
 Rode esse diagnóstico no MESMO aparelho e navegador que vai ser usado no
 dia do pedido — os resultados podem variar entre Safari, Chrome, iPhone
@@ -176,11 +200,9 @@ estão no topo do arquivo `js/sync.js`. Resumindo:
 2. Crie um bucket de Storage público chamado `aurora-backups`, com
    políticas de INSERT/SELECT/UPDATE/DELETE liberadas para "anon".
 3. **Importante — limite de tamanho do bucket:** no painel, em
-   Storage → aurora-backups → "Edit bucket", confira o campo "File size
-   limit". O padrão do plano gratuito costuma ser 50MB. Se os vídeos do
-   projeto costumam passar disso, aumente esse limite ali (o plano
-   gratuito permite até 5GB por arquivo) — sem isso, o upload do backup
-   falha silenciosamente.
+   Storage → aurora-backups → "Edit bucket", deixe o campo "File size
+   limit" em pelo menos 5MB. O site divide backups maiores em partes de
+   5MB, dentro do tamanho recomendado pelo Supabase para upload padrão.
 4. Em Project Settings → API, copie a Project URL e a chave rotulada
    **"anon" / "public"** (nunca a "service_role") — se você gerar uma
    chave nova depois, a antiga para de funcionar e você precisa colar a
@@ -188,8 +210,8 @@ estão no topo do arquivo `js/sync.js`. Resumindo:
 5. Cole os dois valores em `SUPABASE_URL` e `SUPABASE_ANON_KEY`, no topo
    de `js/sync.js`.
 6. Abra `diagnostico.html` e rode os dois testes de nuvem (conexão simples
-   e upload de mídia real de 8MB) para confirmar, com testes reais, que
-   ficou tudo certo antes do grande dia.
+   e parte real de 5MB) para confirmar, com testes reais, que ficou tudo
+   certo antes do grande dia.
 
 Enquanto isso não for configurado, o botão "Compartilhar" continua
 funcionando (compartilha o link), só não sincroniza os dados para outro
@@ -215,36 +237,25 @@ acontece — é importante não travar a tela nem fechar o app enquanto esse
 aviso estiver visível, senão o envio pode ser interrompido pelo sistema
 (principalmente no iPhone).
 
-## Reset do site (com senha + sincroniza entre aparelhos)
+## Resets seguros e limitados
 
-O botão "Resetar site" fica em `diagnostico.html` (fora do site principal,
-pra evitar toque acidental — mesma senha de antes) e agora:
-1. **Pede uma senha** (`SENHA_RESET_SITE` em `js/config.js`, padrão
-   `13046700`) antes de fazer qualquer coisa. Ver nota de segurança acima
-   sobre os limites dessa proteção.
-2. **Publica o reset na nuvem primeiro, com várias tentativas e
-   confirmação de leitura** (`publicarResetNaNuvem()` em `js/sync.js`) —
-   só depois disso confirmar de verdade é que o aparelho local é limpo
-   (IndexedDB, localStorage, sessionStorage e cache). Se a nuvem não
-   confirmar (sem internet, por exemplo), NADA é apagado ainda, e a tela
-   mostra pra tentar de novo — assim não existe mais o estado confuso de
-   "resetei aqui mas o outro aparelho continua com os dados antigos".
-3. **Avisa o outro aparelho.** Um marcador é publicado no `meta.json` da
-   nuvem; qualquer aparelho que abrir o link depois confere esse marcador
-   antes de mais nada e se limpa também, se for o caso. Ver
-   `sincronizarNaAbertura()` em `js/sync.js`.
+Não existe mais reset total da história. O diagnóstico permite reiniciar
+somente o termômetro do dia e, por uma ação separada, o estado do contrato.
+Vídeos, fotos, cartas, mensagens, mural, checklist, assinatura e demais dados
+sentimentais não entram na lista de exclusão. As remoções permitidas recebem
+um relógio por chave e são sincronizadas como tombstones, evitando que um
+aparelho antigo ressuscite o valor removido.
 
 ## Reset parcial só do contrato de namoro
 
-Além do reset total acima, `diagnostico.html` também tem um botão
-"Resetar só o contrato" (mesma senha `SENHA_RESET_SITE`), pra quando você
+`diagnostico.html` também tem um botão "Resetar só o contrato" (senha
+`SENHA_RESET_SITE`), pra quando você
 só quer refazer a escolha das cláusulas do contrato sem apagar mais nada
 (vídeo, fotos, checklist e progresso continuam intactos). Ele apaga só a
-configuração `aurora_regras_contrato` (local + IndexedDB) via
-`excluirConfiguracao()` (`js/db.js`) e marca a atualização local, então a
-remoção sincroniza para o outro aparelho pelo mesmo caminho de backup de
-sempre — não usa o marcador de "reset publicado na nuvem" (esse é
-reservado pro reset total). Depois de resetado, a seção do contrato em
+configuração `aurora_regras_contrato` e o estado visual do contrato via
+`excluirConfiguracao()` (`js/db.js`). A exclusão recebe um relógio técnico e
+sincroniza para o outro aparelho sem permitir que uma cópia antiga a
+ressuscite. Depois de resetado, a seção do contrato em
 "Nossa História" volta a mostrar a grade de seleção de regras do zero
 (`prepararContrato()` em `js/romance.js`).
 

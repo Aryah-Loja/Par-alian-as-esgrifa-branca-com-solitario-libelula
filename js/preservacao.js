@@ -24,13 +24,14 @@
 // excluirConfiguracao() (js/db.js), mesmo que alguém tente no futuro.
 const CHAVES_CONFIG_RESETAVEIS = [
     'aurora_termometro_lista',  // reset do termômetro do dia (discreto, diagnóstico)
-    'aurora_regras_contrato'    // reset do contrato de namoro (botão próprio, com senha)
+    'aurora_regras_contrato',   // reset do contrato de namoro (botão próprio, com senha)
+    'aurora_contrato_fechado'   // estado visual do mesmo contrato
 ];
 
 // Chaves puramente técnicas (cache de descoberta da Galeria) — não são
 // conteúdo sentimental, só uma otimização que se refaz sozinha na próxima
 // abertura. Podem ser limpas livremente junto com o reset do termômetro.
-const CHAVES_CONFIG_CACHE_TECNICO = ['aurora_galeria_cache_v1'];
+const CHAVES_CONFIG_CACHE_TECNICO = ['aurora_galeria_cache_v1', 'aurora_galeria_cache_v2'];
 
 function chaveConfigPodeSerApagada(chave) {
     return CHAVES_CONFIG_RESETAVEIS.includes(chave) || CHAVES_CONFIG_CACHE_TECNICO.includes(chave);

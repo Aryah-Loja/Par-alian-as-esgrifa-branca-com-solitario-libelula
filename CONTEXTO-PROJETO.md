@@ -98,8 +98,8 @@ checklist.html        → "Nosso Checklist" (lista de programas/experiências
                        do casal), página PERMANENTE e independente, com
                        contador de progresso ("X de Y feitos" + barra) —
                        ver seção própria abaixo
-diagnostico.html     → testes técnicos + reset do site + reset PARCIAL do
-                       contrato de namoro (ela NUNCA vê essa página)
+diagnostico.html     → testes técnicos, saúde/códigos de falha e resets
+                       parciais permitidos (ela NUNCA vê essa página)
 
 css/style.css        → TODO o CSS do projeto inteiro (um arquivo só)
 
@@ -109,9 +109,8 @@ js/config.js         → TODA a configuração e conteúdo editável (nomes, tex
                        sempre vai aqui, nunca espalhada pelo código.
 js/db.js             → camada de acesso ao IndexedDB (Dexie) — mídia do
                        usuário + configs (obterConfiguracao/salvarConfiguracao)
-js/sync.js           → sincronização entre aparelhos via Supabase Storage
-                       (bucket público, sem login — o "segredo" é o
-                       EXPERIENCE_ID fixo) + reset remoto + backup/share
+js/sync.js           → sincronização por gerações imutáveis via Supabase
+                       Storage (bucket público, sem login) + backup/share
 js/romance.js        → toda a lógica da página "Nossa História" (o maior
                        arquivo do projeto: timeline, mapa, quiz, playlist,
                        adjetivos, carta de discussão, easter egg da lua,
@@ -148,10 +147,11 @@ verificar se ela já existe em outro arquivo carregado na mesma página.
 
 ## Convenções e coisas que a IA deve saber ANTES de mexer
 
-- **Sem framework, sem npm, sem build.** Scripts carregados via `<script
+- **Sem framework e sem build.** Scripts carregados via `<script
   src="js/arquivo.js">` direto no HTML, na ordem que aparece — ordem
   importa (ex.: `config.js` sempre primeiro, `utils.js` antes de qualquer
-  arquivo que use suas funções).
+  arquivo que use suas funções). O npm existe apenas como atalho para
+  `npm test`; o site publicado continua estático.
 - **`const`/funções top-level em arquivos carregados juntos não podem ter
   o mesmo nome** — script clássico, sem módulos, todo mundo compartilha o
   mesmo escopo global. Sempre checar quais arquivos JS uma página carrega
@@ -159,12 +159,10 @@ verificar se ela já existe em outro arquivo carregado na mesma página.
 - Todo texto de conteúdo pessoal vive em `js/config.js` — nunca hard-code
   texto novo direto no HTML/JS se ele for "conteúdo" (nomes, frases,
   histórias). HTML só tem estrutura + texto de interface genérico.
-- **Sem framework de teste automatizado no repositório**, mas ao longo do
-  projeto foi usado (fora do repo, só como ferramenta de verificação)
-  jsdom + Node pra simular DOM e testar fluxos de clique sem precisar de
-  navegador de verdade. Recomendado fazer isso antes de entregar qualquer
-  mudança: montar um teste rápido em jsdom simulando os cliques principais
-  e conferir que os elementos certos aparecem/somem.
+- **Auditoria automatizada obrigatória:** `npm test` valida a sintaxe dos
+  scripts, as regras puras de merge/preservação, o manifesto e os arquivos
+  da galeria, dependências locais e duplicatas legadas. Para mudanças de
+  interface, complementar com teste manual em navegador móvel.
 - **Todas as fotos/vídeos/áudios são resolvidos via placeholder** (objeto
   `PLACEHOLDERS` em `config.js` + funções `getAsset()` /
   `resolverFotoPlaceholder()` / `aplicarImagemPlaceholder()` em
@@ -408,7 +406,7 @@ original de 132.
 
 ## Reset parcial do contrato de namoro (adicionado nesta sessão)
 
-`diagnostico.html` agora tem, além do "Resetar site" (total), um botão
+`diagnostico.html` tem um botão
 **"Resetar só o contrato"** — motivo: uma vez que o contrato é gerado
 (`regrasSelecionadas.length >= MIN_REGRAS`), `prepararContrato()` em
 `js/romance.js` some com a grade de seleção e só mostra o contrato já
@@ -416,19 +414,15 @@ pronto, então não existia nenhum jeito de refazer a escolha das cláusulas
 sem apagar o site inteiro.
 
 - Botão em `diagnostico.html` (`#btnResetarContrato`), lógica em
-  `executarResetContrato()` (`js/diagnostics.js`). Mesma senha do reset
-  total (`SENHA_RESET_SITE`) por ser destrutivo, mas bem mais restrito.
-- Apaga só a chave `aurora_regras_contrato` via nova função
+  `executarResetContrato()` (`js/diagnostics.js`). Usa
+  `SENHA_RESET_SITE` por ser uma ação sensível e restrita.
+- Reseta as chaves `aurora_regras_contrato` e
+  `aurora_contrato_fechado` via
   `excluirConfiguracao(chave, imediato)` (`js/db.js`, generalizável para
   qualquer reset parcial futuro) — remove de localStorage + IndexedDB e
-  chama `marcarAtualizacaoLocal(true)`, então a remoção **sincroniza
-  normalmente com o outro aparelho** pelo caminho de backup de sempre
-  (próximo `gerarBackupZipBlob()` não vai incluir `regrasContrato`, então
-  `aplicarBackupDeZip()` no outro aparelho também não vai restaurá-lo).
-- **NÃO usa** o marcador de "reset publicado na nuvem"
-  (`publicarResetNaNuvem()`/`meta.resetado`) — esse mecanismo é exclusivo
-  do reset TOTAL. Um reset parcial não precisa (nem deve) forçar o outro
-  aparelho a se limpar por completo.
+  registra um tombstone com relógio por chave e chama
+  `marcarAtualizacaoLocal(true)`. A remoção sincroniza normalmente e um
+  aparelho antigo não consegue ressuscitar o valor.
 - `solicitarSenhaReset()` agora aceita `{ titulo, subtitulo }` opcionais
   para customizar o texto do modal de senha (antes era fixo "Resetar o
   site" / "apaga tudo", o que ficaria enganoso reaproveitado para o reset
@@ -772,7 +766,7 @@ editar nada em lugar nenhum" — ver comentário grande em `js/config.js`,
 não mudou):**
 
 1. **Cache local por aparelho** (`localStorage`, chave
-   `aurora_galeria_cache_v1`, funções `galeriaLerCache`/
+   `aurora_galeria_cache_v2`, funções `galeriaLerCache`/
    `galeriaLerCache(true)`/`galeriaSalvarCacheSeMelhor`/
    `galeriaLimparCache`, todas em `js/utils.js`). Da segunda abertura em
    diante no mesmo aparelho/navegador, a Galeria e "Nossos momentos" usam
@@ -857,7 +851,7 @@ css/style.css → `.galeria-videos-toggle` (só espaçamento, sem CSS novo
                 parecidos do site, ex. "Ver todos os lugares")
 ```
 
-O cache local (`aurora_galeria_cache_v1`, mesma chave/formato de antes)
+O cache local (`aurora_galeria_cache_v2`, mesma chave/formato de antes)
 não mudou de estrutura: continua guardando `{itens, completo, salvoEm}`.
 O que mudou é só QUANDO cada parte é lida/gravada: fotos gravam um cache
 parcial (`completo: false`) se não houver manifesto; ao apertar "Ver
@@ -931,21 +925,12 @@ sem passar pela senha. É uma limitação de arquitetura de qualquer app
 estático sem back-end, não um bug a corrigir. Na prática o link só chega
 a quem for compartilhado, então o risco real é baixo.
 
-### js/sync.js — histórico do reset propagado entre aparelhos
-O reset (zerar a experiência) precisa avisar TODOS os aparelhos, senão um
-aparelho com dados antigos guardados localmente reenvia tudo de volta pra
-nuvem, ressuscitando o que acabou de ser apagado. Histórico de tentativas:
-- Tentativa 1: só apagar o backup da nuvem — não bastava (motivo acima).
-- Tentativa 2: comparar contra um "ack" por aparelho — falhava quando esse
-  aparelho nunca tinha visto aquele reset específico.
-- Tentativa 3: publicar um arquivo separado (`${EXPERIENCE_ID}-reset.json`)
-  numa segunda escrita, depois de apagar o backup. Se essa segunda escrita
-  falhasse silenciosamente (rede, política do bucket), o outro aparelho
-  nunca via sinal do reset e reenviava dados antigos por cima.
-- Solução final (atual): eliminar o arquivo separado — o reset sobrescreve
-  o próprio `${EXPERIENCE_ID}-meta.json` (o mesmo arquivo pequeno já lido
-  em toda sincronização normal) com `resetado: true`. Uma única escrita,
-  um único arquivo: ou o reset é publicado, ou não é.
+### js/sync.js — exclusões propagadas sem reset total
+O projeto não oferece mais reset total da experiência. Exclusões permitidas
+usam tombstones por registro ou relógios por chave e viajam no backup normal.
+Ao mesclar, a exclusão vence uma versão antiga, mas uma gravação realmente
+posterior pode recriar o dado. `meta.resetado` permanece apenas como leitura
+compatível com metadados legados já publicados.
 
 ### js/sync.js — envio imediato de mídia grande (bug do iPhone)
 O envio automático era silencioso e esperava ~2s pra começar. No iPhone,
@@ -965,13 +950,10 @@ automaticamente a cada abertura da página). `window.__auroraSuprimirSyncDiagnos
 é ligada por js/diagnostics.js antes dos testes e desligada depois.
 
 ### js/sync.js — condição de envio automático ao abrir a página
-`!nuvemFoiResetada`: sem essa condição, um aparelho cujo timestamp local já
-fosse >= ao do reset (por já ter "visto" aquele reset antes) podia reenviar
-dados antigos por cima da marca de reset, ressuscitando informação apagada.
-`>` estrito (em vez de `>=`): depois de um envio com sucesso, o timestamp
-da nuvem fica igual ao local; usar `>=` fazia reenviar o backup inteiro
-(zip com vídeos/fotos) em toda abertura seguinte, mesmo sem nada mudar —
-deixando o site lento pra abrir com o banco cheio de vídeo grande.
+A decisão usa revisão remota monotônica e `aurora_sync_dirty`. Um aparelho
+novo não nasce "sujo" e jamais publica um backup vazio. Se existe revisão
+remota desconhecida, ela é validada e mesclada primeiro; só depois uma
+alteração local explícita pode gerar nova publicação.
 
 ### js/utils.js — descoberta da galeria: cache local + manifesto (motivo do redesenho)
 Antes, tanto a Galeria (galeria.html) quanto "Nossos momentos" (index.html)

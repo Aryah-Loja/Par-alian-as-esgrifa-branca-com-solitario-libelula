@@ -27,7 +27,7 @@ async function renderizarPrimeirasVezes() {
     primeirasVezesUrlsTemporarias = [];
     listaEl.innerHTML = '';
 
-    const registros = (await obterPrimeirasVezes()).sort((a, b) => {
+    const registros = (await obterPrimeirasVezes()).filter(item => !item.excluidoEm).sort((a, b) => {
         const dataA = new Date(a.data || a.criadoEm || 0).getTime();
         const dataB = new Date(b.data || b.criadoEm || 0).getTime();
         return dataB - dataA;
@@ -215,7 +215,9 @@ async function excluirPrimeiraVez(id) {
     if (!confirm('Excluir esta lembrança e a foto dela em todos os aparelhos na próxima sincronização?')) return;
     const registros = await obterPrimeirasVezes();
     const removido = registros.find(item => item.id === id);
-    await salvarConfiguracao(CHAVE_PRIMEIRAS_VEZES, JSON.stringify(registros.filter(item => item.id !== id)), true);
+    await salvarConfiguracao(CHAVE_PRIMEIRAS_VEZES, JSON.stringify(registros.map(item => item.id === id
+        ? Object.assign({}, item, { excluidoEm: new Date().toISOString() })
+        : item)), true);
     if (removido && removido.mediaId) await excluirMedia(removido.mediaId);
     await renderizarPrimeirasVezes();
 }

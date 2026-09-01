@@ -21,6 +21,7 @@ const NOME_DELA = "Ana Poloni"; // Como o site vai chamá-la na maior parte do t
 const NOME_DELA_APELIDO = "Poloni";
 const NOME_DELE = "Gabriel";
 const NOME_DELE_COMPLETO = "Gabriel Schmeisk";
+const POLONI_APP_VERSION = '2026.09-preservacao-1';
 
 /* ----------------------------------------------------------------------
    IDENTIDADE FIXA DA EXPERIÊNCIA (sincronização entre aparelhos)
@@ -421,7 +422,7 @@ const VIDEO_EXTENSOES_ACEITAS = ['mp4', 'mov', 'webm'];
 const TIMELINE_MARCOS = [
     {
         data: 'Antes de tudo',
-       texto: `A primeira vez que eu te vi foi alguns dias antes da gente realmente se conhecer. Você estava andando pelo refeitório da UNIP junto com a Vitória e nao pude deixar de perceber sua beleza. Naquele mesmo dia, já dentro da van, falei para a Vitória: "Sua amiga de cabelo loiro é uma gata." Ela, sendo a fofoqueira oficial da história, fez questão de tentar me fazer te chamar kk, me disse para te adicionar no Instagram, mas eu fiquei com vergonha. Passei alguns dias pensando em uma boa estratégia pra te chamar... e, no fim das contas, foi você quem me adicionou primeiro. Mal sabia eu que aquele simples clique seria o começo da história mais bonita da minha vida.`,
+       texto: `A primeira vez que eu te vi foi alguns dias antes da gente realmente se conhecer. Você estava andando pelo refeitório da UNIP junto com a Vitória e não pude deixar de perceber sua beleza. Naquele mesmo dia, já dentro da van, falei para a Vitória: "Sua amiga de cabelo loiro é uma gata." Ela, sendo a fofoqueira oficial da história, fez questão de tentar me fazer te chamar kk, me disse para te adicionar no Instagram, mas eu fiquei com vergonha. Passei alguns dias pensando em uma boa estratégia pra te chamar... e, no fim das contas, foi você quem me adicionou primeiro. Mal sabia eu que aquele simples clique seria o começo da história mais bonita da minha vida.`,
         foto: 'imagem_timeline_1'
     },
     {
@@ -431,7 +432,7 @@ const TIMELINE_MARCOS = [
     },
     {
         data: '30 de maio',
-        texto: `Chegou então o dia do nosso primeiro encontro. Marcamos às 20h30, no Colina, em Orlândia. Na prática, o relógio já se aproximava das 22h quando você finalmente chegou... porque alguém resolveu demorar uma eternidade para ficar pronta, mas, sinceramente? Eu esperaria o tempo que fosse necessário. Quando você apareceu, toda arrumada, eu fiquei completamente sem palavras, çembro até hoje do brilho dos seus olhos e de como eu só conseguia pensar no quanto você era perfeita, atrasasa, mas perfeita. Depois de conversar bastante, fomos para o carro e passamos horas ali, estacionados em frente à praça, falando sobre a vida, rindo, vendo gatos pretos vagando pela rua e nos conhecendo melhor. Eu queria muito te beijar, mas a coragem simplesmente não aparecia, já estava quase ligando o carro para ir embora quando você olhou para mim, sorriu e perguntou: "E o nosso beijo, nada?". Naquele instante, o mundo pareceu parar, nosso primeiro beijo foi exatamente como eu imaginava... ou talvez até melhor. Foi ali que tudo começou de verdade, e foi naquele momento que eu tive a sensação de que havia encontrado a mulher da minha vida.`,
+        texto: `Chegou então o dia do nosso primeiro encontro. Marcamos às 20h30, no Colina, em Orlândia. Na prática, o relógio já se aproximava das 22h quando você finalmente chegou... porque alguém resolveu demorar uma eternidade para ficar pronta, mas, sinceramente? Eu esperaria o tempo que fosse necessário. Quando você apareceu, toda arrumada, eu fiquei completamente sem palavras, lembro até hoje do brilho dos seus olhos e de como eu só conseguia pensar no quanto você era perfeita, atrasada, mas perfeita. Depois de conversar bastante, fomos para o carro e passamos horas ali, estacionados em frente à praça, falando sobre a vida, rindo, vendo gatos pretos vagando pela rua e nos conhecendo melhor. Eu queria muito te beijar, mas a coragem simplesmente não aparecia, já estava quase ligando o carro para ir embora quando você olhou para mim, sorriu e perguntou: "E o nosso beijo, nada?". Naquele instante, o mundo pareceu parar, nosso primeiro beijo foi exatamente como eu imaginava... ou talvez até melhor. Foi ali que tudo começou de verdade, e foi naquele momento que eu tive a sensação de que havia encontrado a mulher da minha vida.`,
         foto: 'imagem_timeline_3'
     },
     {
@@ -840,7 +841,7 @@ Eu ainda não sei onde vou fazer o pedido, tenho algumas ideias na cabeça, mas 
 
 O que eu sei é que, desde que comecei a preparar tudo isso, cada detalhe tem um único propósito: fazer você se sentir tão amada quanto eu me sinto feliz por ter você na minha vida.
 
-Neste exato momento, você provavelmente nem imagina que existe uma carta escrita para ser aberta daqui a um ano, provavelmente está vivendo um dia completamente normal, enquanto eu estou aqui, sentado no meu trabalho pensando em mil possibilidades, imaginando como vai ser olhar nos seus olhos e entregar a aliança que mudar completamente a nossa história.
+Neste exato momento, você provavelmente nem imagina que existe uma carta escrita para ser aberta daqui a um ano, provavelmente está vivendo um dia completamente normal, enquanto eu estou aqui, sentado no meu trabalho pensando em mil possibilidades, imaginando como vai ser olhar nos seus olhos e entregar a aliança que vai mudar completamente a nossa história.
 
 Confesso que estou ansioso.
 
@@ -1006,7 +1007,7 @@ Com amor, até nos dias difíceis,`;
 // Link do site pra virar QR code na carta física. Deixe vazio ('') até
 // saber onde o site vai ficar hospedado — enquanto estiver vazio, a carta
 // física não mostra QR nenhum (só o texto), sem quebrar nada.
-const URL_DO_SITE = '';
+const URL_DO_SITE = 'https://poloni.site';
 
 // Tamanho de impressão da constelação: formato "foto
 // revelada" (10x15cm), o padrão de qualquer revelação de foto em loja ou
@@ -1029,7 +1030,7 @@ const MOMENTO_LENTO_FRASES = [
     'Mas eu quis guardar ele pra sempre, bem devagar.',
     'Pra sempre voltar e ver a mulher linda.',
     'Que está ao meu lado hoje, e para sempre.',
-    'Eu te amo!.',
+    'Eu te amo!',
     'Ana Júlia Poloni.',
     'Sempre estarei aqui por você.',
     'E com você!',
@@ -1942,7 +1943,7 @@ const SENHA_CARTA_DISCUSSAO_HASH = 'dc71e742d453ba0320f5797cf44f181b8e946cb48a59
 const DICA_SENHA_CARTA_DISCUSSAO = 'A dica são duas palavras que a gente nunca pode esquecer de dizer um pro outro.';
 
 /* ----------------------------------------------------------------------
-   SENHA DO BOTÃO "RESETAR SITE"
+   SENHA DAS AÇÕES ADMINISTRATIVAS SENSÍVEIS
    ----------------------------------------------------------------------
    Some qualquer indicação visual dessa senha na tela (o campo é do tipo
    "password", mascarado). Guardada como hash SHA-256 (não o número em

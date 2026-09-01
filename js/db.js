@@ -63,12 +63,56 @@ db.version(2).stores({
     }
 });
 
+// v3 acrescenta somente um diário técnico local. A migração é aditiva:
+// nenhuma tabela ou registro sentimental é removido ou regravado.
+db.version(3).stores({
+    media: 'id, tipo, criadoEm',
+    configuracoes: 'chave',
+    diagnosticos: '++id, codigo, criadoEm, operacao'
+});
+
+function gerarCodigoDiagnostico() {
+    const data = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const aleatorio = Math.random().toString(36).slice(2, 7).toUpperCase().padEnd(5, '0');
+    return `POLONI-${data}-${aleatorio}`;
+}
+
+// Registra apenas metadados técnicos. Nunca recebe senha, token ou conteúdo
+// sentimental. O diário é limitado para não crescer indefinidamente.
+async function registrarDiagnosticoSeguro(operacao, erro, detalhes = {}) {
+    try {
+        const codigo = gerarCodigoDiagnostico();
+        const registro = {
+            codigo,
+            criadoEm: Date.now(),
+            pagina: location && location.pathname ? location.pathname : '',
+            operacao: String(operacao || 'desconhecida').slice(0, 80),
+            mensagem: String(erro && erro.message ? erro.message : erro || 'Falha sem mensagem').slice(0, 500),
+            stack: erro && erro.stack ? String(erro.stack).slice(0, 1800) : null,
+            navegador: navigator && navigator.userAgent ? navigator.userAgent.slice(0, 350) : '',
+            versaoApp: typeof POLONI_APP_VERSION !== 'undefined' ? POLONI_APP_VERSION : null,
+            detalhes: detalhes && typeof detalhes === 'object' ? detalhes : {}
+        };
+        await db.diagnosticos.add(registro);
+        const total = await db.diagnosticos.count();
+        if (total > 120) {
+            const antigos = await db.diagnosticos.orderBy('id').limit(total - 100).primaryKeys();
+            await db.diagnosticos.bulkDelete(antigos);
+        }
+        return codigo;
+    } catch (_) {
+        return null;
+    }
+}
+
 // Marca "agora" como última alteração local (usado por js/sync.js para
 // decidir quem tem dados mais novos) e agenda o envio à nuvem.
 async function marcarAtualizacaoLocal(imediato = false) {
     const agora = String(Date.now());
     try { localStorage.setItem('aurora_atualizado_em', agora); } catch (e) { /* ignora */ }
     try { await db.configuracoes.put({ chave: 'aurora_atualizado_em', valor: agora }); } catch (e) { /* ignora */ }
+    try { localStorage.setItem('aurora_sync_dirty', '1'); } catch (e) { /* ignora */ }
+    try { await db.configuracoes.put({ chave: 'aurora_sync_dirty', valor: '1' }); } catch (e) { /* ignora */ }
     if (typeof agendarEnvioNuvem === 'function') agendarEnvioNuvem(imediato);
 }
 
@@ -77,6 +121,7 @@ async function marcarAtualizacaoLocal(imediato = false) {
 async function salvarMedia(registro) {
     if (!registro || !registro.id) throw new Error('salvarMedia requer um id');
     registro.criadoEm = registro.criadoEm || Date.now();
+    registro.atualizadoEm = Date.now();
 
     try {
         await db.media.put(registro);
@@ -98,16 +143,19 @@ async function salvarMedia(registro) {
 }
 
 async function obterMedia(id) {
-    try { return await db.media.get(id); } catch (e) { console.error(`Falha ao ler mídia "${id}":`, e); return null; }
+    try { const item = await db.media.get(id); return item && !item.excluidoEm ? item : null; } catch (e) { console.error(`Falha ao ler mídia "${id}":`, e); return null; }
 }
 
 async function obterMediaPorTipo(tipo) {
-    try { return await db.media.where('tipo').equals(tipo).toArray(); } catch (e) { console.error(`Falha ao listar mídias do tipo "${tipo}":`, e); return []; }
+    try { return (await db.media.where('tipo').equals(tipo).toArray()).filter(item => !item.excluidoEm); } catch (e) { console.error(`Falha ao listar mídias do tipo "${tipo}":`, e); return []; }
 }
 
 async function excluirMedia(id) {
     try {
-        await db.media.delete(id);
+        const existente = await db.media.get(id);
+        if (!existente) return true;
+        if (existente.tipo === 'diagnostico') await db.media.delete(id);
+        else await db.media.put(Object.assign({}, existente, { excluidoEm: Date.now(), atualizadoEm: Date.now() }));
         await marcarAtualizacaoLocal(true);
         return true;
     } catch (e) { console.error(`Falha ao excluir mídia "${id}":`, e); return false; }
@@ -135,6 +183,21 @@ async function salvarConfiguracao(chave, valor, imediato = false, afetaSincroniz
         sucessoIndexedDB = true;
     } catch (e) { console.error('Falha ao salvar configuração no IndexedDB:', chave, e); }
 
+    // Relógio por chave: permite distinguir uma exclusão legítima de um
+    // valor antigo ressurgindo de outro aparelho. É metadado técnico e não
+    // contém o conteúdo da configuração.
+    if (afetaSincronizacao && !['aurora_config_modificados_em', 'aurora_config_excluidas_em'].includes(chave)) {
+        try {
+            const registro = await db.configuracoes.get('aurora_config_modificados_em');
+            let mapa = {};
+            try { mapa = JSON.parse(registro?.valor || localStorage.getItem('aurora_config_modificados_em') || '{}'); } catch (_) { mapa = {}; }
+            mapa[chave] = Date.now();
+            const serializado = JSON.stringify(mapa);
+            await db.configuracoes.put({ chave: 'aurora_config_modificados_em', valor: serializado });
+            try { localStorage.setItem('aurora_config_modificados_em', serializado); } catch (_) { /* IndexedDB basta */ }
+        } catch (e) { console.error('Falha ao registrar versão da configuração:', chave, e); }
+    }
+
     // Evita recursão em 'aurora_atualizado_em'; afetaSincronizacao=false é
     // para configs cosméticas que não devem contar como "dado novo".
     if (chave !== 'aurora_atualizado_em' && afetaSincronizacao) await marcarAtualizacaoLocal(imediato);
@@ -158,25 +221,45 @@ async function excluirConfiguracao(chave, imediato = true) {
         console.error(`excluirConfiguracao bloqueada: "${chave}" é um dado permanente (ou a proteção de js/preservacao.js não está carregada) e não pode ser apagado por nenhum reset.`);
         return false;
     }
+    const agora = Date.now();
     try { localStorage.removeItem(chave); } catch (e) { console.error('Falha ao remover do localStorage:', chave, e); }
-    try { await db.configuracoes.delete(chave); } catch (e) { console.error('Falha ao remover configuração do IndexedDB:', chave, e); }
+    try {
+        const registro = await db.configuracoes.get('aurora_config_excluidas_em');
+        let mapa = {};
+        try { mapa = JSON.parse(registro?.valor || localStorage.getItem('aurora_config_excluidas_em') || '{}'); } catch (_) { mapa = {}; }
+        mapa[chave] = agora;
+        const serializado = JSON.stringify(mapa);
+        await db.transaction('rw', db.configuracoes, async () => {
+            await db.configuracoes.delete(chave);
+            await db.configuracoes.put({ chave: 'aurora_config_excluidas_em', valor: serializado });
+        });
+        try { localStorage.setItem('aurora_config_excluidas_em', serializado); } catch (_) { /* IndexedDB basta */ }
+    } catch (e) { console.error('Falha ao registrar exclusão da configuração:', chave, e); }
     await marcarAtualizacaoLocal(imediato);
 }
 
 async function obterConfiguracao(chave) {
-    try {
-        const local = localStorage.getItem(chave);
-        if (local !== null) return local;
-    } catch (e) { /* segue para o IndexedDB */ }
+    // IndexedDB é a fonte de verdade. localStorage é apenas um espelho de
+    // recuperação rápida; preferi-lo podia ressuscitar um valor antigo após
+    // uma restauração concluída no banco.
     try {
         const registro = await db.configuracoes.get(chave);
-        if (!registro) return null;
-        // Normaliza para string mesmo se o valor salvo não for uma string.
-        return typeof registro.valor === 'string' ? registro.valor : JSON.stringify(registro.valor);
+        if (registro) {
+            const valor = typeof registro.valor === 'string' ? registro.valor : JSON.stringify(registro.valor);
+            try { if (localStorage.getItem(chave) !== valor) localStorage.setItem(chave, valor); } catch (_) { /* espelho opcional */ }
+            return valor;
+        }
     } catch (e) {
-        console.error('Falha ao ler configuração:', chave, e);
-        return null;
+        await registrarDiagnosticoSeguro('db.ler_configuracao', e, { chave: String(chave).slice(0, 80) });
     }
+    try {
+        const local = localStorage.getItem(chave);
+        if (local !== null) {
+            try { await db.configuracoes.put({ chave, valor: local }); } catch (_) { /* mantém fallback */ }
+            return local;
+        }
+    } catch (_) { /* nenhum armazenamento disponível */ }
+    return null;
 }
 
 /* ---------------- Armazenamento persistente e estimativa de espaço ----------------
@@ -208,4 +291,20 @@ async function obterEstimativaArmazenamento() {
         console.error('Falha ao obter estimativa de armazenamento:', e);
         return null;
     }
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        db,
+        gerarCodigoDiagnostico,
+        registrarDiagnosticoSeguro,
+        marcarAtualizacaoLocal,
+        salvarMedia,
+        obterMedia,
+        obterMediaPorTipo,
+        excluirMedia,
+        salvarConfiguracao,
+        excluirConfiguracao,
+        obterConfiguracao
+    };
 }

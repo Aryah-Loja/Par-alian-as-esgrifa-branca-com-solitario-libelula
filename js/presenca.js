@@ -37,12 +37,9 @@
  * do site, isso é uma aproximação razoável pra um casal sem login, não
  * uma garantia absoluta.
  *
- * Limitação conhecida (mesma natureza do backup em js/sync.js): o
- * arquivo de recados é sobrescrito inteiro a cada envio (upsert simples,
- * sem banco de dados de verdade) — em caso de dois envios praticamente
- * simultâneos dos dois aparelhos, o que salvar por último "ganha" e pode
- * sobrescrever o outro no arquivo da nuvem. Extremamente raro num casal
- * de duas pessoas, mas vale documentar.
+ * Antes de cada gravação, o histórico remoto é relido, unido por id e
+ * confirmado por uma nova leitura. Uma corrida simultânea é repetida uma
+ * vez; falhas de rede nunca viram uma lista vazia gravável.
  */
 const PRESENCA_CANAL = 'aurora-presenca';
 
@@ -148,42 +145,70 @@ function recadosCaminhoEscrita() {
     return `${SUPABASE_URL}/storage/v1/object/${SUPABASE_BUCKET}/${RECADOS_ARQUIVO}`;
 }
 
-// Busca o arquivo na nuvem; se ainda não existir (primeiro recado de
-// todos) ou não der pra alcançar (sem internet), volta uma lista vazia
-// em vez de quebrar qualquer coisa — o recadinho sempre funciona pelo
-// menos via broadcast, mesmo se a parte de nuvem falhar.
+// Só 404 significa "ainda não há histórico". Uma falha de rede nunca é
+// convertida em lista vazia, pois isso permitiria sobrescrever recados
+// existentes com um arquivo incompleto na tentativa seguinte.
 async function recadosBuscarDaNuvem() {
     if (!syncEstaConfigurado()) return { mensagens: [] };
-    try {
-        const resposta = await fetch(recadosCaminhoLeitura());
-        if (!resposta.ok) return { mensagens: [] };
-        const dados = await resposta.json();
-        if (!dados || !Array.isArray(dados.mensagens)) return { mensagens: [] };
-        return dados;
-    } catch (e) {
-        console.warn('Não consegui buscar o histórico de recados na nuvem (sem internet?) — segue sem histórico por agora.', e);
-        return { mensagens: [] };
+    const resposta = await fetch(recadosCaminhoLeitura());
+    if (resposta.status === 404) return { mensagens: [] };
+    if (!resposta.ok) throw new Error(`Falha ao ler recados (${resposta.status}).`);
+    const dados = await resposta.json();
+    if (!dados || !Array.isArray(dados.mensagens)) throw new Error('Histórico de recados inválido; gravação bloqueada para preservar os dados atuais.');
+    return dados;
+}
+
+function recadosMesclarPreservando(...fontes) {
+    const porId = new Map();
+    for (const fonte of fontes) {
+        for (const mensagem of fonte?.mensagens || []) {
+            if (!mensagem?.id) continue;
+            const anterior = porId.get(mensagem.id);
+            porId.set(mensagem.id, anterior
+                ? Object.assign({}, anterior, mensagem, { entregue: Boolean(anterior.entregue || mensagem.entregue) })
+                : Object.assign({}, mensagem));
+        }
     }
+    const mensagens = Array.from(porId.values())
+        .sort((a, b) => String(a.enviadoEm || '').localeCompare(String(b.enviadoEm || '')))
+        .slice(-RECADOS_LIMITE_HISTORICO);
+    return { mensagens, atualizadoEm: new Date().toISOString() };
 }
 
 async function recadosSalvarNaNuvem(dados) {
     if (!syncEstaConfigurado()) return false;
-    try {
-        const resposta = await fetch(recadosCaminhoEscrita(), {
-            method: 'POST',
-            headers: {
-                'apikey': SUPABASE_ANON_KEY,
-                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                'Content-Type': 'application/json',
-                'x-upsert': 'true'
-            },
-            body: JSON.stringify(dados)
-        });
-        return resposta.ok;
-    } catch (e) {
-        console.warn('Não consegui salvar o recado na nuvem (sem internet?) — se a outra pessoa estiver online agora, ainda chega por broadcast.', e);
-        return false;
+    const idsObrigatorios = new Set((dados?.mensagens || []).map(m => m.id).filter(Boolean));
+    for (let tentativa = 0; tentativa < 2; tentativa++) {
+        try {
+            const atual = await recadosBuscarDaNuvem();
+            const unido = recadosMesclarPreservando(atual, dados);
+            const resposta = await fetch(recadosCaminhoEscrita(), {
+                method: 'POST',
+                headers: {
+                    'apikey': SUPABASE_ANON_KEY,
+                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                    'Content-Type': 'application/json',
+                    'x-upsert': 'true'
+                },
+                body: JSON.stringify(unido)
+            });
+            if (!resposta.ok) throw new Error(`Falha ao gravar recados (${resposta.status}).`);
+
+            // Confirma por releitura. Se outro aparelho gravou ao mesmo
+            // tempo e venceu a corrida, a segunda tentativa une de novo.
+            const confirmado = await recadosBuscarDaNuvem();
+            const idsConfirmados = new Set(confirmado.mensagens.map(m => m.id));
+            if ([...idsObrigatorios].every(id => idsConfirmados.has(id))) {
+                recadosCache = recadosMesclarPreservando(confirmado, unido);
+                recadosCacheCarregado = true;
+                return true;
+            }
+        } catch (e) {
+            console.warn('Não consegui salvar o recado na nuvem sem risco de sobrescrever o histórico.', e);
+            if (typeof registrarDiagnosticoSeguro === 'function') await registrarDiagnosticoSeguro('recados_salvar', e, { tentativa: tentativa + 1 });
+        }
     }
+    return false;
 }
 
 // Garante que recadosCache está carregado (uma vez por sessão é
@@ -192,8 +217,13 @@ async function recadosSalvarNaNuvem(dados) {
 // de outro aparelho entre uma checagem e outra).
 async function recadosGarantirCacheCarregado() {
     if (recadosCacheCarregado) return recadosCache;
-    recadosCache = await recadosBuscarDaNuvem();
-    recadosCacheCarregado = true;
+    try {
+        recadosCache = await recadosBuscarDaNuvem();
+        recadosCacheCarregado = true;
+    } catch (e) {
+        console.warn('Histórico de recados indisponível; mantendo o cache local sem gravar por cima da nuvem.', e);
+        if (typeof registrarDiagnosticoSeguro === 'function') await registrarDiagnosticoSeguro('recados_ler', e);
+    }
     return recadosCache;
 }
 
@@ -359,7 +389,7 @@ function exibirRecadosRecebidos(lista) {
 
     container.innerHTML = mensagens.map((m) => {
         const nome = m.de === 'gabriel' ? NOME_DELE : NOME_DELA_APELIDO;
-        const textoEscapado = String(m.texto).replace(/</g, '&lt;');
+        const textoEscapado = escaparHtml(m.texto);
         return `
             <div class="recado-recebido-item">
                 <p class="recado-recebido-de">${nome} mandou um recado:</p>
@@ -393,7 +423,12 @@ function fecharRecadoRecebido() {
 // mesmo que os dois nunca tenham ficado online ao mesmo tempo.
 async function verificarRecadosPendentes() {
     if (!syncEstaConfigurado()) return;
-    const dados = await recadosBuscarDaNuvem();
+    let dados;
+    try { dados = await recadosBuscarDaNuvem(); }
+    catch (e) {
+        if (typeof registrarDiagnosticoSeguro === 'function') await registrarDiagnosticoSeguro('recados_pendentes', e);
+        return;
+    }
     recadosCache = dados;
     recadosCacheCarregado = true;
 
@@ -431,7 +466,7 @@ async function renderizarHistoricoRecados() {
 
     lista.innerHTML = mensagens.map((m) => {
         const nome = m.de === 'gabriel' ? NOME_DELE : NOME_DELA_APELIDO;
-        const textoEscapado = String(m.texto).replace(/</g, '&lt;').replace(/\n/g, '<br>');
+        const textoEscapado = escaparHtml(m.texto).replace(/\n/g, '<br>');
         return `
             <div class="recado-historico-item">
                 <div class="recado-historico-item-topo">

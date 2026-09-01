@@ -61,7 +61,7 @@ function mapaAdminAtualizarIconePreview() {
 async function mapaAdminRenderizarLista() {
     const container = document.getElementById('mapaAdminLista');
     if (!container) return;
-    const lista = await mapaAdminObterLista();
+    const lista = (await mapaAdminObterLista()).filter(lugar => !lugar.excluidoEm);
 
     if (!lista.length) {
         container.innerHTML = '<p class="small text-white-50 text-center mb-0">Nenhum local adicionado por aqui ainda.</p>';
@@ -73,15 +73,15 @@ async function mapaAdminRenderizarLista() {
         const item = document.createElement('div');
         item.className = 'mapa-admin-item';
         item.innerHTML = `
-            <i class="bi ${lugar.icon || 'bi-geo-alt-fill'}"></i>
+            <i class="bi ${/^bi-[a-z0-9-]+$/i.test(lugar.icon || '') ? lugar.icon : 'bi-geo-alt-fill'}"></i>
             <div class="flex-grow-1">
-                <strong>${lugar.nome}</strong>
-                <p class="mb-1">${lugar.cidade || ''}${lugar.texto ? ', ' + lugar.texto : ''}</p>
+                <strong>${escaparHtml(lugar.nome)}</strong>
+                <p class="mb-1">${escaparHtml(lugar.cidade || '')}${lugar.texto ? ', ' + escaparHtml(lugar.texto) : ''}</p>
                 <p class="mb-0">${lugar.mediaId ? 'Foto enviada e sincronizada' : (lugar.fotoBase ? `Foto antiga: assets/img/${lugar.fotoBase}.jpg` : 'Sem foto')}</p>
             </div>
             <div class="d-flex flex-column gap-1">
-                <button type="button" class="btn btn-outline-light btn-sm rounded-pill" data-editar="${lugar.id}"><i class="bi bi-pencil"></i></button>
-                <button type="button" class="btn btn-outline-danger btn-sm rounded-pill" data-excluir="${lugar.id}"><i class="bi bi-trash"></i></button>
+                <button type="button" class="btn btn-outline-light btn-sm rounded-pill" data-editar="${escaparHtml(lugar.id)}"><i class="bi bi-pencil"></i></button>
+                <button type="button" class="btn btn-outline-danger btn-sm rounded-pill" data-excluir="${escaparHtml(lugar.id)}"><i class="bi bi-trash"></i></button>
             </div>`;
         container.appendChild(item);
     });
@@ -135,7 +135,9 @@ async function mapaAdminExcluir(id) {
     if (!confirm('Excluir este local? Ele também some do mapa em qualquer outro aparelho na próxima sincronização.')) return;
     const lista = await mapaAdminObterLista();
     const removido = lista.find(l => l.id === id);
-    const novaLista = lista.filter(l => l.id !== id);
+    const novaLista = lista.map(l => l.id === id
+        ? Object.assign({}, l, { excluidoEm: new Date().toISOString() })
+        : l);
     await mapaAdminSalvarLista(novaLista);
     if (removido && removido.mediaId) await excluirMedia(removido.mediaId);
     if (mapaAdminEditandoId === id) mapaAdminCancelarEdicao();
@@ -187,7 +189,9 @@ async function mapaAdminSalvar() {
         texto: textoInput.value.trim(),
         icon: iconeInput.value.trim() || 'bi-geo-alt-fill',
         mediaId,
-        fotoBase: anterior?.fotoBase || null
+        fotoBase: anterior?.fotoBase || null,
+        criadoEm: anterior?.criadoEm || Date.now(),
+        atualizadoEm: Date.now()
     };
 
     const novaLista = mapaAdminEditandoId

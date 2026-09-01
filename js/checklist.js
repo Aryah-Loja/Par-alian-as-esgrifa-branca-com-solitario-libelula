@@ -13,6 +13,7 @@ const CHECKLIST_CHAVE_CONFIG = 'aurora_checklist_encontros';
 // uma categoria já existente. Usa o mesmo objeto de estado dos itens
 // originais, com "id" como chave.
 const CHECKLIST_ITENS_CUSTOM_CHAVE_CONFIG = 'aurora_checklist_itens_customizados';
+const CHECKLIST_ALTERACOES_CHAVE_CONFIG = 'aurora_checklist_alteracoes_em';
 
 // Estado em memória (carregado uma vez em montarChecklist), só mutado e
 // persistido localmente a cada mudança, sem reler o banco — evita perder
@@ -21,6 +22,8 @@ let __checklistEstadoAtual = null;
 
 // Itens customizados em memória, mesmo princípio do estado acima.
 let __checklistItensCustomizados = null;
+let __checklistAlteracoesEm = null;
+let __checklistFilaSalvar = Promise.resolve();
 
 // Último percentual visto pela barra de progresso geral, pra detectar o
 // INSTANTE em que ela cruza 25/50/75/100% (ver checklistAtualizarProgresso)
@@ -32,12 +35,12 @@ let __checklistPercentualAnterior = null;
 
 function checklistTotalItens() {
     const totalOriginal = CHECKLIST_ENCONTROS.reduce((soma, cat) => soma + cat.itens.length, 0);
-    return totalOriginal + (__checklistItensCustomizados ? __checklistItensCustomizados.length : 0);
+    return totalOriginal + (__checklistItensCustomizados ? __checklistItensCustomizados.filter(item => !item.excluidoEm).length : 0);
 }
 
 function checklistItensCustomizadosDaCategoria(catIdx) {
     if (!__checklistItensCustomizados) return [];
-    return __checklistItensCustomizados.filter(item => Number(item.catIdx) === Number(catIdx));
+    return __checklistItensCustomizados.filter(item => !item.excluidoEm && Number(item.catIdx) === Number(catIdx));
 }
 
 async function checklistCarregarEstadoDoBanco() {
@@ -65,7 +68,10 @@ async function checklistCarregarItensCustomizadosDoBanco() {
 /** Atualiza o cartão de progresso geral + o contador de cada categoria, sem redesenhar a lista inteira. */
 function checklistAtualizarProgresso(estado) {
     const total = checklistTotalItens();
-    const feitos = Object.keys(estado).filter(id => estado[id]).length;
+    const idsValidos = new Set();
+    CHECKLIST_ENCONTROS.forEach((cat, catIdx) => cat.itens.forEach((_, itemIdx) => idsValidos.add(`${catIdx}_${itemIdx}`)));
+    (__checklistItensCustomizados || []).filter(item => !item.excluidoEm).forEach(item => idsValidos.add(item.id));
+    const feitos = Object.keys(estado).filter(id => estado[id] && idsValidos.has(id)).length;
     const faltam = total - feitos;
     const percentual = total > 0 ? Math.round((feitos / total) * 100) : 0;
 
@@ -115,9 +121,17 @@ function checklistAtualizarProgresso(estado) {
 // Marca/desmarca um item (original ou customizado) pelo id final.
 async function checklistAlternarItem(id, marcado) {
     if (!__checklistEstadoAtual) __checklistEstadoAtual = await checklistCarregarEstadoDoBanco();
-    if (marcado) __checklistEstadoAtual[id] = true; else delete __checklistEstadoAtual[id];
+    if (!__checklistAlteracoesEm) __checklistAlteracoesEm = await checklistCarregarAlteracoesDoBanco();
+    __checklistEstadoAtual[id] = Boolean(marcado);
+    __checklistAlteracoesEm[id] = Date.now();
     checklistAtualizarProgresso(__checklistEstadoAtual); // atualiza a tela na hora, sem esperar o banco
-    await salvarConfiguracao(CHECKLIST_CHAVE_CONFIG, JSON.stringify(__checklistEstadoAtual));
+    const estadoSnapshot = JSON.stringify(__checklistEstadoAtual);
+    const versoesSnapshot = JSON.stringify(__checklistAlteracoesEm);
+    __checklistFilaSalvar = __checklistFilaSalvar.then(async () => {
+        await salvarConfiguracao(CHECKLIST_CHAVE_CONFIG, estadoSnapshot);
+        await salvarConfiguracao(CHECKLIST_ALTERACOES_CHAVE_CONFIG, versoesSnapshot);
+    });
+    await __checklistFilaSalvar;
 }
 
 // Escapa o texto antes de jogar no innerHTML (itens customizados vêm de um <textarea>).
@@ -129,16 +143,25 @@ function checklistEscaparHtml(texto) {
 
 function checklistHtmlItem(id, texto, marcado, removivel) {
     const textoSeguro = checklistEscaparHtml(texto);
+    const idSeguro = escaparHtml(String(id));
     return `
         <div class="checklist-item-linha">
-            <label class="checklist-item${marcado ? ' checklist-item-feito' : ''}${removivel ? ' checklist-item-personalizado' : ''}" for="checklistItem_${id}">
-                <input type="checkbox" id="checklistItem_${id}" data-checklist-id="${id}" ${marcado ? 'checked' : ''}>
+            <label class="checklist-item${marcado ? ' checklist-item-feito' : ''}${removivel ? ' checklist-item-personalizado' : ''}" for="checklistItem_${idSeguro}">
+                <input type="checkbox" id="checklistItem_${idSeguro}" data-checklist-id="${idSeguro}" ${marcado ? 'checked' : ''}>
                 <span class="checklist-item-check"><i class="bi bi-check-lg"></i></span>
                 <span class="checklist-item-texto">${textoSeguro}</span>
             </label>
-            ${removivel ? `<button type="button" class="checklist-item-remover" data-remover-id="${id}" aria-label="Remover este item"><i class="bi bi-x-lg"></i></button>` : ''}
+            ${removivel ? `<button type="button" class="checklist-item-remover" data-remover-id="${idSeguro}" aria-label="Remover este item"><i class="bi bi-x-lg"></i></button>` : ''}
         </div>
     `;
+}
+
+async function checklistCarregarAlteracoesDoBanco() {
+    try {
+        const bruto = await obterConfiguracao(CHECKLIST_ALTERACOES_CHAVE_CONFIG);
+        const mapa = bruto ? JSON.parse(bruto) : {};
+        return mapa && typeof mapa === 'object' && !Array.isArray(mapa) ? mapa : {};
+    } catch (_) { return {}; }
 }
 
 function checklistHtmlCategoria(cat, catIdx, estado) {
@@ -221,12 +244,17 @@ async function checklistRemoverItemCustomizado(id) {
     if (!confirm('Remover este item da lista? Essa ação não pode ser desfeita, e também remove ele do outro aparelho na próxima sincronização.')) return;
     if (!__checklistItensCustomizados) __checklistItensCustomizados = await checklistCarregarItensCustomizadosDoBanco();
     if (!__checklistEstadoAtual) __checklistEstadoAtual = await checklistCarregarEstadoDoBanco();
+    if (!__checklistAlteracoesEm) __checklistAlteracoesEm = await checklistCarregarAlteracoesDoBanco();
 
-    __checklistItensCustomizados = __checklistItensCustomizados.filter(item => item.id !== id);
-    delete __checklistEstadoAtual[id];
+    __checklistItensCustomizados = __checklistItensCustomizados.map(item => item.id === id
+        ? Object.assign({}, item, { excluidoEm: new Date().toISOString() })
+        : item);
+    __checklistEstadoAtual[id] = false;
+    __checklistAlteracoesEm[id] = Date.now();
 
     await salvarConfiguracao(CHECKLIST_ITENS_CUSTOM_CHAVE_CONFIG, JSON.stringify(__checklistItensCustomizados));
     await salvarConfiguracao(CHECKLIST_CHAVE_CONFIG, JSON.stringify(__checklistEstadoAtual));
+    await salvarConfiguracao(CHECKLIST_ALTERACOES_CHAVE_CONFIG, JSON.stringify(__checklistAlteracoesEm));
     checklistRenderizarLista();
 }
 
@@ -347,6 +375,7 @@ async function montarChecklist() {
     const carregando = document.getElementById('checklistCarregando');
     __checklistEstadoAtual = await checklistCarregarEstadoDoBanco();
     __checklistItensCustomizados = await checklistCarregarItensCustomizadosDoBanco();
+    __checklistAlteracoesEm = await checklistCarregarAlteracoesDoBanco();
 
     checklistRenderizarLista();
     checklistPreencherSelectDeCategorias();

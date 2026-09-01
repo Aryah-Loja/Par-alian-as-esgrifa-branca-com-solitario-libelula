@@ -347,6 +347,10 @@ function verificarOrientacao() {
     const videoScreen = document.getElementById('videoScreen');
     const postRecordScreen = document.getElementById('postRecordScreen');
 
+    // No bloqueio de desktop, o conteúdo principal é substituído pelo QR Code.
+    // Eventos de orientação que já estavam agendados não devem tentar acessar
+    // os elementos removidos.
+    if (!orientacaoMsg || !conteudoGravacao || !permissaoNegadaMsg || !videoScreen || !postRecordScreen) return;
     if (videoScreen.classList.contains('d-none')) return;
     if (aguardandoRetornoPortrait) return;
 
@@ -363,7 +367,7 @@ function verificarOrientacao() {
         orientacaoMsg.classList.add('d-none');
         conteudoGravacao.classList.remove('d-none');
         const preview = document.getElementById('videoPreview');
-        if (mediaStream && !preview.srcObject && !videoJaSalvo) preview.srcObject = mediaStream;
+        if (mediaStream && preview && !preview.srcObject && !videoJaSalvo) preview.srcObject = mediaStream;
     } else {
         orientacaoMsg.classList.remove('d-none');
         conteudoGravacao.classList.add('d-none');
@@ -405,7 +409,7 @@ async function iniciarTelaDeVideoSomenteVisualizacao() {
     playback.removeAttribute('src');
     try {
         const salvo = await obterMedia('video_pedido');
-        if (salvo && salvo.blob) playback.src = URL.createObjectURL(salvo.blob);
+        if (salvo && salvo.blob) atribuirObjectURLGerenciado(playback, salvo.blob);
     } catch (e) { console.error('Falha ao carregar o vídeo salvo para o modo visualização:', e); }
 
     document.getElementById('videoVisualizacaoAcoes').classList.remove('d-none');
@@ -444,12 +448,12 @@ async function salvarVideoComSeguranca(blob, mimeType) {
     if (statusEl) {
         if (sucesso) {
             const tamanhoMB = (blob.size / (1024 * 1024)).toFixed(1);
-            const proximoDoLimite = blob.size > 45 * 1024 * 1024; // aviso perto do limite fixo de 50MB do plano gratuito do Supabase
+            const videoGrande = blob.size > 45 * 1024 * 1024;
             statusEl.textContent = `Vídeo salvo com sucesso (${tamanhoMB}MB). Baixando uma cópia automaticamente...`;
-            statusEl.className = proximoDoLimite ? 'save-status pending' : 'save-status ok';
+            statusEl.className = videoGrande ? 'save-status pending' : 'save-status ok';
 
             const avisoEl = document.getElementById('videoGrandeAviso');
-            if (avisoEl) avisoEl.classList.toggle('d-none', !proximoDoLimite);
+            if (avisoEl) avisoEl.classList.toggle('d-none', !videoGrande);
         } else {
             statusEl.textContent = 'Não foi possível confirmar o salvamento interno, mas o download automático foi iniciado. Não feche o app até ele terminar.';
             statusEl.className = 'save-status err';
@@ -714,7 +718,7 @@ function iniciarSuspense() {
         videoJaSalvo = false;
         document.getElementById('saveStatus').textContent = '';
         const mimeType = getSupportedMimeType();
-        const opcoesGravacao = montarOpcoesMediaRecorder('video'); // limita o bitrate (ver utils.js) para não estourar 50MB
+        const opcoesGravacao = montarOpcoesMediaRecorder('video'); // limita o bitrate para reduzir backup, tráfego e uso de Storage
 
         // Espelha o vídeo antes de gravar (ver criarStreamEspelhado em js/utils.js).
         streamGravacaoEspelhada = criarStreamEspelhado(mediaStream);
@@ -737,7 +741,7 @@ function iniciarSuspense() {
 
             document.getElementById('videoPreview').style.display = 'none';
             const playback = document.getElementById('videoPlayback');
-            playback.src = URL.createObjectURL(gravacaoBlob);
+            atribuirObjectURLGerenciado(playback, gravacaoBlob);
             playback.style.display = 'block';
 
             await salvarVideoComSeguranca(gravacaoBlob, tipoFinal);

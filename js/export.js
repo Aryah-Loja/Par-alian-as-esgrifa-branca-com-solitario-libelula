@@ -280,7 +280,7 @@ async function exibirPolaroidSalva() {
     try {
         const registro = await obterMedia('polaroid_gerada');
         if (registro && registro.blob) {
-            wrap.querySelector('img').src = URL.createObjectURL(registro.blob);
+            atribuirObjectURLGerenciado(wrap.querySelector('img'), registro.blob);
             wrap.classList.remove('d-none');
         } else {
             wrap.classList.add('d-none');
@@ -362,6 +362,18 @@ async function obterConfigJSON(chave) {
     }
 }
 
+async function sha256BlobSeguro(blob) {
+    if (!blob || typeof crypto === 'undefined' || !crypto.subtle) return null;
+    const bytes = await blob.arrayBuffer();
+    const digest = await crypto.subtle.digest('SHA-256', bytes);
+    return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function chaveConfigEhTecnica(chave) {
+    return chave === 'aurora_atualizado_em' || chave === 'aurora_sync_dirty' ||
+        chave === 'aurora_sync_revision' || chave.startsWith('aurora_galeria_cache_');
+}
+
 /** Gera o backup completo como um Blob .zip (usado tanto pelo botão "Backup" quanto pela sincronização — ver sync.js). */
 async function gerarBackupZipBlob() {
     if (typeof JSZip === 'undefined') throw new Error('Não foi possível carregar o gerador de backup (JSZip). Verifique sua conexão.');
@@ -370,7 +382,9 @@ async function gerarBackupZipBlob() {
     const pastaMedia = zip.folder('media');
 
     const manifest = {
-        versao: 3,
+        formato: 'poloni-backup',
+        versao: 4,
+        schemaBanco: 3,
         criadoEm: new Date().toISOString(),
         // Última alteração local, usada por js/sync.js para decidir "puxar" ou "empurrar".
         atualizadoEm: parseInt(await obterConfiguracao('aurora_atualizado_em'), 10) || Date.now(),
@@ -399,36 +413,76 @@ async function gerarBackupZipBlob() {
         muralAna: await obterConfigJSON('aurora_mural_ana'),
         primeirasVezes: await obterConfigJSON('aurora_primeiras_vezes'),
         contratoFechado: await obterConfiguracao('aurora_contrato_fechado') || null,
-        medias: []
+        configuracoes: {},
+        medias: [],
+        integridade: { algoritmo: 'SHA-256' },
+        estatisticas: { configuracoes: 0, medias: 0, bytesMidia: 0 }
     };
 
+    // Além dos campos históricos acima, exporta todas as configurações
+    // sentimentais. Isso torna o formato preparado para recursos futuros:
+    // uma chave nova não fica fora do backup por esquecimento manual.
+    try {
+        const configuracoes = await db.configuracoes.toArray();
+        for (const item of configuracoes) {
+            if (!item || !item.chave || chaveConfigEhTecnica(item.chave)) continue;
+            manifest.configuracoes[item.chave] = item.valor;
+        }
+        manifest.estatisticas.configuracoes = Object.keys(manifest.configuracoes).length;
+    } catch (e) {
+        await registrarDiagnosticoSeguro('backup.listar_configuracoes', e);
+        throw new Error('Não foi possível ler todas as configurações para o backup. Nada foi enviado.');
+    }
+
     let todosRegistros = [];
-    try { todosRegistros = await db.media.toArray(); } catch (e) { console.error('Backup: falha ao listar mídias', e); }
+    try { todosRegistros = await db.media.toArray(); }
+    catch (e) {
+        await registrarDiagnosticoSeguro('backup.listar_midias', e);
+        throw new Error('Não foi possível ler todas as mídias para o backup. O backup anterior foi preservado.');
+    }
 
     for (const registro of todosRegistros) {
         if (registro.tipo === 'diagnostico') continue; // arquivo de teste técnico, não faz parte da experiência
 
-        const entrada = { id: registro.id, tipo: registro.tipo, subtipo: registro.subtipo || null, criadoEm: registro.criadoEm || Date.now() };
+        const entrada = { id: registro.id, tipo: registro.tipo, subtipo: registro.subtipo || null, criadoEm: registro.criadoEm || Date.now(), atualizadoEm: registro.atualizadoEm || registro.criadoEm || Date.now(), excluidoEm: registro.excluidoEm || null };
 
         try {
             if (registro.blob) {
+                if (!registro.blob.size) {
+                    await registrarDiagnosticoSeguro('backup.midia_vazia', new Error('Blob com zero bytes'), { id: registro.id, tipo: registro.tipo });
+                    throw new Error(`A mídia "${registro.id}" está vazia. O backup anterior foi preservado.`);
+                }
                 const nomeArquivo = `${registro.id}.${extensaoParaMime(registro.mimeType || registro.blob.type)}`;
-                pastaMedia.file(nomeArquivo, registro.blob);
+                const ambienteNode = typeof process !== 'undefined' && process.versions && process.versions.node;
+                const conteudoZip = ambienteNode ? new Uint8Array(await registro.blob.arrayBuffer()) : registro.blob;
+                pastaMedia.file(nomeArquivo, conteudoZip);
                 entrada.arquivo = nomeArquivo;
                 entrada.mimeType = registro.mimeType || registro.blob.type || null;
+                entrada.tamanho = registro.blob.size;
+                entrada.sha256 = await sha256BlobSeguro(registro.blob);
+                manifest.estatisticas.bytesMidia += registro.blob.size;
             } else if (registro.texto) {
                 entrada.texto = registro.texto; // ex: assinatura (dataURL pequeno) ou mensagem de texto para o futuro
+                entrada.sha256Texto = await sha256BlobSeguro(new Blob([registro.texto], { type: 'text/plain' }));
             } else {
                 continue;
             }
             manifest.medias.push(entrada);
-        } catch (e) { console.error(`Backup: falha ao empacotar a mídia "${registro.id}"`, e); }
+        } catch (e) {
+            await registrarDiagnosticoSeguro('backup.empacotar_midia', e, { id: registro.id, tipo: registro.tipo });
+            throw new Error(`Não foi possível incluir a mídia "${registro.id}" no backup. O backup anterior foi preservado.`);
+        }
     }
 
-    zip.file('manifest.json', JSON.stringify(manifest));
+    manifest.estatisticas.medias = manifest.medias.length;
+
+    zip.file('manifest.json', JSON.stringify(manifest, null, 2));
     // Sem compressão adicional (STORE): mídia já vem comprimida (MP4/JPEG),
     // recomprimir só gastaria processamento à toa.
-    return await zip.generateAsync({ type: 'blob', compression: 'STORE' });
+    const ambienteNode = typeof process !== 'undefined' && process.versions && process.versions.node;
+    const tipoSaida = ambienteNode ? 'uint8array' : 'blob';
+    const gerado = await zip.generateAsync({ type: tipoSaida, compression: 'STORE' });
+    return tipoSaida === 'blob' ? gerado : new Blob([gerado], { type: 'application/zip' });
 }
 
 /* ----------------------------------------------------------------------
@@ -502,82 +556,245 @@ async function baixarBackupCompleto() {
  * Aplica um backup no formato NOVO (.zip) no armazenamento local deste
  * aparelho. Recebe um ArrayBuffer ou Blob do arquivo .zip.
  */
-async function aplicarBackupDeZip(zipDados) {
-    if (typeof JSZip === 'undefined') throw new Error('Não foi possível carregar o leitor de backup (JSZip). Verifique sua conexão.');
+function manifestParaConfiguracoes(manifest) {
+    const saida = Object.assign({}, manifest.configuracoes || {});
+    const antigos = {
+        aurora_data_pedido: manifest.dataPedido,
+        aurora_primeiro_acesso: manifest.dataInicioRelacionamento,
+        aurora_stage: manifest.stage,
+        aurora_regras_contrato: manifest.regrasContrato,
+        aurora_quiz_respostas: manifest.quizRespostas,
+        aurora_video_pedido_youtube: manifest.videoPedidoYoutube,
+        aurora_checklist_encontros: manifest.checklistEncontros,
+        aurora_checklist_itens_customizados: manifest.checklistItensCustomizados,
+        aurora_mapa_lugares_extra: manifest.mapaLugaresExtra,
+        aurora_previsoes_gabriel: manifest.previsoesRespostasGabriel,
+        aurora_previsoes_ana: manifest.previsoesRespostasAna,
+        aurora_previsoes_criado_em: manifest.previsoesCriadoEm,
+        aurora_previsoes_ana_senha_hash: manifest.previsoesAnaSenhaHash,
+        aurora_termometro_lista: manifest.termometroLista,
+        aurora_cartas_condicionais_liberadas: manifest.cartasCondicionaisLiberadas,
+        aurora_mural_ana: manifest.muralAna,
+        aurora_primeiras_vezes: manifest.primeirasVezes,
+        aurora_contrato_fechado: manifest.contratoFechado
+    };
+    for (const [chave, valor] of Object.entries(antigos)) {
+        if (valor === undefined || valor === null || chave in saida) continue;
+        saida[chave] = typeof valor === 'string' ? valor : JSON.stringify(valor);
+    }
+    return saida;
+}
 
-    const zip = await JSZip.loadAsync(zipDados);
-    const manifestArquivo = zip.file('manifest.json');
-    if (!manifestArquivo) throw new Error('Backup inválido: manifest.json não encontrado dentro do arquivo.');
+function tentarJSON(valor) {
+    if (typeof valor !== 'string') return valor;
+    try { return JSON.parse(valor); } catch (_) { return valor; }
+}
 
-    const manifest = JSON.parse(await manifestArquivo.async('string'));
-    if (!manifest || !manifest.versao) throw new Error('Backup inválido.');
-
-    if (manifest.dataPedido) await salvarConfiguracao('aurora_data_pedido', manifest.dataPedido);
-    if (manifest.dataInicioRelacionamento) await salvarConfiguracao('aurora_primeiro_acesso', manifest.dataInicioRelacionamento);
-    if (manifest.stage) await salvarConfiguracao('aurora_stage', manifest.stage);
-    if (manifest.regrasContrato) await salvarConfiguracao('aurora_regras_contrato', JSON.stringify(manifest.regrasContrato));
-    if (manifest.quizRespostas) await salvarConfiguracao('aurora_quiz_respostas', JSON.stringify(manifest.quizRespostas));
-    if (manifest.videoPedidoYoutube) await salvarConfiguracao('aurora_video_pedido_youtube', manifest.videoPedidoYoutube);
-    if (manifest.checklistEncontros) await salvarConfiguracao('aurora_checklist_encontros', JSON.stringify(manifest.checklistEncontros));
-    if (manifest.checklistItensCustomizados) await salvarConfiguracao('aurora_checklist_itens_customizados', JSON.stringify(manifest.checklistItensCustomizados));
-    if (manifest.mapaLugaresExtra) await salvarConfiguracao('aurora_mapa_lugares_extra', JSON.stringify(manifest.mapaLugaresExtra));
-    if (manifest.previsoesRespostasGabriel) await salvarConfiguracao('aurora_previsoes_gabriel', JSON.stringify(manifest.previsoesRespostasGabriel));
-    if (manifest.previsoesRespostasAna) await salvarConfiguracao('aurora_previsoes_ana', JSON.stringify(manifest.previsoesRespostasAna));
-    if (manifest.previsoesCriadoEm) await salvarConfiguracao('aurora_previsoes_criado_em', manifest.previsoesCriadoEm);
-    if (manifest.previsoesAnaSenhaHash) await salvarConfiguracao('aurora_previsoes_ana_senha_hash', manifest.previsoesAnaSenhaHash);
-    if (manifest.termometroLista) await salvarConfiguracao('aurora_termometro_lista', JSON.stringify(manifest.termometroLista));
-    if (manifest.cartasCondicionaisLiberadas) await salvarConfiguracao('aurora_cartas_condicionais_liberadas', JSON.stringify(manifest.cartasCondicionaisLiberadas));
-    if (manifest.muralAna) await salvarConfiguracao('aurora_mural_ana', JSON.stringify(manifest.muralAna));
-    if (manifest.primeirasVezes) await salvarConfiguracao('aurora_primeiras_vezes', JSON.stringify(manifest.primeirasVezes));
-    if (manifest.contratoFechado) await salvarConfiguracao('aurora_contrato_fechado', manifest.contratoFechado);
-
-    // O backup é a "fotografia completa": listas locais são substituídas
-    // pelas do backup (não acrescentadas), para não duplicar em cada sincronização.
-    try {
-        const antigasFuturo = await obterMediaPorTipo('mensagem_futuro');
-        for (const antiga of antigasFuturo) await db.media.delete(antiga.id);
-    } catch (e) { console.error('Falha ao limpar mensagens antigas antes de restaurar', e); }
-
-    try {
-        const antigasLembrancas = await obterMediaPorTipo('lembranca');
-        for (const antiga of antigasLembrancas) await db.media.delete(antiga.id);
-    } catch (e) { console.error('Falha ao limpar lembranças antigas antes de restaurar', e); }
-
-    try {
-        const antigasPrimeirasVezes = await obterMediaPorTipo('primeira_vez_foto');
-        for (const antiga of antigasPrimeirasVezes) await db.media.delete(antiga.id);
-    } catch (e) { console.error('Falha ao limpar fotos antigas de primeiras vezes antes de restaurar', e); }
-
-    try {
-        const antigasFotosMapa = await obterMediaPorTipo('mapa_local_foto');
-        for (const antiga of antigasFotosMapa) await db.media.delete(antiga.id);
-    } catch (e) { console.error('Falha ao limpar fotos antigas do mapa antes de restaurar', e); }
-
-    for (const entrada of (manifest.medias || [])) {
-        try {
-            const registro = {
-                id: entrada.id || gerarIdUnico(entrada.tipo || 'item'),
-                tipo: entrada.tipo,
-                subtipo: entrada.subtipo || undefined,
-                criadoEm: entrada.criadoEm || Date.now()
-            };
-
-            if (entrada.arquivo) {
-                const arquivoZip = zip.file(`media/${entrada.arquivo}`);
-                if (!arquivoZip) { console.error(`Backup: arquivo "${entrada.arquivo}" não encontrado dentro do zip`); continue; }
-                registro.blob = await arquivoZip.async('blob');
-                registro.mimeType = entrada.mimeType || registro.blob.type || null;
-            } else if (entrada.texto) {
-                registro.texto = entrada.texto;
-            } else {
-                continue;
+function mesclarArrayPreservando(a, b) {
+    const resultado = [];
+    const posicoesPorId = new Map();
+    const vistosSemId = new Set();
+    for (const item of [...a, ...b]) {
+        const temId = item && typeof item === 'object' && item.id;
+        if (!temId) {
+            const identidade = JSON.stringify(item);
+            if (!vistosSemId.has(identidade)) {
+                vistosSemId.add(identidade);
+                resultado.push(item);
             }
+            continue;
+        }
 
-            await salvarMedia(registro);
-        } catch (e) { console.error(`Backup: falha ao restaurar a mídia "${entrada.id}"`, e); }
+        if (!posicoesPorId.has(item.id)) {
+            posicoesPorId.set(item.id, resultado.length);
+            resultado.push(Object.assign({}, item));
+            continue;
+        }
+
+        // Quando há relógio por registro, a edição mais recente vira a
+        // canônica. Sem relógio, o local prevalece e campos exclusivos do
+        // outro aparelho ainda são incorporados.
+        const indice = posicoesPorId.get(item.id);
+        const atual = resultado[indice];
+        const paraTempo = valor => {
+            if (!valor) return 0;
+            const numero = Number(valor);
+            return Number.isFinite(numero) ? numero : (Date.parse(valor) || 0);
+        };
+        const tempoAtual = paraTempo(atual.atualizadoEm || atual.criadoEm || atual.data);
+        const tempoItem = paraTempo(item.atualizadoEm || item.criadoEm || item.data);
+        const unido = tempoItem > tempoAtual ? Object.assign({}, atual, item) : Object.assign({}, item, atual);
+        const exclusaoMaisNova = Math.max(paraTempo(item.excluidoEm), paraTempo(atual.excluidoEm));
+        if (exclusaoMaisNova > Math.max(tempoAtual, tempoItem)) {
+            unido.excluidoEm = new Date(exclusaoMaisNova).toISOString();
+        } else if (Math.max(tempoAtual, tempoItem) > exclusaoMaisNova) {
+            delete unido.excluidoEm;
+        }
+        resultado[indice] = unido;
+    }
+    return resultado;
+}
+
+function mesclarConfiguracaoPreservando(chave, local, remoto, conflitos) {
+    if (local === undefined || local === null || local === '') return remoto;
+    if (remoto === undefined || remoto === null || remoto === '' || local === remoto) return local;
+    const a = tentarJSON(local);
+    const b = tentarJSON(remoto);
+    if (['aurora_config_modificados_em', 'aurora_config_excluidas_em', 'aurora_checklist_alteracoes_em'].includes(chave) &&
+        a && b && typeof a === 'object' && typeof b === 'object') {
+        const unido = Object.assign({}, a);
+        for (const [id, valor] of Object.entries(b)) unido[id] = Math.max(Number(unido[id]) || 0, Number(valor) || 0);
+        return JSON.stringify(unido);
+    }
+    if (Array.isArray(a) && Array.isArray(b)) return JSON.stringify(mesclarArrayPreservando(a, b));
+    if (chave === 'aurora_checklist_encontros' && a && b && typeof a === 'object' && typeof b === 'object') {
+        const unido = Object.assign({}, b, a);
+        for (const id of new Set([...Object.keys(a), ...Object.keys(b)])) unido[id] = Boolean(a[id] || b[id]);
+        return JSON.stringify(unido);
+    }
+    if (chave === 'aurora_stage') return (local === 'final' || remoto === 'final') ? 'final' : local;
+    conflitos.push({ chave, valorPreservado: remoto, detectadoEm: new Date().toISOString() });
+    return local;
+}
+
+function mesclarChecklistVersionado(estadoLocal = {}, estadoRemoto = {}, versoesLocal = {}, versoesRemoto = {}) {
+    const resultado = {};
+    for (const id of new Set([...Object.keys(estadoLocal || {}), ...Object.keys(estadoRemoto || {})])) {
+        const tempoLocal = Number(versoesLocal && versoesLocal[id]) || 0;
+        const tempoRemoto = Number(versoesRemoto && versoesRemoto[id]) || 0;
+        resultado[id] = tempoLocal === tempoRemoto
+            ? Boolean((estadoLocal && estadoLocal[id]) || (estadoRemoto && estadoRemoto[id]))
+            : (tempoLocal > tempoRemoto ? Boolean(estadoLocal && estadoLocal[id]) : Boolean(estadoRemoto && estadoRemoto[id]));
+    }
+    return resultado;
+}
+
+async function validarEPrepararBackupZip(zipDados) {
+    if (typeof JSZip === 'undefined') throw new Error('Não foi possível carregar o leitor de backup (JSZip). Verifique sua conexão.');
+    const zip = await JSZip.loadAsync(zipDados, { checkCRC32: true });
+    const manifestArquivo = zip.file('manifest.json');
+    if (!manifestArquivo) throw new Error('Backup inválido: manifest.json não encontrado.');
+    const manifest = JSON.parse(await manifestArquivo.async('string'));
+    if (!manifest || !manifest.versao || !Array.isArray(manifest.medias)) throw new Error('Backup inválido: manifesto incompatível.');
+
+    const registros = [];
+    for (const entrada of manifest.medias) {
+        if (!entrada || !entrada.id || !entrada.tipo) throw new Error('Backup inválido: mídia sem identidade persistente.');
+        const registro = { id: entrada.id, tipo: entrada.tipo, subtipo: entrada.subtipo || undefined, criadoEm: entrada.criadoEm || Date.now(), atualizadoEm: entrada.atualizadoEm || entrada.criadoEm || Date.now(), excluidoEm: entrada.excluidoEm || undefined };
+        if (entrada.arquivo) {
+            const arquivoZip = zip.file(`media/${entrada.arquivo}`);
+            if (!arquivoZip) throw new Error(`Backup incompleto: mídia "${entrada.id}" ausente.`);
+            const ambienteNode = typeof process !== 'undefined' && process.versions && process.versions.node;
+            if (!ambienteNode) registro.blob = await arquivoZip.async('blob');
+            else registro.blob = new Blob([await arquivoZip.async('uint8array')], { type: entrada.mimeType || 'application/octet-stream' });
+            registro.mimeType = entrada.mimeType || registro.blob.type || null;
+            if (!registro.blob.size) throw new Error(`Backup inválido: mídia "${entrada.id}" possui zero bytes.`);
+            if (entrada.tamanho && registro.blob.size !== entrada.tamanho) throw new Error(`Backup corrompido: tamanho de "${entrada.id}" não confere.`);
+            if (entrada.sha256) {
+                const hash = await sha256BlobSeguro(registro.blob);
+                if (hash && hash !== entrada.sha256) throw new Error(`Backup corrompido: checksum de "${entrada.id}" não confere.`);
+            }
+        } else if (typeof entrada.texto === 'string') {
+            registro.texto = entrada.texto;
+            if (entrada.sha256Texto) {
+                const hashTexto = await sha256BlobSeguro(new Blob([entrada.texto], { type: 'text/plain' }));
+                if (hashTexto && hashTexto !== entrada.sha256Texto) throw new Error(`Backup corrompido: checksum do texto "${entrada.id}" não confere.`);
+            }
+        } else {
+            throw new Error(`Backup inválido: mídia "${entrada.id}" não possui conteúdo.`);
+        }
+        registros.push(registro);
+    }
+    return { manifest, registros };
+}
+
+// Restauração append-first: valida tudo antes e aplica em uma transação.
+// Nada é apagado. Conflitos são preservados com outra identidade.
+async function aplicarBackupDeZip(zipDados) {
+    const preparado = await validarEPrepararBackupZip(zipDados);
+    const configuracoesRemotas = manifestParaConfiguracoes(preparado.manifest);
+    const configsAtuais = new Map((await db.configuracoes.toArray()).map(x => [x.chave, x.valor]));
+    const conflitos = tentarJSON(configsAtuais.get('aurora_conflitos_preservados') || '[]');
+    const conflitosLista = Array.isArray(conflitos) ? conflitos : [];
+    const configsMescladas = [];
+    const estadoChecklistLocal = tentarJSON(configsAtuais.get('aurora_checklist_encontros') || '{}');
+    const estadoChecklistRemoto = tentarJSON(configuracoesRemotas.aurora_checklist_encontros || '{}');
+    const versoesChecklistLocal = tentarJSON(configsAtuais.get('aurora_checklist_alteracoes_em') || '{}');
+    const versoesChecklistRemoto = tentarJSON(configuracoesRemotas.aurora_checklist_alteracoes_em || '{}');
+    const estadoChecklistMesclado = mesclarChecklistVersionado(estadoChecklistLocal, estadoChecklistRemoto, versoesChecklistLocal, versoesChecklistRemoto);
+
+    for (const [chave, remotoBruto] of Object.entries(configuracoesRemotas)) {
+        if (chaveConfigEhTecnica(chave)) continue;
+        const remoto = typeof remotoBruto === 'string' ? remotoBruto : JSON.stringify(remotoBruto);
+        const valor = chave === 'aurora_checklist_encontros'
+            ? JSON.stringify(estadoChecklistMesclado)
+            : mesclarConfiguracaoPreservando(chave, configsAtuais.get(chave), remoto, conflitosLista);
+        configsMescladas.push({ chave, valor });
+    }
+    if (conflitosLista.length) configsMescladas.push({ chave: 'aurora_conflitos_preservados', valor: JSON.stringify(conflitosLista.slice(-100)) });
+
+    const configsMescladasMapa = new Map(configsMescladas.map(item => [item.chave, item.valor]));
+    const modificados = tentarJSON(configsMescladasMapa.get('aurora_config_modificados_em') || configsAtuais.get('aurora_config_modificados_em') || '{}');
+    const excluidas = tentarJSON(configsMescladasMapa.get('aurora_config_excluidas_em') || configsAtuais.get('aurora_config_excluidas_em') || '{}');
+    const configsParaExcluir = Object.entries(excluidas && typeof excluidas === 'object' ? excluidas : {})
+        .filter(([chave, excluidoEm]) =>
+            typeof chaveConfigPodeSerApagada === 'function' &&
+            chaveConfigPodeSerApagada(chave) &&
+            Number(excluidoEm) > Number(modificados && modificados[chave] || 0))
+        .map(([chave]) => chave);
+    const exclusoesSet = new Set(configsParaExcluir);
+
+    const mediasAtuais = new Map((await db.media.toArray()).map(x => [x.id, x]));
+    const mediasParaGravar = [];
+    for (const remoto of preparado.registros) {
+        const local = mediasAtuais.get(remoto.id);
+        if (!local) { mediasParaGravar.push(remoto); continue; }
+        if (remoto.excluidoEm && local.excluidoEm) {
+            if (Number(remoto.excluidoEm) > Number(local.excluidoEm)) mediasParaGravar.push(Object.assign({}, local, { excluidoEm: remoto.excluidoEm, atualizadoEm: remoto.excluidoEm }));
+            continue;
+        }
+        if (remoto.excluidoEm && !local.excluidoEm) {
+            if (Number(remoto.excluidoEm) >= Number(local.atualizadoEm || local.criadoEm || 0)) {
+                mediasParaGravar.push(Object.assign({}, local, { excluidoEm: remoto.excluidoEm, atualizadoEm: remoto.excluidoEm }));
+            }
+            continue;
+        }
+        if (local.excluidoEm && !remoto.excluidoEm) {
+            if (Number(remoto.atualizadoEm || remoto.criadoEm || 0) > Number(local.excluidoEm)) mediasParaGravar.push(remoto);
+            continue;
+        }
+        const localTamanho = local.blob ? local.blob.size : String(local.texto || '').length;
+        const remotoTamanho = remoto.blob ? remoto.blob.size : String(remoto.texto || '').length;
+        if (local.blob && remoto.blob && localTamanho === remotoTamanho) {
+            const [hashLocal, hashRemoto] = await Promise.all([sha256BlobSeguro(local.blob), sha256BlobSeguro(remoto.blob)]);
+            if (hashLocal && hashLocal === hashRemoto) continue;
+        } else if (!local.blob && !remoto.blob && local.texto === remoto.texto) {
+            continue;
+        }
+        const remotoEhMaisNovo = Number(remoto.atualizadoEm || remoto.criadoEm || 0) > Number(local.atualizadoEm || local.criadoEm || 0);
+        const manterComoAlternativo = remotoEhMaisNovo ? local : remoto;
+        const sufixo = manterComoAlternativo.blob ? (await sha256BlobSeguro(manterComoAlternativo.blob) || gerarIdUnico('hash')).slice(0, 10) : gerarIdUnico('texto').slice(-10);
+        if (remotoEhMaisNovo) mediasParaGravar.push(remoto);
+        mediasParaGravar.push(Object.assign({}, manterComoAlternativo, { id: `${remoto.id}__preservado_${sufixo}`, idOriginal: remoto.id }));
     }
 
-    await exibirPolaroidSalva();
+    await db.transaction('rw', db.configuracoes, db.media, async () => {
+        const configsValidas = configsMescladas.filter(item => !exclusoesSet.has(item.chave));
+        if (configsValidas.length) await db.configuracoes.bulkPut(configsValidas);
+        if (configsParaExcluir.length) await db.configuracoes.bulkDelete(configsParaExcluir);
+        if (mediasParaGravar.length) await db.media.bulkPut(mediasParaGravar);
+    });
+    for (const item of configsMescladas) {
+        try {
+            if (exclusoesSet.has(item.chave)) localStorage.removeItem(item.chave);
+            else localStorage.setItem(item.chave, typeof item.valor === 'string' ? item.valor : JSON.stringify(item.valor));
+        } catch (_) { /* IndexedDB continua sendo a cópia durável */ }
+    }
+    for (const chave of configsParaExcluir) {
+        try { localStorage.removeItem(chave); } catch (_) { /* IndexedDB continua sendo a fonte de verdade */ }
+    }
+    try { await exibirPolaroidSalva(); } catch (_) { /* página pode não possuir o componente */ }
+    return { manifest: preparado.manifest, configuracoesAplicadas: configsMescladas.length, mediasNovas: mediasParaGravar.length };
 }
 
 /**
@@ -608,14 +825,11 @@ async function aplicarBackupLegadoDeJson(backup) {
     }
 
     if (Array.isArray(backup.mensagensFuturo)) {
-        try {
-            const antigas = await obterMediaPorTipo('mensagem_futuro');
-            for (const antiga of antigas) await db.media.delete(antiga.id);
-        } catch (e) { console.error('Falha ao limpar mensagens antigas antes de restaurar', e); }
-
         for (const item of backup.mensagensFuturo) {
+            const id = item.id || gerarIdUnico('futuro');
+            if (await obterMedia(id)) continue;
             await salvarMedia({
-                id: item.id || gerarIdUnico('futuro'),
+                id,
                 tipo: 'mensagem_futuro',
                 subtipo: item.tipo,
                 texto: item.texto || null,
@@ -627,13 +841,10 @@ async function aplicarBackupLegadoDeJson(backup) {
     }
 
     if (Array.isArray(backup.lembrancas)) {
-        try {
-            const antigas = await obterMediaPorTipo('lembranca');
-            for (const antiga of antigas) await db.media.delete(antiga.id);
-        } catch (e) { console.error('Falha ao limpar lembranças antigas antes de restaurar', e); }
-
         for (const item of backup.lembrancas) {
-            await salvarMedia({ id: item.id || gerarIdUnico('lembranca'), tipo: 'lembranca', blob: dataURLParaBlob(item.imagem), criadoEm: item.criadoEm || Date.now() });
+            const id = item.id || gerarIdUnico('lembranca');
+            if (await obterMedia(id)) continue;
+            await salvarMedia({ id, tipo: 'lembranca', blob: dataURLParaBlob(item.imagem), criadoEm: item.criadoEm || Date.now() });
         }
     }
 
@@ -661,12 +872,13 @@ async function restaurarBackupDeArquivo(arquivo) {
             const dados = await arquivo.arrayBuffer();
             await aplicarBackupDeZip(dados);
         }
-        statusEl.textContent = 'Backup restaurado com sucesso! Recarregando...';
+        await salvarConfiguracao('aurora_sync_dirty', '1', false, false);
+        statusEl.textContent = 'Backup validado e mesclado com sucesso. Os dados atuais foram preservados.';
         statusEl.className = 'save-status ok';
-        setTimeout(() => location.reload(), 1200);
     } catch (err) {
         console.error('Falha ao restaurar backup', err);
-        statusEl.textContent = 'Não foi possível ler esse arquivo de backup. Confira se é o arquivo .zip gerado por este site.';
+        const codigo = await registrarDiagnosticoSeguro('backup.restauracao_manual', err, { nome: arquivo && arquivo.name ? arquivo.name.slice(-120) : '' });
+        statusEl.textContent = `Não foi possível restaurar. Os dados atuais não foram alterados.${codigo ? ` Código: ${codigo}` : ''}`;
         statusEl.className = 'save-status err';
     } finally {
         __auroraAplicandoBackupRemoto = false;
@@ -701,4 +913,20 @@ function iniciarModuloExport() {
     document.getElementById('btnLembreteBackupAgora').addEventListener('click', baixarBackupCompleto);
     document.getElementById('btnLembreteBackupDepois').addEventListener('click', adiarLembreteBackup);
     verificarLembreteBackup();
+}
+
+// Exporta apenas funções puras quando o arquivo é carregado pelos testes
+// automatizados do repositório. No navegador, `module` não existe.
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        tentarJSON,
+        mesclarArrayPreservando,
+        mesclarConfiguracaoPreservando,
+        mesclarChecklistVersionado,
+        manifestParaConfiguracoes,
+        sha256BlobSeguro,
+        gerarBackupZipBlob,
+        validarEPrepararBackupZip,
+        aplicarBackupDeZip
+    };
 }

@@ -118,7 +118,7 @@ function iniciarGravacaoFuturo() {
     const statusEl = document.getElementById('futuroStatus');
     statusEl.textContent = ''; statusEl.className = 'save-status';
 
-    const opcoesGravacao = montarOpcoesMediaRecorder(futuroModo); // limita o bitrate (ver utils.js) para não estourar 50MB
+    const opcoesGravacao = montarOpcoesMediaRecorder(futuroModo); // limita o bitrate para reduzir backup, tráfego e uso de Storage
 
     // Espelha o vídeo antes de gravar (ver criarStreamEspelhado em js/utils.js).
     const streamParaGravar = futuroModo === 'video'
@@ -152,15 +152,14 @@ function iniciarGravacaoFuturo() {
         futuroBlobPendente = new Blob(futuroChunks, { type: tipoFinal });
         futuroMimePendente = tipoFinal;
 
-        const urlPreview = URL.createObjectURL(futuroBlobPendente);
         if (futuroModo === 'video') {
             document.getElementById('futuroPreviewVideo').classList.add('d-none');
             const playbackVideo = document.getElementById('futuroPlaybackVideo');
-            playbackVideo.src = urlPreview; playbackVideo.classList.remove('d-none');
+            atribuirObjectURLGerenciado(playbackVideo, futuroBlobPendente); playbackVideo.classList.remove('d-none');
         } else {
             document.getElementById('futuroVozIndicador').classList.add('d-none');
             const playbackAudio = document.getElementById('futuroPlaybackAudio');
-            playbackAudio.src = urlPreview; playbackAudio.classList.remove('d-none');
+            atribuirObjectURLGerenciado(playbackAudio, futuroBlobPendente); playbackAudio.classList.remove('d-none');
         }
         document.getElementById('futuroAcoesGravacao').classList.remove('d-none');
     };
@@ -194,6 +193,8 @@ function regravarMensagemFuturo() {
 
     const playbackVideo = document.getElementById('futuroPlaybackVideo');
     const playbackAudio = document.getElementById('futuroPlaybackAudio');
+    liberarObjectURLGerenciado(playbackVideo);
+    liberarObjectURLGerenciado(playbackAudio);
     playbackVideo.classList.add('d-none'); playbackVideo.removeAttribute('src');
     playbackAudio.classList.add('d-none'); playbackAudio.removeAttribute('src');
 
@@ -222,11 +223,11 @@ async function salvarMensagemFuturoGravada() {
     if (sucesso) {
         document.getElementById('futuroGravacaoArea').classList.add('d-none');
         document.getElementById('futuroSucesso').classList.remove('d-none');
-        const proximoDoLimite = futuroModo === 'video' && futuroBlobPendente.size > 45 * 1024 * 1024;
-        statusEl.textContent = proximoDoLimite
-            ? `Essa mensagem ficou com ${(futuroBlobPendente.size / (1024 * 1024)).toFixed(1)}MB, grande demais pra sincronizar com a nuvem (limite de 50MB do plano gratuito). Prefira mensagens mais curtas, ou envie essa por outro meio.`
+        const videoGrande = futuroModo === 'video' && futuroBlobPendente.size > 45 * 1024 * 1024;
+        statusEl.textContent = videoGrande
+            ? `Essa mensagem ficou com ${(futuroBlobPendente.size / (1024 * 1024)).toFixed(1)}MB. Ela será dividida e sincronizada, mas pode demorar mais e consumir bastante espaço da nuvem. Guarde também uma cópia fora do site.`
             : '';
-        statusEl.className = proximoDoLimite ? 'save-status pending' : 'save-status';
+        statusEl.className = videoGrande ? 'save-status pending' : 'save-status';
         renderizarMensagensFuturo();
     } else {
         statusEl.textContent = 'Não foi possível confirmar o salvamento. Tente novamente.';
@@ -284,11 +285,11 @@ async function renderizarMensagensFuturo() {
             item.appendChild(p);
         } else if (msg.subtipo === 'audio' && msg.blob) {
             const audio = document.createElement('audio');
-            audio.className = 'mensagem-futuro-audio'; audio.controls = true; audio.preload = 'metadata'; audio.src = URL.createObjectURL(msg.blob);
+            audio.className = 'mensagem-futuro-audio'; audio.controls = true; audio.preload = 'metadata'; atribuirObjectURLGerenciado(audio, msg.blob);
             item.appendChild(audio);
         } else if (msg.subtipo === 'video' && msg.blob) {
             const video = document.createElement('video');
-            video.className = 'mensagem-futuro-video-el'; video.controls = true; video.playsInline = true; video.preload = 'metadata'; video.src = URL.createObjectURL(msg.blob);
+            video.className = 'mensagem-futuro-video-el'; video.controls = true; video.playsInline = true; video.preload = 'metadata'; atribuirObjectURLGerenciado(video, msg.blob);
             item.appendChild(video);
         }
         container.appendChild(item);

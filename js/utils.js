@@ -2,6 +2,24 @@
  * UTILS.JS — Funções utilitárias compartilhadas.
  */
 
+// Algumas páginas leves (como a galeria) não carregam db.js. Estas duas
+// pontes usam o banco completo quando ele existe e mantêm um fallback local
+// para preferências cosméticas quando utils.js roda sozinho.
+async function obterConfiguracaoCompat(chave) {
+    if (typeof obterConfiguracao === 'function') return obterConfiguracao(chave);
+    try { return localStorage.getItem(chave); } catch (_) { return null; }
+}
+
+async function salvarConfiguracaoCompat(chave, valor, imediato = false, afetaSincronizacao = true) {
+    if (typeof salvarConfiguracao === 'function') return salvarConfiguracao(chave, valor, imediato, afetaSincronizacao);
+    try {
+        localStorage.setItem(chave, typeof valor === 'string' ? valor : JSON.stringify(valor));
+        return true;
+    } catch (_) {
+        return false;
+    }
+}
+
 // Data em que este aparelho abriu o site pela primeira vez — usada tanto
 // pelo contador vivo do relacionamento (js/romance.js) quanto pelo
 // backup/sincronização (js/export.js, dataInicioRelacionamento). Mora
@@ -10,8 +28,8 @@
 // antes disso causava "obterOuCriarDataPrimeiroAcesso is not defined" e
 // quebrava a sincronização/backup em silêncio nessas duas páginas.
 async function obterOuCriarDataPrimeiroAcesso() {
-    let data = await obterConfiguracao('aurora_primeiro_acesso');
-    if (!data) { data = new Date().toISOString(); await salvarConfiguracao('aurora_primeiro_acesso', data); }
+    let data = await obterConfiguracaoCompat('aurora_primeiro_acesso');
+    if (!data) { data = new Date().toISOString(); await salvarConfiguracaoCompat('aurora_primeiro_acesso', data); }
     return data;
 }
 
@@ -130,6 +148,7 @@ function abrirModoVela(eyebrowTexto, textoHtml, assinaturaTexto, opcoes = {}) {
         const fechar = () => {
             overlay.classList.add('d-none');
             if (videoWrap) videoWrap.innerHTML = ''; // remove o player, não só esconde (evita YouTube tocando escondido)
+            if (opcoes.videoLocalUrl && String(opcoes.videoLocalUrl).startsWith('blob:')) URL.revokeObjectURL(opcoes.videoLocalUrl);
             if (videoLegendaEl) { videoLegendaEl.textContent = ''; videoLegendaEl.classList.add('d-none'); }
             desbloquearScrollFundoLembranca();
             if (typeof opcoes.aoFechar === 'function') opcoes.aoFechar();
@@ -175,6 +194,12 @@ const SVG_PLACEHOLDER_GENERICO = 'data:image/svg+xml;utf8,' + encodeURIComponent
         <path d="M200 260c-40-28-72-56-72-92a44 44 0 0 1 72-34 44 44 0 0 1 72 34c0 36-32 64-72 92z" fill="#e0b4bc"/>
     </svg>
 `);
+
+function escaparHtml(valor) {
+    return String(valor == null ? '' : valor)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
 
 /**
  * Tenta recuperar uma foto que "existe" no servidor (por isso não caiu no
@@ -345,7 +370,7 @@ let filaMarcacaoEasterEgg = Promise.resolve();
 function marcarEasterEggEncontrado(id) {
     filaMarcacaoEasterEgg = filaMarcacaoEasterEgg.then(async () => {
         let encontrados = [];
-        try { encontrados = JSON.parse(await obterConfiguracao('easterEggsEncontrados') || '[]'); } catch (e) { /* trata como nenhum encontrado ainda */ }
+        try { encontrados = JSON.parse(await obterConfiguracaoCompat('easterEggsEncontrados') || '[]'); } catch (e) { /* trata como nenhum encontrado ainda */ }
         if (!Array.isArray(encontrados)) encontrados = [];
 
         // Segredos descobertos ao usar "Rever a lojinha" também precisam
@@ -353,7 +378,7 @@ function marcarEasterEggEncontrado(id) {
         // pode voltar com calma para procurar os girassóis que deixou passar.
         if (IDS_TODOS_OS_EASTER_EGGS.includes(id) && !encontrados.includes(id)) {
             encontrados.push(id);
-            try { await salvarConfiguracao('easterEggsEncontrados', encontrados, false, false); } catch (e) { /* não crítico se falhar salvar */ }
+            try { await salvarConfiguracaoCompat('easterEggsEncontrados', encontrados, false, false); } catch (e) { /* não crítico se falhar salvar */ }
         }
         atualizarContadorEasterEggs(encontrados.filter(item => IDS_TODOS_OS_EASTER_EGGS.includes(item)).length);
     }).catch((e) => console.error('Falha ao contabilizar easter egg:', e));
@@ -394,7 +419,7 @@ function atualizarContadorEasterEggs(quantidadeEncontrada) {
 // Chamado uma vez no carregamento para ter o número certo desde o início.
 async function iniciarContadorEasterEggs() {
     let encontrados = [];
-    try { encontrados = JSON.parse(await obterConfiguracao('easterEggsEncontrados') || '[]'); } catch (e) { /* nenhum ainda */ }
+    try { encontrados = JSON.parse(await obterConfiguracaoCompat('easterEggsEncontrados') || '[]'); } catch (e) { /* nenhum ainda */ }
     if (!Array.isArray(encontrados)) encontrados = [];
     atualizarContadorEasterEggs(encontrados.filter(id => IDS_TODOS_OS_EASTER_EGGS.includes(id)).length);
 }
@@ -485,7 +510,9 @@ function galeriaCarregarManifesto() {
 // `completo` distingue uma varredura completa (fotos+vídeos, única
 // confiável para a página da Galeria) de uma parcial (só fotos, para
 // "Nossos momentos"). Um cache parcial nunca sobrescreve um completo.
-const GALERIA_CACHE_CHAVE = 'aurora_galeria_cache_v1';
+// v2 invalida listas antigas que ainda apontavam para oito JPEGs corrompidos
+// removidos na auditoria de setembro/2026.
+const GALERIA_CACHE_CHAVE = 'aurora_galeria_cache_v2';
 
 function galeriaLerCacheBruto() {
     try {
@@ -873,7 +900,7 @@ function getSupportedMimeTypeParaModo(modo) {
 }
 
 /* ----------------------------------------------------------------------
-   BITRATES DE GRAVAÇÃO (evita estourar o limite de 50MB do Supabase)
+   BITRATES DE GRAVAÇÃO (reduz o tamanho do backup, tráfego e uso de Storage)
    ----------------------------------------------------------------------
    Sem esses limites, o MediaRecorder usa o bitrate padrão do navegador,
    que costuma ser bem mais alto do que o necessário para uma tela de
@@ -1027,13 +1054,13 @@ let __auroraSomAtivo = true;
 let __auroraAudioCtx = null;
 
 (async () => {
-    const salvo = await obterConfiguracao('aurora_som_ativo');
+    const salvo = await obterConfiguracaoCompat('aurora_som_ativo');
     if (salvo === 'false') __auroraSomAtivo = false;
 })();
 
 function alternarSomAmbiente(ativo) {
     __auroraSomAtivo = ativo;
-    salvarConfiguracao('aurora_som_ativo', String(ativo));
+    salvarConfiguracaoCompat('aurora_som_ativo', String(ativo));
 }
 
 function tocarSininho(intensidade = 1) {
@@ -1258,8 +1285,24 @@ function dataURLParaBlob(dataUrl) {
     return new Blob([array], { type: mime });
 }
 
+const __objectUrlsGerenciadas = new WeakMap();
+function atribuirObjectURLGerenciado(elemento, blob) {
+    if (!elemento || !blob) return '';
+    const anterior = __objectUrlsGerenciadas.get(elemento);
+    if (anterior) URL.revokeObjectURL(anterior);
+    const url = URL.createObjectURL(blob);
+    __objectUrlsGerenciadas.set(elemento, url);
+    elemento.src = url;
+    return url;
+}
+function liberarObjectURLGerenciado(elemento) {
+    const url = elemento && __objectUrlsGerenciadas.get(elemento);
+    if (url) URL.revokeObjectURL(url);
+    if (elemento) __objectUrlsGerenciadas.delete(elemento);
+}
+
 /* ----------------------------------------------------------------------
-   COMPRESSÃO DE IMAGENS NO NAVEGADOR (evita estourar o limite de 50MB do
+   COMPRESSÃO DE IMAGENS NO NAVEGADOR (reduz o tamanho do backup e o uso do
    Supabase e deixa a sincronização entre aparelhos mais rápida)
    ----------------------------------------------------------------------
    Fotos de celular hoje em dia costumam ter vários MB mesmo sendo

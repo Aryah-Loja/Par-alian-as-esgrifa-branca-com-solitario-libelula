@@ -29,7 +29,7 @@
  * de js/ (ou secret/secret.css, secret/secret.js) e for publicar a
  * atualização. Rode antes de subir pro GitHub:
  *
- *   node scripts/atualizar-versao.js
+ *   node js/atualizar-versao.js
  *
  * e depois suba (commit/push) normalmente. Não precisa rodar se você só
  * mudou texto/conteúdo dentro do js/config.js? Precisa sim — qualquer
@@ -49,7 +49,6 @@ const ARQUIVOS_HTML = [
     'checklist.html',
     'diagnostico.html',
     'galeria.html',
-    'backup.html',
     path.join('secret', 'coupon.html'),
     path.join('secret', 'fortune.html'),
     path.join('secret', 'gerar-hash.html'),

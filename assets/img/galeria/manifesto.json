@@ -1,370 +1,383 @@
 {
-  "geradoEm": "2026-08-11T18:04:03.998Z",
+  "geradoEm": "2026-09-01T05:22:20.155Z",
   "itens": [
     {
       "numero": 1,
       "tipo": "foto",
-      "ext": "jpg"
+      "ext": "jpg",
+      "tamanho": 2101285
     },
     {
       "numero": 2,
       "tipo": "foto",
-      "ext": "jpg"
+      "ext": "jpg",
+      "tamanho": 2836385
     },
     {
       "numero": 3,
       "tipo": "foto",
-      "ext": "jpg"
+      "ext": "jpg",
+      "tamanho": 2244187
     },
     {
       "numero": 4,
       "tipo": "foto",
-      "ext": "jpg"
+      "ext": "jpg",
+      "tamanho": 2327322
     },
     {
       "numero": 5,
       "tipo": "foto",
-      "ext": "jpg"
+      "ext": "jpg",
+      "tamanho": 2312426
     },
     {
       "numero": 6,
       "tipo": "foto",
-      "ext": "jpg"
+      "ext": "jpg",
+      "tamanho": 2171858
     },
     {
       "numero": 7,
       "tipo": "foto",
-      "ext": "jpg"
+      "ext": "jpg",
+      "tamanho": 2469941
     },
     {
       "numero": 8,
       "tipo": "foto",
-      "ext": "jpg"
+      "ext": "jpg",
+      "tamanho": 1996730
     },
     {
       "numero": 9,
       "tipo": "foto",
-      "ext": "jpg"
+      "ext": "jpg",
+      "tamanho": 1631107
     },
     {
       "numero": 10,
       "tipo": "foto",
-      "ext": "jpg"
+      "ext": "jpg",
+      "tamanho": 1533365
     },
     {
       "numero": 11,
       "tipo": "foto",
-      "ext": "jpg"
+      "ext": "jpg",
+      "tamanho": 1831518
     },
     {
       "numero": 12,
       "tipo": "foto",
-      "ext": "jpg"
+      "ext": "jpg",
+      "tamanho": 2699668
     },
     {
       "numero": 13,
       "tipo": "foto",
-      "ext": "jpg"
-    },
-    {
-      "numero": 14,
-      "tipo": "foto",
-      "ext": "jpg"
-    },
-    {
-      "numero": 15,
-      "tipo": "foto",
-      "ext": "jpg"
-    },
-    {
-      "numero": 16,
-      "tipo": "foto",
-      "ext": "jpg"
-    },
-    {
-      "numero": 17,
-      "tipo": "foto",
-      "ext": "jpg"
-    },
-    {
-      "numero": 18,
-      "tipo": "foto",
-      "ext": "jpg"
-    },
-    {
-      "numero": 19,
-      "tipo": "foto",
-      "ext": "jpg"
-    },
-    {
-      "numero": 20,
-      "tipo": "foto",
-      "ext": "jpg"
-    },
-    {
-      "numero": 21,
-      "tipo": "foto",
-      "ext": "jpg"
+      "ext": "jpg",
+      "tamanho": 1662911
     },
     {
       "numero": 22,
       "tipo": "foto",
-      "ext": "jpg"
+      "ext": "jpg",
+      "tamanho": 2245041
     },
     {
       "numero": 23,
       "tipo": "foto",
-      "ext": "jpg"
+      "ext": "jpg",
+      "tamanho": 1888886
     },
     {
       "numero": 24,
       "tipo": "foto",
-      "ext": "jpg"
+      "ext": "jpg",
+      "tamanho": 2369070
     },
     {
       "numero": 25,
       "tipo": "foto",
-      "ext": "jpg"
+      "ext": "jpg",
+      "tamanho": 2118268
     },
     {
       "numero": 26,
       "tipo": "foto",
-      "ext": "jpg"
+      "ext": "jpg",
+      "tamanho": 2905791
     },
     {
       "numero": 27,
       "tipo": "foto",
-      "ext": "jpg"
+      "ext": "jpg",
+      "tamanho": 2688961
     },
     {
       "numero": 28,
       "tipo": "foto",
-      "ext": "jpg"
+      "ext": "jpg",
+      "tamanho": 2401942
     },
     {
       "numero": 29,
       "tipo": "foto",
-      "ext": "jpg"
+      "ext": "jpg",
+      "tamanho": 1676189
     },
     {
       "numero": 30,
       "tipo": "foto",
-      "ext": "jpg"
+      "ext": "jpg",
+      "tamanho": 1594590
     },
     {
       "numero": 31,
       "tipo": "foto",
-      "ext": "jpg"
+      "ext": "jpg",
+      "tamanho": 1627837
     },
     {
       "numero": 32,
       "tipo": "foto",
-      "ext": "jpg"
+      "ext": "jpg",
+      "tamanho": 3223865
     },
     {
       "numero": 33,
       "tipo": "foto",
-      "ext": "jpg"
+      "ext": "jpg",
+      "tamanho": 1459649
     },
     {
       "numero": 34,
       "tipo": "foto",
-      "ext": "jpg"
+      "ext": "jpg",
+      "tamanho": 1720627
     },
     {
       "numero": 35,
       "tipo": "foto",
-      "ext": "jpg"
+      "ext": "jpg",
+      "tamanho": 2995019
     },
     {
       "numero": 36,
       "tipo": "foto",
-      "ext": "jpg"
+      "ext": "jpg",
+      "tamanho": 3183162
     },
     {
       "numero": 37,
       "tipo": "foto",
-      "ext": "jpg"
+      "ext": "jpg",
+      "tamanho": 3151376
     },
     {
       "numero": 38,
       "tipo": "foto",
-      "ext": "jpg"
+      "ext": "jpg",
+      "tamanho": 1711676
     },
     {
       "numero": 39,
       "tipo": "foto",
-      "ext": "jpg"
+      "ext": "jpg",
+      "tamanho": 1712382
     },
     {
       "numero": 40,
       "tipo": "foto",
-      "ext": "jpg"
+      "ext": "jpg",
+      "tamanho": 1492059
     },
     {
       "numero": 41,
       "tipo": "foto",
-      "ext": "jpg"
+      "ext": "jpg",
+      "tamanho": 2183878
     },
     {
       "numero": 42,
       "tipo": "foto",
-      "ext": "jpg"
+      "ext": "jpg",
+      "tamanho": 2466384
     },
     {
       "numero": 43,
       "tipo": "foto",
-      "ext": "jpg"
+      "ext": "jpg",
+      "tamanho": 2396932
     },
     {
       "numero": 44,
       "tipo": "foto",
-      "ext": "jpg"
+      "ext": "jpg",
+      "tamanho": 124995
     },
     {
       "numero": 45,
       "tipo": "foto",
-      "ext": "jpg"
+      "ext": "jpg",
+      "tamanho": 113174
     },
     {
       "numero": 46,
       "tipo": "foto",
-      "ext": "jpg"
+      "ext": "jpg",
+      "tamanho": 157455
     },
     {
       "numero": 47,
       "tipo": "foto",
-      "ext": "jpg"
+      "ext": "jpg",
+      "tamanho": 130375
     },
     {
       "numero": 48,
       "tipo": "foto",
-      "ext": "jpg"
+      "ext": "jpg",
+      "tamanho": 181733
     },
     {
       "numero": 49,
       "tipo": "foto",
-      "ext": "jpg"
+      "ext": "jpg",
+      "tamanho": 1999485
     },
     {
       "numero": 50,
       "tipo": "foto",
-      "ext": "jpg"
+      "ext": "jpg",
+      "tamanho": 1064559
     },
     {
       "numero": 51,
       "tipo": "foto",
-      "ext": "jpg"
+      "ext": "jpg",
+      "tamanho": 2263852
     },
     {
       "numero": 101,
       "tipo": "video",
-      "ext": "mp4"
+      "ext": "mp4",
+      "tamanho": 19788228
     },
     {
       "numero": 102,
       "tipo": "video",
-      "ext": "mp4"
+      "ext": "mp4",
+      "tamanho": 4783855
     },
     {
       "numero": 103,
       "tipo": "video",
-      "ext": "mp4"
+      "ext": "mp4",
+      "tamanho": 9926834
     },
     {
       "numero": 104,
       "tipo": "video",
-      "ext": "mp4"
+      "ext": "mp4",
+      "tamanho": 8667249
     },
     {
       "numero": 105,
       "tipo": "video",
-      "ext": "mp4"
+      "ext": "mp4",
+      "tamanho": 5497833
     },
     {
       "numero": 106,
       "tipo": "video",
-      "ext": "mp4"
+      "ext": "mp4",
+      "tamanho": 5497833
     },
     {
       "numero": 107,
       "tipo": "video",
-      "ext": "mp4"
+      "ext": "mp4",
+      "tamanho": 2072401
     },
     {
       "numero": 108,
       "tipo": "video",
-      "ext": "mp4"
+      "ext": "mp4",
+      "tamanho": 9568560
     },
     {
       "numero": 109,
       "tipo": "video",
-      "ext": "mp4"
+      "ext": "mp4",
+      "tamanho": 552157
     },
     {
       "numero": 110,
       "tipo": "video",
-      "ext": "mp4"
-    },
-    {
-      "numero": 111,
-      "tipo": "video",
-      "ext": "mp4"
+      "ext": "mp4",
+      "tamanho": 8493068
     },
     {
       "numero": 112,
       "tipo": "video",
-      "ext": "mp4"
+      "ext": "mp4",
+      "tamanho": 1486650
     },
     {
       "numero": 113,
       "tipo": "video",
-      "ext": "mp4"
+      "ext": "mp4",
+      "tamanho": 17144814
     },
     {
       "numero": 114,
       "tipo": "video",
-      "ext": "mp4"
+      "ext": "mp4",
+      "tamanho": 4907050
     },
     {
       "numero": 115,
       "tipo": "video",
-      "ext": "mp4"
+      "ext": "mp4",
+      "tamanho": 10516776
     },
     {
       "numero": 116,
       "tipo": "video",
-      "ext": "mp4"
+      "ext": "mp4",
+      "tamanho": 8247738
     },
     {
       "numero": 117,
       "tipo": "video",
-      "ext": "mp4"
+      "ext": "mp4",
+      "tamanho": 748445
     },
     {
       "numero": 118,
       "tipo": "video",
-      "ext": "mp4"
+      "ext": "mp4",
+      "tamanho": 748445
     },
     {
       "numero": 120,
       "tipo": "video",
-      "ext": "mp4"
+      "ext": "mp4",
+      "tamanho": 7904198
     },
     {
       "numero": 121,
       "tipo": "video",
-      "ext": "mp4"
-    },
-    {
-      "numero": 122,
-      "tipo": "video",
-      "ext": "mp4"
+      "ext": "mp4",
+      "tamanho": 4670598
     },
     {
       "numero": 123,
       "tipo": "video",
-      "ext": "mp4"
+      "ext": "mp4",
+      "tamanho": 894051
     }
   ]
 }

@@ -50,32 +50,107 @@ function validarFormatoAnonKey(chave) {
     }
 }
 
-// Envia o backup (.zip) para o bucket, mais um ".meta.json" com o
-// timestamp (para checar "existe algo mais novo?" sem baixar o zip inteiro).
+// Envia o backup (.zip) para o bucket e confirma uma revisão monotônica
+// no ".meta.json" sem depender do relógio do aparelho.
 
-const TAMANHO_MAXIMO_PARTE_BYTES = 45 * 1024 * 1024; // abaixo do limite de 50MB por arquivo do plano gratuito
+// O upload padrão do Storage é mais confiável para arquivos pequenos. Mantemos
+// cada parte abaixo de 6 MB; backups maiores continuam sendo divididos.
+const TAMANHO_MAXIMO_PARTE_BYTES = 5 * 1024 * 1024;
 const AVISO_QUOTA_TOTAL_BYTES = 900 * 1024 * 1024; // aviso perto do 1GB de quota total
 
-// Caminho de uma parte do backup (nome simples se só existir 1 parte).
+const POLONI_RETENCAO_GERACOES = 3;
+
+// Compatibilidade com o formato remoto antigo.
 function caminhoParteZip(codigo, indice, totalPartes) {
     return totalPartes <= 1 ? `${codigo}.zip` : `${codigo}.zip.parte${indice}`;
 }
 
+function caminhoPublico(objeto) {
+    return `${SUPABASE_URL}/storage/v1/object/public/${SUPABASE_BUCKET}/${objeto}`;
+}
+
+function caminhoEscrita(objeto) {
+    return `${SUPABASE_URL}/storage/v1/object/${SUPABASE_BUCKET}/${objeto}`;
+}
+
+async function enviarObjetoNuvem(objeto, corpo, contentType, upsert = false) {
+    const resposta = await fetch(caminhoEscrita(objeto), {
+        method: 'POST',
+        headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': contentType,
+            'x-upsert': upsert ? 'true' : 'false'
+        },
+        body: corpo
+    });
+    if (!resposta.ok) throw new Error(`Falha ao gravar objeto remoto (${resposta.status}).`);
+}
+
+async function confirmarObjetoNuvem(objeto, tamanhoEsperado) {
+    let ultimoErro;
+    for (let tentativa = 1; tentativa <= 3; tentativa++) {
+        try {
+            const resposta = await fetch(`${caminhoPublico(objeto)}?v=${Date.now()}`, { cache: 'no-store' });
+            if (!resposta.ok) throw new Error(`Não foi possível confirmar a parte remota (${resposta.status}).`);
+            const blob = await resposta.blob();
+            if (blob.size !== tamanhoEsperado) throw new Error(`Parte remota incompleta: esperado ${tamanhoEsperado}, recebido ${blob.size}.`);
+            return true;
+        } catch (e) {
+            ultimoErro = e;
+            if (tentativa < 3) await new Promise(resolve => setTimeout(resolve, tentativa * 500));
+        }
+    }
+    throw ultimoErro;
+}
+
+async function lerManifestBackup(blob) {
+    const zip = await JSZip.loadAsync(blob, { checkCRC32: true });
+    const arquivo = zip.file('manifest.json');
+    if (!arquivo) throw new Error('Backup gerado sem manifest.json.');
+    return JSON.parse(await arquivo.async('string'));
+}
+
 /**
- * Backups acima de 50MB (limite por arquivo do Supabase gratuito) são
- * divididos em partes menores, remontadas automaticamente ao baixar
+ * Backups acima de 5MB são divididos em partes menores, remontadas
+ * automaticamente ao baixar
  * (ver buscarBackupZipDaNuvem). O meta.json guarda quantas partes existem.
  *
- * Importante: isso contorna o limite POR ARQUIVO, mas não aumenta o
- * espaço TOTAL disponível — o plano gratuito do Supabase continua tendo
- * 1GB no total, somando tudo (por isso ainda existe um aviso separado se
+ * Importante: isso mantém cada upload no intervalo recomendado para o modo
+ * padrão, mas não aumenta o espaço TOTAL disponível — o plano gratuito do
+ * Supabase continua tendo 1GB no total, somando tudo (por isso ainda existe
+ * um aviso separado se
  * o backup sozinho já estiver perto disso). Se esse for o caso, vale
  * considerar o YouTube pro vídeo do pedido (sai da conta do backup) ou o
  * plano pago do Supabase.
  */
-async function publicarBackupNaNuvem(codigo) {
+async function publicarBackupNaNuvem(codigo, lockPublicacao = null) {
+    // Preservation-first: antes de gerar qualquer upload, incorpora a geração
+    // remota atual ao banco local. Assim um celular desatualizado nunca remove
+    // a foto que outro celular adicionou.
+    const metaInicial = await buscarMetaDaNuvem(codigo);
+    if (metaInicial && !metaInicial.resetado) {
+        const remoto = await buscarBackupZipDaNuvem(codigo, metaInicial.partes, metaInicial);
+        if (remoto) {
+            __auroraAplicandoBackupRemoto = true;
+            try { await aplicarBackupDeZip(remoto); }
+            finally { __auroraAplicandoBackupRemoto = false; }
+        }
+    }
+
     const zipBlob = await gerarBackupZipBlob();
-    const atualizadoEm = parseInt(await obterConfiguracao('aurora_atualizado_em'), 10) || Date.now();
+    const manifest = await lerManifestBackup(zipBlob);
+    const stats = manifest.estatisticas || { configuracoes: 0, medias: (manifest.medias || []).length, bytesMidia: 0 };
+
+    // Defesa programática contra regressão: um estado anormalmente menor não
+    // substitui automaticamente uma geração comprovadamente rica.
+    const statsRemoto = metaInicial && metaInicial.estatisticas;
+    if (statsRemoto && ((statsRemoto.medias > 0 && stats.medias < statsRemoto.medias) ||
+        (statsRemoto.bytesMidia > 0 && stats.bytesMidia < statsRemoto.bytesMidia * 0.85))) {
+        const erro = new Error('Upload bloqueado: o estado local ficou anormalmente menor que o backup remoto.');
+        await registrarDiagnosticoSeguro('sync.bloqueio_backup_menor', erro, { local: stats, remoto: statsRemoto });
+        throw erro;
+    }
 
     if (zipBlob.size > AVISO_QUOTA_TOTAL_BYTES) {
         const tamanhoMB = (zipBlob.size / (1024 * 1024)).toFixed(0);
@@ -83,63 +158,72 @@ async function publicarBackupNaNuvem(codigo) {
     }
 
     const totalPartes = Math.max(1, Math.ceil(zipBlob.size / TAMANHO_MAXIMO_PARTE_BYTES));
+    const geracaoId = `${Date.now().toString(36)}-${gerarIdUnico('g').slice(-10)}`;
+    const baseGeracao = `${codigo}/geracoes/${geracaoId}`;
+    const partesMeta = [];
 
     for (let i = 0; i < totalPartes; i++) {
         const inicio = i * TAMANHO_MAXIMO_PARTE_BYTES;
         const fim = Math.min(inicio + TAMANHO_MAXIMO_PARTE_BYTES, zipBlob.size);
         const parte = zipBlob.slice(inicio, fim);
 
-        const url = `${SUPABASE_URL}/storage/v1/object/${SUPABASE_BUCKET}/${caminhoParteZip(codigo, i, totalPartes)}`;
-        const resposta = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'apikey': SUPABASE_ANON_KEY,
-                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                'Content-Type': 'application/zip',
-                'x-upsert': 'true'
-            },
-            body: parte
-        });
-        if (!resposta.ok) throw new Error(`Falha ao publicar parte ${i + 1} de ${totalPartes} na nuvem: ${resposta.status}`);
+        const objeto = `${baseGeracao}/parte-${String(i).padStart(3, '0')}.zip`;
+        await enviarObjetoNuvem(objeto, parte, 'application/zip', false);
+        await confirmarObjetoNuvem(objeto, parte.size);
+        partesMeta.push({ objeto, tamanho: parte.size });
     }
 
-    // Limpeza best-effort de partes "sobrando" de um envio anterior maior
-    // (ex.: o backup diminuiu de tamanho, ou voltou a caber numa parte só).
-    try {
-        const nomesParaApagar = [];
-        for (let i = totalPartes; i < totalPartes + 3; i++) nomesParaApagar.push(`${codigo}.zip.parte${i}`);
-        if (totalPartes > 1) nomesParaApagar.push(`${codigo}.zip`); // era um arquivo único, agora virou múltiplas partes
-        await Promise.all(nomesParaApagar.map(nome => fetch(`${SUPABASE_URL}/storage/v1/object/${SUPABASE_BUCKET}/${nome}`, {
-            method: 'DELETE',
-            headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
-        }).catch(() => {})));
-    } catch (e) { /* limpeza, não crítico */ }
+    const hashZip = await sha256BlobSeguro(zipBlob);
+    const revisaoBase = Number(metaInicial && metaInicial.revisao) || 0;
+    const geracao = { id: geracaoId, revisao: revisaoBase + 1, criadoEm: new Date().toISOString(), tamanho: zipBlob.size, sha256: hashZip, partes: partesMeta, estatisticas: stats };
+    await enviarObjetoNuvem(`${baseGeracao}/manifest.json`, JSON.stringify(geracao), 'application/json', false);
 
-    const urlMeta = `${SUPABASE_URL}/storage/v1/object/${SUPABASE_BUCKET}/${codigo}-meta.json`;
-    const respostaMeta = await fetch(urlMeta, {
-        method: 'POST',
-        headers: {
-            'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-            'Content-Type': 'application/json',
-            'x-upsert': 'true'
-        },
-        body: JSON.stringify({ atualizadoEm, partes: totalPartes })
-    });
-    if (!respostaMeta.ok) throw new Error(`Falha ao publicar metadados na nuvem: ${respostaMeta.status}`);
+    // Rechecagem otimista imediatamente antes do commit do ponteiro. Se outro
+    // aparelho publicou enquanto este enviava, aborta; a geração anterior e a
+    // concorrente continuam intactas, e a próxima tentativa mescla as duas.
+    const metaAntesCommit = await buscarMetaDaNuvem(codigo);
+    const revisaoAgora = Number(metaAntesCommit && metaAntesCommit.revisao) || 0;
+    if (revisaoAgora !== revisaoBase) {
+        const erro = new Error('Outro aparelho sincronizou ao mesmo tempo. A tentativa será refeita sem sobrescrever a outra geração.');
+        await registrarDiagnosticoSeguro('sync.conflito_publicacao', erro, { revisaoBase, revisaoAgora });
+        throw erro;
+    }
+    if (lockPublicacao) {
+        const lockAtual = await lerLockPublicacao(lockPublicacao.objeto);
+        if (!lockAtual || lockAtual.token !== lockPublicacao.token) {
+            throw new Error('Outro aparelho assumiu a publicação antes do commit. A geração enviada foi preservada e será mesclada na nova tentativa.');
+        }
+    }
 
-    return true;
+    const historicoAnterior = Array.isArray(metaInicial && metaInicial.historico) ? metaInicial.historico : [];
+    const historico = [geracao, ...(metaInicial && metaInicial.geracaoAtual ? [metaInicial.geracaoAtual] : []), ...historicoAnterior]
+        .filter((g, i, lista) => g && g.id && lista.findIndex(x => x.id === g.id) === i)
+        .slice(0, POLONI_RETENCAO_GERACOES);
+    const metaNovo = { formato: 2, revisao: geracao.revisao, geracaoAtual: geracao, historico, estatisticas: stats, atualizadoEm: Date.now(), partes: totalPartes, resetado: false };
+    await enviarObjetoNuvem(`${codigo}-meta.json`, JSON.stringify(metaNovo), 'application/json', true);
+    let metaConfirmado = null;
+    for (let tentativa = 1; tentativa <= 3; tentativa++) {
+        metaConfirmado = await buscarMetaDaNuvem(codigo);
+        if (Number(metaConfirmado && metaConfirmado.revisao) === geracao.revisao && metaConfirmado?.geracaoAtual?.id === geracao.id) break;
+        if (tentativa < 3) await new Promise(resolve => setTimeout(resolve, tentativa * 500));
+    }
+    if (Number(metaConfirmado && metaConfirmado.revisao) !== geracao.revisao || metaConfirmado?.geracaoAtual?.id !== geracao.id) {
+        throw new Error('A geração foi enviada, mas o ponteiro remoto não pôde ser confirmado. Os dados locais continuam marcados para nova tentativa.');
+    }
+    await salvarConfiguracao('aurora_sync_revision', String(geracao.revisao), false, false);
+    await salvarConfiguracao('aurora_sync_dirty', '0', false, false);
+    return metaNovo;
 }
 
 /** Baixa o backup (.zip) de um código de compartilhamento e aplica no aparelho atual. */
 async function importarBackupDaNuvem(codigo) {
     const meta = await buscarMetaDaNuvem(codigo);
-    const zipDados = await buscarBackupZipDaNuvem(codigo, meta ? meta.partes : 1);
+    const zipDados = await buscarBackupZipDaNuvem(codigo, meta ? meta.partes : 1, meta);
     if (!zipDados) throw new Error('Não foi possível localizar essa experiência.');
     await aplicarBackupDeZip(zipDados);
 }
 
-/** Baixa só o arquivo pequeno de metadados (timestamp + quantas partes o backup tem) de um código. Retorna `null` se não existir (404). */
+/** Baixa só o arquivo pequeno de metadados (revisão + geração atual) de um código. Retorna `null` se não existir (404). */
 async function buscarMetaDaNuvem(codigo) {
     // "?t=" muda a cada chamada de propósito: as URLs "públicas" do Supabase
     // Storage passam por um CDN, e "cache: no-store" só evita o cache do
@@ -160,7 +244,26 @@ async function buscarMetaDaNuvem(codigo) {
  * (404) — inclusive se alguma parte estiver faltando, pra nunca aplicar
  * um backup incompleto/corrompido.
  */
-async function buscarBackupZipDaNuvem(codigo, totalPartes) {
+async function buscarBackupZipDaNuvem(codigo, totalPartes, meta = null) {
+    if (meta && meta.geracaoAtual && Array.isArray(meta.geracaoAtual.partes)) {
+        const buffers = [];
+        for (const parte of meta.geracaoAtual.partes) {
+            const resposta = await fetch(`${caminhoPublico(parte.objeto)}?v=${Date.now()}`, { cache: 'no-store' });
+            if (!resposta.ok) throw new Error(`Geração remota incompleta (${resposta.status}).`);
+            const buffer = await resposta.arrayBuffer();
+            if (parte.tamanho && buffer.byteLength !== parte.tamanho) throw new Error('Geração remota truncada; dados locais foram preservados.');
+            buffers.push(buffer);
+        }
+        const tamanhoTotal = buffers.reduce((soma, b) => soma + b.byteLength, 0);
+        const combinado = new Uint8Array(tamanhoTotal);
+        let offset = 0;
+        for (const b of buffers) { combinado.set(new Uint8Array(b), offset); offset += b.byteLength; }
+        if (meta.geracaoAtual.sha256) {
+            const hash = await sha256BlobSeguro(new Blob([combinado]));
+            if (hash && hash !== meta.geracaoAtual.sha256) throw new Error('Checksum da geração remota não confere; dados locais foram preservados.');
+        }
+        return combinado.buffer;
+    }
     const partes = Math.max(1, totalPartes || 1);
 
     if (partes === 1) {
@@ -185,66 +288,6 @@ async function buscarBackupZipDaNuvem(codigo, totalPartes) {
     let offset = 0;
     for (const b of buffers) { combinado.set(new Uint8Array(b), offset); offset += b.byteLength; }
     return combinado.buffer;
-}
-
-/** Apaga o(s) arquivo(s) de backup antigo(s) da nuvem — incluindo partes, se o backup tiver sido dividido (limpeza — não é a parte crítica do reset, ver publicarResetNaNuvem). */
-async function apagarZipDaNuvem() {
-    if (!syncEstaConfigurado()) return;
-    // Inclui o nome antigo (.json) por compatibilidade com experiências criadas antes desta correção,
-    // e um número generoso de partes possíveis (ver publicarBackupNaNuvem) — DELETE num arquivo que
-    // não existe simplesmente não faz nada, então não tem problema tentar mais do que o necessário.
-    const arquivos = [`${EXPERIENCE_ID}.zip`, `${EXPERIENCE_ID}.json`, `${EXPERIENCE_ID}-reset.json`];
-    for (let i = 0; i < 20; i++) arquivos.push(`${EXPERIENCE_ID}.zip.parte${i}`);
-
-    await Promise.all(arquivos.map(nomeArquivo => fetch(`${SUPABASE_URL}/storage/v1/object/${SUPABASE_BUCKET}/${nomeArquivo}`, {
-        method: 'DELETE',
-        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
-    }).catch(err => console.error(`Falha ao apagar "${nomeArquivo}" na nuvem (não crítico):`, err))));
-}
-
-/* ----------------------------------------------------------------------
- * RESET PROPAGADO VIA O PRÓPRIO meta.json (sem arquivo separado)
- * ----------------------------------------------------------------------
- * O reset sobrescreve o "${EXPERIENCE_ID}-meta.json" (o mesmo arquivo
- * pequeno lido em toda sincronização normal) com uma marca "resetado:
- * true", numa única escrita — assim outros aparelhos ficam sabendo do
- * reset e não reenviam dados antigos por cima. Histórico das tentativas
- * anteriores (por que um arquivo separado não funcionava): ver CONTEXTO-PROJETO.md.
- * ---------------------------------------------------------------------- */
-
-// Publica o reset no meta.json e confirma relendo da nuvem; tenta várias
-// vezes, pois é a escrita mais crítica do fluxo de reset.
-async function publicarResetNaNuvem() {
-    if (!syncEstaConfigurado()) return;
-
-    const TENTATIVAS = 4;
-    let ultimoErro = null;
-
-    for (let tentativa = 1; tentativa <= TENTATIVAS; tentativa++) {
-        try {
-            const resposta = await fetch(`${SUPABASE_URL}/storage/v1/object/${SUPABASE_BUCKET}/${EXPERIENCE_ID}-meta.json`, {
-                method: 'POST',
-                headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json', 'x-upsert': 'true' },
-                body: JSON.stringify({ atualizadoEm: Date.now(), resetado: true })
-            });
-            if (!resposta.ok) throw new Error(`Falha ao publicar o reset na nuvem (HTTP ${resposta.status})`);
-
-            // Confirma de verdade: relê o meta.json da nuvem e confere se o
-            // reset realmente "pegou", em vez de confiar só no HTTP 200 (o
-            // bucket pode aceitar a escrita e mesmo assim não refletir por
-            // alguma inconsistência momentânea).
-            const confirmado = await buscarMetaDaNuvem(EXPERIENCE_ID);
-            if (confirmado && confirmado.resetado === true) return; // sucesso confirmado
-
-            throw new Error('O reset foi enviado, mas a confirmação de leitura não mostrou "resetado: true".');
-        } catch (err) {
-            ultimoErro = err;
-            console.error(`publicarResetNaNuvem — tentativa ${tentativa}/${TENTATIVAS} falhou:`, err);
-            if (tentativa < TENTATIVAS) await new Promise(r => setTimeout(r, 800 * tentativa)); // espera crescente entre tentativas
-        }
-    }
-
-    throw ultimoErro || new Error('Falha desconhecida ao publicar o reset na nuvem.');
 }
 
 /**
@@ -302,6 +345,104 @@ window.addEventListener('beforeunload', (evt) => {
 
 let __auroraPublicacaoEmAndamento = false; // true enquanto um envio já está em voo
 let __auroraPublicacaoPendente = false;    // true se algo mudou DE NOVO enquanto esse envio estava em voo
+let __auroraPublicacaoPromessa = null;     // todos os chamadores aguardam a mesma fila
+const POLONI_LOCK_EXPIRA_MS = 10 * 60 * 1000;
+
+async function lerLockPublicacao(objeto) {
+    try {
+        const resposta = await fetch(`${caminhoPublico(objeto)}?lock=${Date.now()}`, { cache: 'no-store' });
+        if (!resposta.ok) return null;
+        return await resposta.json();
+    } catch (_) {
+        return null;
+    }
+}
+
+async function tentarCriarLockPublicacao(objeto, lock) {
+    try {
+        const resposta = await fetch(caminhoEscrita(objeto), {
+            method: 'POST',
+            headers: {
+                'apikey': SUPABASE_ANON_KEY,
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                'Content-Type': 'application/json',
+                'x-upsert': 'false'
+            },
+            body: JSON.stringify(lock)
+        });
+        return resposta.ok;
+    } catch (_) {
+        return false;
+    }
+}
+
+async function adquirirLockPublicacao(codigo) {
+    const objeto = `${codigo}-publicacao.lock.json`;
+    const agoraServidor = (await obterHoraConfiavel()).getTime();
+    const lock = { token: gerarIdUnico('lock'), criadoEm: new Date(agoraServidor).toISOString() };
+
+    if (await tentarCriarLockPublicacao(objeto, lock)) return { objeto, ...lock };
+
+    // Um aparelho fechado no meio do upload pode deixar o lock órfão. Só o
+    // remove após 10 minutos e depois de identificar exatamente seu token;
+    // a recriação continua atômica porque usa x-upsert=false.
+    const existente = await lerLockPublicacao(objeto);
+    const criadoEm = existente && Date.parse(existente.criadoEm);
+    if (existente?.token && Number.isFinite(criadoEm) && agoraServidor - criadoEm > POLONI_LOCK_EXPIRA_MS) {
+        const releitura = await lerLockPublicacao(objeto);
+        if (releitura?.token === existente.token) {
+            try {
+                await fetch(caminhoEscrita(objeto), {
+                    method: 'DELETE',
+                    headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+                });
+            } catch (_) { /* a tentativa atômica abaixo decidirá */ }
+            if (await tentarCriarLockPublicacao(objeto, lock)) return { objeto, ...lock };
+        }
+    }
+
+    throw new Error('Outro aparelho está publicando agora. A tentativa será refeita sem sobrescrever dados.');
+}
+
+async function liberarLockPublicacao(lock) {
+    if (!lock) return;
+    try {
+        const atual = await lerLockPublicacao(lock.objeto);
+        if (!atual || atual.token !== lock.token) return;
+        const resposta = await fetch(caminhoEscrita(lock.objeto), {
+            method: 'DELETE',
+            headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+        });
+        if (!resposta.ok) throw new Error(`Falha ao liberar lock remoto (${resposta.status}).`);
+    } catch (erro) {
+        await registrarDiagnosticoSeguro('sync.liberar_lock', erro);
+    }
+}
+
+async function executarPublicacaoComLock() {
+    const executar = async () => {
+        let ultimoErro;
+        for (let tentativa = 1; tentativa <= 3; tentativa++) {
+            let lock = null;
+            try {
+                lock = await adquirirLockPublicacao(EXPERIENCE_ID);
+                return await publicarBackupNaNuvem(EXPERIENCE_ID, lock);
+            }
+            catch (erro) {
+                ultimoErro = erro;
+                if (!String(erro && erro.message).includes('Outro aparelho') || tentativa === 3) throw erro;
+                await new Promise(resolve => setTimeout(resolve, 1200 * tentativa));
+            } finally {
+                await liberarLockPublicacao(lock);
+            }
+        }
+        throw ultimoErro;
+    };
+    if (navigator.locks && navigator.locks.request) {
+        return navigator.locks.request('poloni-sync-publicacao', { mode: 'exclusive' }, executar);
+    }
+    return executar();
+}
 
 // Publica na nuvem de forma serializada: se já existe um envio em voo,
 // uma nova chamada só marca "pendente" e é reprocessada ao terminar (evita
@@ -309,20 +450,24 @@ let __auroraPublicacaoPendente = false;    // true se algo mudou DE NOVO enquant
 async function publicarComIndicadorVisivel() {
     if (__auroraPublicacaoEmAndamento) {
         __auroraPublicacaoPendente = true;
-        return;
+        return __auroraPublicacaoPromessa;
     }
 
     __auroraPublicacaoEmAndamento = true;
     mostrarBannerSync(true);
-    try {
-        do {
-            __auroraPublicacaoPendente = false;
-            await publicarBackupNaNuvem(EXPERIENCE_ID);
-        } while (__auroraPublicacaoPendente);
-    } finally {
-        __auroraPublicacaoEmAndamento = false;
-        mostrarBannerSync(false);
-    }
+    __auroraPublicacaoPromessa = (async () => {
+        try {
+            do {
+                __auroraPublicacaoPendente = false;
+                await executarPublicacaoComLock();
+            } while (__auroraPublicacaoPendente);
+        } finally {
+            __auroraPublicacaoEmAndamento = false;
+            __auroraPublicacaoPromessa = null;
+            mostrarBannerSync(false);
+        }
+    })();
+    return __auroraPublicacaoPromessa;
 }
 
 // Aviso persistente (mesmo banner do "Salvando na nuvem"), visível em
@@ -330,7 +475,7 @@ async function publicarComIndicadorVisivel() {
 function mostrarAvisoPersistente(mensagem) {
     const banner = document.getElementById('auroraSyncBanner');
     if (!banner) return;
-    banner.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-2"></i>${mensagem} <button type="button" class="aurora-aviso-fechar" aria-label="Fechar">&times;</button>`;
+    banner.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-2"></i>${escaparHtml(mensagem)} <button type="button" class="aurora-aviso-fechar" aria-label="Fechar">&times;</button>`;
     banner.classList.remove('d-none');
     banner.classList.add('aurora-sync-banner-erro');
     banner.querySelector('.aurora-aviso-fechar').addEventListener('click', () => {
@@ -388,7 +533,8 @@ async function sincronizarNaAbertura() {
 
     if (!syncEstaConfigurado()) return;
 
-    const timestampLocal = parseInt(await obterConfiguracao('aurora_atualizado_em'), 10) || 0;
+    const revisaoLocal = parseInt(await obterConfiguracao('aurora_sync_revision'), 10) || 0;
+    const localSujo = (await obterConfiguracao('aurora_sync_dirty')) === '1';
 
     let meta = null;
     try {
@@ -398,48 +544,46 @@ async function sincronizarNaAbertura() {
         return;
     }
 
-    const timestampNuvem = (meta && meta.atualizadoEm) ? meta.atualizadoEm : 0;
+    const revisaoNuvem = Number(meta && meta.revisao) || 0;
+    const timestampNuvem = (meta && meta.atualizadoEm) ? meta.atualizadoEm : 0; // somente compatibilidade com reset legado
     const nuvemFoiResetada = Boolean(meta && meta.resetado);
 
     // Um reset é "pendente" pra este aparelho se for mais novo que qualquer
     // dado que ele já conhece; assim que este aparelho publica algo novo, a
     // marca "resetado" some do meta.json.
-    const resetPendente = nuvemFoiResetada && timestampNuvem > timestampLocal;
+    const resetPendente = nuvemFoiResetada && timestampNuvem > (parseInt(await obterConfiguracao('aurora_reset_visto_em'), 10) || 0);
 
     if (resetPendente) {
         await limparArmazenamentoLocal();
-        // Alinha o relógio local com o do reset (em vez de zero) para não
-        // reentrar no mesmo reset a cada recarregamento.
-        try { await db.configuracoes.put({ chave: 'aurora_atualizado_em', valor: String(timestampNuvem) }); } catch (e) { /* ignora */ }
-        try { localStorage.setItem('aurora_atualizado_em', String(timestampNuvem)); } catch (e) { /* ignora */ }
-        location.reload();
-        return; // location.reload() é assíncrono — não deixa nada mais rodar neste ciclo
+        await salvarConfiguracao('aurora_reset_visto_em', String(timestampNuvem), false, false);
     }
 
-    if (meta && !nuvemFoiResetada && timestampNuvem > timestampLocal) {
-        // A nuvem tem uma versão mais nova (ex.: foi concluída em outro aparelho) — baixa o zip completo e aplica aqui.
+    if (meta && !nuvemFoiResetada && (revisaoNuvem > revisaoLocal || revisaoLocal === 0)) {
+        // A revisão remota é monotônica e não depende do relógio do aparelho.
         __auroraAplicandoBackupRemoto = true;
         try {
-            const zipDados = await buscarBackupZipDaNuvem(EXPERIENCE_ID, meta.partes);
+            const zipDados = await buscarBackupZipDaNuvem(EXPERIENCE_ID, meta.partes, meta);
             if (zipDados) {
                 await aplicarBackupDeZip(zipDados);
-                await db.configuracoes.put({ chave: 'aurora_atualizado_em', valor: String(timestampNuvem) });
-                try { localStorage.setItem('aurora_atualizado_em', String(timestampNuvem)); } catch (e) { /* ignora */ }
+                await salvarConfiguracao('aurora_sync_revision', String(revisaoNuvem), false, false);
+                await salvarConfiguracao('aurora_sync_dirty', localSujo ? '1' : '0', false, false);
             }
         } catch (err) {
             console.error('Falha ao baixar/aplicar o backup da nuvem:', err);
+            await registrarDiagnosticoSeguro('sync.abertura_download', err, { revisaoLocal, revisaoNuvem });
         } finally {
             __auroraAplicandoBackupRemoto = false;
         }
-    } else if (!nuvemFoiResetada && timestampLocal > 0 && timestampLocal > timestampNuvem) {
-        // Este aparelho tem dados que a nuvem ainda não tem — envia agora.
-        // !nuvemFoiResetada evita reenviar dados antigos por cima de um
-        // reset; ">" estrito (não ">=") evita reenviar o backup à toa a
-        // cada abertura quando nada mudou (ver CONTEXTO-PROJETO.md).
+    }
+
+    // Só publica se existe uma alteração local explicitamente marcada. Um
+    // navegador novo nasce limpo e, portanto, jamais envia backup vazio.
+    if (!nuvemFoiResetada && localSujo) {
         try {
             await publicarComIndicadorVisivel();
         } catch (err) {
             console.error('Falha ao publicar dados locais na nuvem ao abrir o site:', err);
+            await registrarDiagnosticoSeguro('sync.abertura_upload', err, { revisaoLocal, revisaoNuvem });
         }
     }
 }
@@ -508,6 +652,21 @@ async function compartilharExperiencia() {
  * Supabase — é a prova definitiva de que URL + chave estão certos e que
  * as políticas do bucket permitem inserir/ler/apagar.
  */
+async function limparObjetoTemporarioNuvem(caminho, caminhoPublico) {
+    try {
+        const resposta = await fetch(caminho, {
+            method: 'DELETE',
+            headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+        });
+        if (!resposta.ok) return { ok: false, status: resposta.status };
+
+        const confirmacao = await fetch(`${caminhoPublico}?removido=${Date.now()}`, { cache: 'no-store' });
+        return { ok: !confirmacao.ok, status: confirmacao.status };
+    } catch (e) {
+        return { ok: false, status: 0 };
+    }
+}
+
 async function testarConexaoNuvem() {
     if (!syncEstaConfigurado()) {
         return { ok: false, etapa: 'configuracao', motivo: 'SUPABASE_URL e/ou SUPABASE_ANON_KEY ainda estão vazios em js/sync.js.' };
@@ -528,7 +687,7 @@ async function testarConexaoNuvem() {
     try {
         respostaUpload = await fetch(caminho, {
             method: 'POST',
-            headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json', 'x-upsert': 'true' },
+            headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json', 'x-upsert': 'false' },
             body: JSON.stringify(conteudoTeste)
         });
     } catch (err) {
@@ -539,34 +698,37 @@ async function testarConexaoNuvem() {
         return { ok: false, etapa: 'upload', motivo: `Upload falhou (HTTP ${respostaUpload.status}). Confira a policy de INSERT do bucket. Detalhe: ${corpo.slice(0, 200)}` };
     }
 
-    // 2) Download público
-    let respostaDownload;
+    // 2) Download público e integridade. Depois de um upload bem-sucedido,
+    // não há retorno antecipado: a limpeza sempre é tentada.
+    let resultado;
     try {
-        respostaDownload = await fetch(caminhoPublico, { cache: 'no-store' });
+        const respostaDownload = await fetch(`${caminhoPublico}?teste=${Date.now()}`, { cache: 'no-store' });
+        if (!respostaDownload.ok) {
+            resultado = { ok: false, etapa: 'download', motivo: `Upload funcionou, mas o download falhou (HTTP ${respostaDownload.status}). Confira se o bucket está marcado como público.` };
+        } else {
+            const baixado = await respostaDownload.json().catch(() => null);
+            resultado = (!baixado || baixado.ts !== conteudoTeste.ts)
+                ? { ok: false, etapa: 'integridade', motivo: 'O conteúdo baixado não confere com o que foi enviado.' }
+                : { ok: true, etapa: 'completo', motivo: 'Upload, download, integridade e remoção confirmados com sucesso.' };
+        }
     } catch (err) {
-        return { ok: false, etapa: 'download', motivo: `Upload funcionou, mas o download falhou: ${err.message}` };
-    }
-    if (!respostaDownload.ok) {
-        return { ok: false, etapa: 'download', motivo: `Upload funcionou, mas o download falhou (HTTP ${respostaDownload.status}). Confira se o bucket está marcado como público e se a policy de SELECT existe.` };
-    }
-    const baixado = await respostaDownload.json().catch(() => null);
-    if (!baixado || baixado.ts !== conteudoTeste.ts) {
-        return { ok: false, etapa: 'integridade', motivo: 'O conteúdo baixado não confere com o que foi enviado.' };
+        resultado = { ok: false, etapa: 'download', motivo: `Upload funcionou, mas o download falhou: ${err.message}` };
     }
 
-    // 3) Limpeza (apaga o arquivo de teste) — falha aqui não invalida o teste principal.
-    try {
-        await fetch(caminho, { method: 'DELETE', headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` } });
-    } catch (e) { /* não crítico */ }
+    // 3) Limpeza confirmada; falhar aqui reprova o diagnóstico para não
+    // acumular objetos temporários no bucket.
+    const limpeza = await limparObjetoTemporarioNuvem(caminho, caminhoPublico);
+    if (!limpeza.ok) {
+        return { ok: false, etapa: 'limpeza', motivo: `O teste gravou o arquivo, mas não confirmou sua remoção (HTTP ${limpeza.status || 'rede'}). Confira a policy de DELETE do bucket.` };
+    }
 
-    return { ok: true, etapa: 'completo', motivo: 'Upload, download e integridade confirmados com sucesso.' };
+    return resultado;
 }
 
 /**
- * Teste de UPLOAD BINÁRIO REAL — sobe um arquivo de alguns MB (simulando o
- * peso de um vídeo/foto de verdade) pelo MESMO caminho que o backup .zip
- * real usa (POST binário direto, "Content-Type: application/zip",
- * "x-upsert"). Isso é essencial porque testarConexaoNuvem() só testa um
+ * Teste de UPLOAD BINÁRIO REAL — sobe uma parte de 5 MB pelo MESMO caminho
+ * usado na publicação (POST binário direto, "Content-Type: application/zip",
+ * sem sobrescrita). Isso é essencial porque testarConexaoNuvem() só testa um
  * JSON de poucos bytes — passa tranquilamente mesmo que o bucket tenha um
  * "File size limit" baixo demais, ou mesmo que a rede do celular seja
  * lenta o bastante para o upload de um vídeo real cair pela metade. Este
@@ -579,7 +741,7 @@ async function testarUploadMediaReal() {
     }
 
     const idTeste = `diagnostico_zip_${Date.now()}`;
-    const tamanhoBytes = 8 * 1024 * 1024; // 8MB — próximo do peso real de um backup .zip com fotos + um vídeo curto
+    const tamanhoBytes = 5 * 1024 * 1024; // mesmo tamanho máximo de uma parte real do backup
     const blobTeste = criarBlobDeTeste(tamanhoBytes);
     const caminho = `${SUPABASE_URL}/storage/v1/object/${SUPABASE_BUCKET}/${idTeste}.zip`;
     const caminhoPublico = `${SUPABASE_URL}/storage/v1/object/public/${SUPABASE_BUCKET}/${idTeste}.zip`;
@@ -593,7 +755,7 @@ async function testarUploadMediaReal() {
                 'apikey': SUPABASE_ANON_KEY,
                 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
                 'Content-Type': 'application/zip',
-                'x-upsert': 'true'
+                'x-upsert': 'false'
             },
             body: blobTeste
         });
@@ -608,28 +770,36 @@ async function testarUploadMediaReal() {
         return { ok: false, motivo: `Não foi possível conectar ao Supabase para o upload: ${err.message}` };
     }
 
-    // 2) Download público, para confirmar que o arquivo realmente chegou íntegro.
-    let blobBaixado;
+    // 2) Download público, para confirmar que a parte chegou íntegra. Depois
+    // do upload, o fluxo sempre passa pela limpeza antes de retornar.
+    let resultado;
     try {
-        const respostaDownload = await fetch(caminhoPublico, { cache: 'no-store' });
-        if (!respostaDownload.ok) return { ok: false, motivo: `Upload funcionou, mas o download falhou (HTTP ${respostaDownload.status}). Confira se o bucket está público e se a policy de SELECT existe.` };
-        blobBaixado = await respostaDownload.blob();
+        const respostaDownload = await fetch(`${caminhoPublico}?teste=${Date.now()}`, { cache: 'no-store' });
+        if (!respostaDownload.ok) {
+            resultado = { ok: false, motivo: `Upload funcionou, mas o download falhou (HTTP ${respostaDownload.status}). Confira se o bucket está público.` };
+        } else {
+            const blobBaixado = await respostaDownload.blob();
+            if (blobBaixado.size !== blobTeste.size) {
+                resultado = { ok: false, motivo: `O arquivo baixado não bate em tamanho com o enviado (enviado ${blobTeste.size} bytes, baixado ${blobBaixado.size} bytes) — algo está truncando o upload/download.` };
+            } else {
+                const [hashEnviado, hashBaixado] = await Promise.all([
+                    sha256BlobSeguro(blobTeste),
+                    sha256BlobSeguro(blobBaixado)
+                ]);
+                resultado = (hashEnviado && hashBaixado && hashEnviado !== hashBaixado)
+                    ? { ok: false, motivo: 'O tamanho confere, mas o SHA-256 do arquivo baixado é diferente do enviado.' }
+                    : { ok: true, motivo: `Upload, download, SHA-256 e remoção de ${(tamanhoBytes / (1024 * 1024)).toFixed(0)}MB confirmados em ${Math.round(performance.now() - inicio)}ms, pelo mesmo caminho usado por cada parte do backup real.` };
+            }
+        }
     } catch (err) {
-        return { ok: false, motivo: `Upload funcionou, mas o download falhou: ${err.message}` };
+        resultado = { ok: false, motivo: `Upload funcionou, mas o download falhou: ${err.message}` };
     }
 
-    const duracaoMs = Math.round(performance.now() - inicio);
-
-    // 3) Limpeza (apaga o arquivo de teste) — falha aqui não invalida o teste principal.
-    try {
-        await fetch(caminho, { method: 'DELETE', headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` } });
-    } catch (e) { /* não crítico */ }
-
-    if (!blobBaixado || blobBaixado.size !== blobTeste.size) {
-        return { ok: false, motivo: `O arquivo baixado não bate em tamanho com o enviado (enviado ${blobTeste.size} bytes, baixado ${blobBaixado ? blobBaixado.size : 0} bytes) — algo está truncando o upload/download.` };
+    const limpeza = await limparObjetoTemporarioNuvem(caminho, caminhoPublico);
+    if (!limpeza.ok) {
+        return { ok: false, motivo: `O teste gravou a parte, mas não confirmou sua remoção (HTTP ${limpeza.status || 'rede'}). Confira a policy de DELETE do bucket.` };
     }
-
-    return { ok: true, motivo: `Upload e download de ${(tamanhoBytes / (1024 * 1024)).toFixed(0)}MB binários confirmados em ${duracaoMs}ms, pelo mesmo caminho usado pelo backup .zip real. Vídeos e fotos devem sincronizar normalmente (respeitando o "File size limit" do bucket para o .zip completo).` };
+    return resultado;
 }
 
 function iniciarModuloSync() {

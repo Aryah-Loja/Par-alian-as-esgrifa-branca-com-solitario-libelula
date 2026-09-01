@@ -184,7 +184,7 @@ async function executarTesteMediaReal() {
     const resultadoEl = document.getElementById('diagResultadoMediaReal');
     btn.disabled = true;
     const textoOriginal = btn.innerHTML;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Enviando 8MB de teste...';
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Enviando 5MB de teste...';
     resultadoEl.textContent = '';
     resultadoEl.className = 'save-status pending';
 
@@ -258,7 +258,7 @@ async function executarVerEstadoReset() {
             <div class="veredito ${erroNuvem ? 'alerta' : (resetPendente ? 'alerta' : 'ok')}">${decisao}</div>
         `;
     } catch (err) {
-        painel.innerHTML = `<p class="text-danger mb-0">Falha ao consultar: ${err.message}</p>`;
+        painel.innerHTML = `<p class="text-danger mb-0">Falha ao consultar: ${escaparHtml(err.message)}</p>`;
         console.error(err);
     } finally {
         btn.disabled = false;
@@ -337,7 +337,7 @@ function solicitarSenhaReset(opcoes = {}) {
         if (!overlay || !input) { resolve(false); return; }
 
         // Título/subtítulo customizáveis: este modal de senha é reaproveitado
-        // por várias ações sensíveis (reset total, reset do contrato, troca de vídeo).
+        // por várias ações sensíveis (reset do contrato, troca de vídeo).
         const titulo = overlay.querySelector('.senha-memorias-titulo');
         const subtitulo = overlay.querySelector('.senha-memorias-sub');
         if (titulo) titulo.textContent = opcoes.titulo || 'Confirmar ação';
@@ -381,9 +381,8 @@ function solicitarSenhaReset(opcoes = {}) {
 // Reset do termômetro do dia (único dado temporário do projeto — ver
 // js/preservacao.js). Botão discreto, dentro da página de diagnóstico
 // (ela nunca vê esta página); apaga só 'aurora_termometro_lista', sem
-// tocar em nenhum outro dado do site. Continua publicando na nuvem antes
-// de limpar localmente, do mesmo jeito que o reset total fazia, para que
-// o outro aparelho também reinicie o termômetro na próxima sincronização.
+// tocar em nenhum outro dado do site. O tombstone da configuração segue
+// no backup normal para o outro aparelho também reiniciar o termômetro.
 async function executarResetTermometro() {
     const senhaOk = await solicitarSenhaReset({
         titulo: 'Resetar o termômetro do dia',
@@ -498,7 +497,7 @@ async function executarTesteCapsula() {
 
         resultado.innerHTML = html;
     } catch (e) {
-        resultado.innerHTML = `<div class="diag-resumo diag-erro">Deu erro tentando calcular: ${e.message}</div>`;
+        resultado.innerHTML = `<div class="diag-resumo diag-erro">Deu erro tentando calcular: ${escaparHtml(e.message)}</div>`;
     } finally {
         if (botao) { botao.disabled = false; botao.innerHTML = '<i class="bi bi-envelope-paper me-1"></i>Ver prévia da cápsula'; }
     }
@@ -536,10 +535,12 @@ function iniciarTrocaDeVideo() {
                 const videoAtual = await obterMedia('video_pedido');
                 if (videoAtual && videoAtual.blob) {
                     const a = document.createElement('a');
-                    a.href = URL.createObjectURL(videoAtual.blob);
+                    const urlBackup = URL.createObjectURL(videoAtual.blob);
+                    a.href = urlBackup;
                     a.download = 'video-pedido-backup-antes-da-troca.mp4';
                     document.body.appendChild(a); a.click(); a.remove();
                     await new Promise(r => setTimeout(r, 400)); // dá um instante pro download iniciar antes de seguir
+                    setTimeout(() => URL.revokeObjectURL(urlBackup), 10000);
                 } else {
                     status.textContent = 'Não havia vídeo salvo ainda pra fazer backup, seguindo com a troca...';
                 }
@@ -1027,6 +1028,85 @@ async function verificarVideosDoSite() {
     botao.innerHTML = textoOriginal;
 }
 
+async function carregarSaudeEDiagnosticos() {
+    const resumo = document.getElementById('diagSaudeResumo');
+    const lista = document.getElementById('diagFalhasRecentes');
+    if (!resumo || !lista || !db?.diagnosticos) return;
+
+    try {
+        const [medias, configuracoes, falhas, revisao, sujo] = await Promise.all([
+            db.media.count(),
+            db.configuracoes.count(),
+            db.diagnosticos.orderBy('id').reverse().limit(25).toArray(),
+            obterConfiguracao('aurora_sync_revision'),
+            obterConfiguracao('aurora_sync_dirty')
+        ]);
+        const estimativa = navigator.storage?.estimate ? await navigator.storage.estimate() : null;
+        const usoMb = estimativa?.usage ? (estimativa.usage / 1024 / 1024).toFixed(1) : 'indisponível';
+
+        resumo.innerHTML = '';
+        const linhas = [
+            ['Versão do app', typeof POLONI_APP_VERSION !== 'undefined' ? POLONI_APP_VERSION : 'não informada'],
+            ['Revisão sincronizada', revisao || '0'],
+            ['Alterações aguardando envio', sujo === '1' ? 'sim' : 'não'],
+            ['Mídias no banco local', String(medias)],
+            ['Configurações no banco local', String(configuracoes)],
+            ['Uso estimado do navegador', `${usoMb} MB`],
+            ['Falhas técnicas registradas', String(falhas.length)]
+        ];
+        for (const [rotulo, valor] of linhas) {
+            const linha = document.createElement('div');
+            linha.className = 'linha';
+            const a = document.createElement('span');
+            const b = document.createElement('span');
+            a.textContent = rotulo;
+            b.textContent = valor;
+            linha.append(a, b);
+            resumo.appendChild(linha);
+        }
+
+        lista.innerHTML = '';
+        if (!falhas.length) {
+            const vazio = document.createElement('li');
+            vazio.className = 'diag-item diag-ok';
+            vazio.innerHTML = '<i class="bi bi-check-circle-fill"></i><div><strong>Nenhuma falha registrada</strong><p>O diário técnico local está limpo.</p></div>';
+            lista.appendChild(vazio);
+            return;
+        }
+        for (const falha of falhas) {
+            const item = document.createElement('li');
+            item.className = 'diag-item diag-erro';
+            const icone = document.createElement('i');
+            icone.className = 'bi bi-exclamation-triangle-fill';
+            const corpo = document.createElement('div');
+            const titulo = document.createElement('strong');
+            const texto = document.createElement('p');
+            titulo.textContent = `${falha.codigo || 'sem código'} · ${falha.operacao || 'operação desconhecida'}`;
+            texto.textContent = `${new Date(falha.criadoEm).toLocaleString('pt-BR')} — ${falha.mensagem || 'Falha sem mensagem'}`;
+            corpo.append(titulo, texto);
+            item.append(icone, corpo);
+            lista.appendChild(item);
+        }
+    } catch (e) {
+        resumo.textContent = `Não foi possível ler a saúde local: ${e.message}`;
+    }
+}
+
+async function baixarRelatorioDiagnosticos() {
+    const falhas = db?.diagnosticos ? await db.diagnosticos.orderBy('id').reverse().limit(100).toArray() : [];
+    const relatorio = {
+        geradoEm: new Date().toISOString(),
+        versaoApp: typeof POLONI_APP_VERSION !== 'undefined' ? POLONI_APP_VERSION : null,
+        pagina: location.pathname,
+        revisaoSync: await obterConfiguracao('aurora_sync_revision'),
+        alteracoesPendentes: (await obterConfiguracao('aurora_sync_dirty')) === '1',
+        quantidadeMidias: await db.media.count(),
+        quantidadeConfiguracoes: await db.configuracoes.count(),
+        falhas
+    };
+    await salvarOuCompartilharArquivo(new Blob([JSON.stringify(relatorio, null, 2)], { type: 'application/json' }), `diagnostico-poloni-${new Date().toISOString().slice(0, 10)}.json`, 'application/json');
+}
+
 // Senha de acesso ao painel inteiro (ver SENHA_DIAGNOSTICO_HASH em
 // js/config.js). Mesmo padrão de solicitarSenhaMemorias() (js/romance.js):
 // desbloqueado só nesta sessão/aba (sessionStorage) — fechar o navegador
@@ -1092,5 +1172,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     carregarCartasCondicionaisAdmin();
     const botaoVerificarVideos = document.getElementById('btnVerificarVideosSite');
     if (botaoVerificarVideos) botaoVerificarVideos.addEventListener('click', verificarVideosDoSite);
+    document.getElementById('btnAtualizarSaude')?.addEventListener('click', carregarSaudeEDiagnosticos);
+    document.getElementById('btnBaixarDiagnosticos')?.addEventListener('click', baixarRelatorioDiagnosticos);
+    carregarSaudeEDiagnosticos();
     executarDiagnosticoCompleto();
 });

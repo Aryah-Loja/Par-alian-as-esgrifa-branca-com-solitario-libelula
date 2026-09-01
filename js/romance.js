@@ -972,6 +972,7 @@ function iniciarPlaylistDaGente() {
 }
 
 /* ---------------- Lembranças (prints de conversas antigas) ---------------- */
+let lembrancasBlobUrls = [];
 async function adicionarLembrancas(fileList) {
     const arquivos = Array.from(fileList || []).filter(f => f.type && f.type.startsWith('image/'));
     if (!arquivos.length) return;
@@ -992,6 +993,8 @@ async function renderizarLembrancas() {
     const vazio = document.getElementById('lembrancasVazio');
     if (!grid) return;
 
+    lembrancasBlobUrls.forEach(url => URL.revokeObjectURL(url));
+    lembrancasBlobUrls = [];
     const lista = (await obterMediaPorTipo('lembranca')).sort((a, b) => a.criadoEm - b.criadoEm);
     grid.innerHTML = '';
     if (!lista.length) { vazio.classList.remove('d-none'); return; }
@@ -999,6 +1002,7 @@ async function renderizarLembrancas() {
 
     lista.forEach(item => {
         const url = URL.createObjectURL(item.blob);
+        lembrancasBlobUrls.push(url);
         const wrapper = document.createElement('div');
         wrapper.className = 'lembranca-item-wrap';
 
@@ -1278,8 +1282,7 @@ async function garantirBackupDeVideoDisponivel() {
     }
 
     if (localUtilizavel) {
-        const url = URL.createObjectURL(video.blob);
-        elVideo.src = url;
+        const url = atribuirObjectURLGerenciado(elVideo, video.blob);
         wrap.classList.remove('d-none');
         if (btnBaixar) { btnBaixar.href = url; btnBaixar.classList.remove('d-none'); } // mesmo blob já carregado — download não refaz nenhuma leitura
         return;
@@ -1849,17 +1852,21 @@ async function preencherGridDoMapa(grid, lugares) {
 
         const card = document.createElement('div');
         card.className = 'mapa-card' + (lugar.futuro ? ' mapa-card-futuro' : '');
+        const nomeSeguro = escaparHtml(lugar.nome || 'Local especial');
+        const cidadeSegura = escaparHtml(lugar.cidade || '');
+        const textoSeguro = escaparHtml(lugar.texto || '');
+        const iconeSeguro = /^bi-[a-z0-9-]+$/i.test(lugar.icon || '') ? lugar.icon : 'bi-geo-alt-fill';
         card.innerHTML = `
             <div class="mapa-pin${temFoto ? ' mapa-pin-foto' : ''}">${
                 temFoto
-                    ? `<img src="${foto}" alt="${lugar.nome}">`
-                    : `<i class="bi ${lugar.icon || 'bi-geo-alt-fill'}"></i>`
+                    ? `<img src="${escaparHtml(foto)}" alt="${nomeSeguro}">`
+                    : `<i class="bi ${iconeSeguro}"></i>`
             }</div>
             <div class="mapa-linha"></div>
             <div class="mapa-conteudo">
-                <p class="mapa-nome">${lugar.nome}</p>
-                <p class="mapa-cidade">${lugar.cidade || ''}</p>
-                <p class="mapa-texto">${lugar.texto || ''}</p>
+                <p class="mapa-nome">${nomeSeguro}</p>
+                <p class="mapa-cidade">${cidadeSegura}</p>
+                <p class="mapa-texto">${textoSeguro}</p>
             </div>`;
 
         // Só abre o visor de foto ampliada se já existir uma foto de
@@ -1884,7 +1891,7 @@ async function obterLugaresExtrasDoMapa() {
     try {
         const bruto = await obterConfiguracao(CHAVE_MAPA_LUGARES_EXTRA);
         const lista = JSON.parse(bruto || '[]');
-        return Array.isArray(lista) ? lista : [];
+        return Array.isArray(lista) ? lista.filter(lugar => !lugar.excluidoEm) : [];
     } catch (e) {
         console.error('Falha ao ler locais extras do mapa:', e);
         return [];
@@ -1951,10 +1958,16 @@ async function renderizarResumoChecklist() {
     if (!textoEl || typeof CHECKLIST_ENCONTROS === 'undefined') return;
 
     let total = CHECKLIST_ENCONTROS.reduce((soma, cat) => soma + cat.itens.length, 0);
+    const idsValidos = new Set();
+    CHECKLIST_ENCONTROS.forEach((cat, catIdx) => cat.itens.forEach((_, itemIdx) => idsValidos.add(`${catIdx}_${itemIdx}`)));
     try {
         const brutoCustom = await obterConfiguracao('aurora_checklist_itens_customizados');
         const listaCustom = brutoCustom ? JSON.parse(brutoCustom) : [];
-        if (Array.isArray(listaCustom)) total += listaCustom.length;
+        if (Array.isArray(listaCustom)) {
+            const ativos = listaCustom.filter(item => !item.excluidoEm);
+            ativos.forEach(item => idsValidos.add(item.id));
+            total += ativos.length;
+        }
     } catch (e) { /* mantém só o total original em caso de erro */ }
 
     let estado = {};
@@ -1964,7 +1977,7 @@ async function renderizarResumoChecklist() {
     } catch (e) { estado = {}; }
     if (!estado || typeof estado !== 'object' || Array.isArray(estado)) estado = {};
 
-    const feitos = Object.keys(estado).filter(id => estado[id]).length;
+    const feitos = Object.keys(estado).filter(id => estado[id] && idsValidos.has(id)).length;
     const percentual = total > 0 ? Math.round((feitos / total) * 100) : 0;
 
     textoEl.textContent = feitos === 0
@@ -2758,7 +2771,9 @@ async function salvarNovoTextoMural() {
 async function excluirTextoMural(id) {
     if (!confirm('Apagar este texto? Essa ação não pode ser desfeita.')) return;
     const lista = await obterMural();
-    const restante = lista.filter((item) => item.id !== id);
+    const restante = lista.map(item => item.id === id
+        ? Object.assign({}, item, { excluidoEm: new Date().toISOString() })
+        : item);
     await salvarConfiguracao('aurora_mural_ana', JSON.stringify(restante));
     await renderizarMural();
 }
@@ -2777,7 +2792,7 @@ function atualizarMuralCtaSub(quantidade) {
 async function renderizarMural() {
     const lista = document.getElementById('muralLista');
     if (!lista) return;
-    const itens = await obterMural();
+    const itens = (await obterMural()).filter(item => !item.excluidoEm);
     atualizarMuralCtaSub(itens.length);
 
     if (!itens.length) {
@@ -2796,9 +2811,9 @@ async function renderizarMural() {
             <div class="mural-item">
                 <div class="mural-item-topo">
                     <span class="mural-item-data">${dataFormatada}</span>
-                    <button type="button" class="mural-item-excluir" data-id="${item.id}" aria-label="Apagar este texto"><i class="bi bi-trash3"></i></button>
+                    <button type="button" class="mural-item-excluir" data-id="${escaparHtml(item.id)}" aria-label="Apagar este texto"><i class="bi bi-trash3"></i></button>
                 </div>
-                <p class="mural-item-texto">${item.texto.replace(/</g, '&lt;').replace(/\n/g, '<br>')}</p>
+                <p class="mural-item-texto">${escaparHtml(item.texto).replace(/\n/g, '<br>')}</p>
             </div>
         `;
     }).join('');

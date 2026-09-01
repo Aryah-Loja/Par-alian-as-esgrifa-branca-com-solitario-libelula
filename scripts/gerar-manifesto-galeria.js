@@ -73,8 +73,14 @@ function gerarManifesto() {
         // o manifesto listar um arquivo que o site depois não vai achar.
         if (extEncontrada !== EXTENSAO_FOTO && extEncontrada !== EXTENSAO_VIDEO) continue;
 
+        const tamanho = fs.statSync(path.join(PASTA_GALERIA, nomeArquivo)).size;
+        if (tamanho <= 0) {
+            console.warn(`[manifesto] Ignorando mídia vazia: ${nomeArquivo}`);
+            continue;
+        }
+
         const tipo = extEncontrada === EXTENSAO_VIDEO ? 'video' : 'foto';
-        itens.push({ numero, tipo, ext: extEncontrada });
+        itens.push({ numero, tipo, ext: extEncontrada, tamanho });
     }
 
     itens.sort((a, b) => a.numero - b.numero);
@@ -98,7 +104,7 @@ function gerarManifesto() {
         itensAntigos = null; // manifesto ainda não existe, ou está corrompido — gera do zero
     }
 
-    const normalizar = (lista) => JSON.stringify(lista.map(i => ({ numero: i.numero, tipo: i.tipo, ext: i.ext })));
+    const normalizar = (lista) => JSON.stringify(lista.map(i => ({ numero: i.numero, tipo: i.tipo, ext: i.ext, tamanho: i.tamanho || 0 })));
     if (itensAntigos && normalizar(itensAntigos) === normalizar(itens)) {
         console.log(`[manifesto] ${itens.length} item(ns) encontrados, igual ao manifesto já salvo — nada para atualizar.`);
         return;
