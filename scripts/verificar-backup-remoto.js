@@ -36,7 +36,7 @@ async function buscarBytes(url, tentativas = 3) {
     throw ultimoErro;
 }
 
-async function executar() {
+async function verificarBackupRemoto(opcoes = {}) {
     const supabaseUrl = extrairConstante('js/sync.js', 'SUPABASE_URL');
     const bucket = extrairConstante('js/sync.js', 'SUPABASE_BUCKET');
     const codigo = extrairConstante('js/config.js', 'EXPERIENCE_ID');
@@ -93,31 +93,58 @@ async function executar() {
         throw new Error(`Total de mídia divergente (${bytesMidia}/${manifesto.estatisticas.bytesMidia}).`);
     }
 
-    const indiceSaida = process.argv.indexOf('--saida');
-    let arquivoSaida = null;
-    if (indiceSaida >= 0) {
-        arquivoSaida = process.argv[indiceSaida + 1];
-        if (!arquivoSaida) throw new Error('Informe um caminho depois de --saida.');
+    let arquivoSaida = opcoes.arquivoSaida || null;
+    if (arquivoSaida) {
         arquivoSaida = path.resolve(arquivoSaida);
         fs.mkdirSync(path.dirname(arquivoSaida), { recursive: true });
         fs.writeFileSync(arquivoSaida, zipBytes);
     }
 
-    console.log(JSON.stringify({
+    const resultado = {
         ok: true,
         projeto: new URL(supabaseUrl).hostname.split('.')[0],
+        bucket,
+        codigo,
         revisao: Number(meta.revisao),
         geracao: geracao.id,
+        geracaoCriadaEm: geracao.criadoEm || null,
         zipBytes: zipBytes.length,
         sha256: hashZip,
         medias: manifesto.medias.length,
         bytesMidia,
         configuracoes: Object.keys(manifesto.configuracoes || {}).length,
-        arquivoSaida
-    }, null, 2));
+        arquivoSaida,
+        verificadoEm: new Date().toISOString()
+    };
+
+    if (opcoes.reciboSaida) {
+        const reciboSaida = path.resolve(opcoes.reciboSaida);
+        fs.mkdirSync(path.dirname(reciboSaida), { recursive: true });
+        fs.writeFileSync(reciboSaida, `${JSON.stringify(resultado, null, 2)}\n`, 'utf8');
+        resultado.reciboSaida = reciboSaida;
+    }
+
+    return { resultado, zipBytes, meta, manifesto };
 }
 
-executar().catch(erro => {
-    console.error(`FALHA: ${erro.message}`);
-    process.exitCode = 1;
-});
+function valorArgumento(nome) {
+    const indice = process.argv.indexOf(nome);
+    if (indice < 0) return null;
+    const valor = process.argv[indice + 1];
+    if (!valor || valor.startsWith('--')) throw new Error(`Informe um caminho depois de ${nome}.`);
+    return valor;
+}
+
+if (require.main === module) {
+    verificarBackupRemoto({
+        arquivoSaida: valorArgumento('--saida'),
+        reciboSaida: valorArgumento('--recibo')
+    }).then(({ resultado }) => {
+        console.log(JSON.stringify(resultado, null, 2));
+    }).catch(erro => {
+        console.error(`FALHA: ${erro.message}`);
+        process.exitCode = 1;
+    });
+}
+
+module.exports = { verificarBackupRemoto, extrairConstante, sha256, buscarBytes };

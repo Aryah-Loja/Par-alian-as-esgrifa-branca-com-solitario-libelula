@@ -925,6 +925,32 @@ sem passar pela senha. É uma limitação de arquitetura de qualquer app
 estático sem back-end, não um bug a corrigir. Na prática o link só chega
 a quem for compartilhado, então o risco real é baixo.
 
+### Backup externo criptografado e retenção do Storage (01/09/2026)
+
+O workflow `.github/workflows/backup-externo-e-limpeza.yml` roda aos domingos
+e também aceita execução manual. A ordem é uma propriedade de segurança:
+
+1. `scripts/verificar-backup-remoto.js` baixa todas as partes da geração
+   atual e confirma tamanho, CRC do ZIP, SHA-256 do ZIP, de cada mídia e de
+   cada texto. Ele produz um recibo ligado ao projeto, bucket, revisão e hash.
+2. `scripts/backup-criptografia.js` criptografa o ZIP com AES-256-GCM e chave
+   derivada por scrypt, abre a cópia novamente e exige que o hash restaurado
+   seja idêntico ao original. O GitHub recebe somente `.poloni.enc` + recibo.
+3. `actions/upload-artifact` guarda a cópia criptografada por 30 dias.
+4. Somente depois do upload bem-sucedido,
+   `scripts/limpar-geracoes-supabase.js` pode excluir objetos pelo Storage API.
+
+A limpeza preserva no mínimo cinco gerações indexadas em `meta.json`, ignora
+qualquer geração com menos de 24 horas, nunca toca nos arquivos legados da
+raiz e cancela tudo se a revisão remota mudar depois da cópia. Uma pasta sem
+manifesto válido também é ignorada, pois pode ser um upload ainda em voo.
+Excluir por SQL é proibido; somente o Storage API remove arquivo e metadado
+juntos. O primeiro teste deve usar `--dry-run`.
+
+A chave não pertence ao repositório. Ela fica no secret do GitHub
+`POLONI_BACKUP_PASSPHRASE` e deve existir também numa cópia offline segura.
+Sem essa chave, um artefato externo não pode ser restaurado.
+
 ### js/sync.js — exclusões propagadas sem reset total
 O projeto não oferece mais reset total da experiência. Exclusões permitidas
 usam tombstones por registro ou relógios por chave e viajam no backup normal.
@@ -978,11 +1004,10 @@ pasta, sem editar nada":
    galeria.js + workflow do GitHub Actions) toda vez que fotos/vídeos novos
    são enviados ao repositório. Se o manifesto não existir, o site cai de
    volta no método antigo (varredura por HEAD) sem quebrar nada.
-   Fetch usa `cache: 'no-cache'` (não 'no-store'): permite o navegador
-   guardar a resposta mas obriga revalidar com o servidor (ETag/Last-
-   Modified) antes de usar — evita servir um manifesto.json desatualizado
-   por minutos depois de fotos novas, mas ainda é mais barato que HEAD
-   (o servidor costuma responder "304 não mudou" quase sem custo).
+   Fetch usa `cache: 'no-store'`, parâmetro variável na URL, timeout e uma
+   repetição automática. Isso evita tanto o cache local quanto uma resposta
+   antiga do CDN e impede que uma falha transitória fique memorizada durante
+   toda a abertura do site.
    Uma lista de itens vazia é um resultado válido (galeria realmente
    vazia) — só `null` significa "sem manifesto, usa o jeito antigo".
 

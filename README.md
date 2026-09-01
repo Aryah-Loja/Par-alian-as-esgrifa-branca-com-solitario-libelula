@@ -13,7 +13,7 @@ Antes de publicar, o aparelho incorpora a versão remota; restaurações são
 aditivas, em transação, e nunca esvaziam o banco antes da validação.
 
 O backup `.zip` inclui manifesto, versão de schema, contagens, tamanhos e
-checksums SHA-256. As três gerações recentes ficam indexadas no histórico do
+checksums SHA-256. As cinco gerações recentes ficam indexadas no histórico do
 metadado remoto. Conflitos de mídia preservam uma cópia alternativa e listas
 com ids são unidas. Exclusões sincronizáveis usam marcas de exclusão para não
 ressuscitarem em aparelhos desatualizados.
@@ -268,16 +268,24 @@ Um aviso fixo no rodapé ("Só revendo — nada aqui é salvo") e um botão
 "Voltar para nossa história" ficam sempre visíveis nesse modo. Ver
 `abrirLojaSomenteVisualizacao()` em `js/romance.js`.
 
-## Lembrete de backup manual
+## Backup externo automático e cópia manual
 
-A sincronização automática com a nuvem é ótima, mas é uma dependência de
-terceiro. Por isso, na página final, um pequeno card sugere baixar uma
-cópia de segurança (o `.zip` completo) quando faz tempo que ninguém baixa
-uma — nunca no meio da experiência, e sem incomodar toda vez (respeita
-"lembrar depois" por 14 dias). Ver `verificarLembreteBackup()` em
-`js/export.js`. Vale o hábito de baixar esse backup manualmente de vez em
-quando, principalmente logo depois do pedido — é a única cópia que fica
-100% com vocês, fora de qualquer serviço.
+A automação `.github/workflows/backup-externo-e-limpeza.yml` roda toda
+semana. Ela baixa a geração atual, confere CRC e SHA-256 de cada mídia,
+criptografa o ZIP com AES-256-GCM e guarda a cópia como artefato do GitHub
+por 30 dias. Só depois que o artefato é criado com sucesso a automação pode
+remover gerações antigas do Supabase; as cinco mais recentes são sempre
+preservadas e gerações com menos de 24 horas nunca entram na limpeza.
+
+A chave fica no secret `POLONI_BACKUP_PASSPHRASE` do GitHub e numa cópia
+local fora do repositório. Ela nunca deve ser enviada ao Git. Para restaurar
+um artefato baixado, use `scripts/backup-criptografia.js descriptografar`.
+
+Além disso, na página final, um card continua sugerindo baixar manualmente o
+`.zip` completo quando faz tempo que ninguém baixa uma. Ver
+`verificarLembreteBackup()` em `js/export.js`. A cópia manual continua sendo
+uma camada adicional recomendada, principalmente logo depois de uma mídia
+importante ser adicionada.
 
 ## Galeria de lembranças (página própria)
 

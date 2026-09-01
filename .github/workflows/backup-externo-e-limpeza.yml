@@ -1,0 +1,70 @@
+name: Backup externo criptografado e retenção
+
+on:
+  schedule:
+    # Todo domingo às 04:30 de Brasília (07:30 UTC).
+    - cron: "30 7 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: poloni-backup-externo
+  cancel-in-progress: false
+
+jobs:
+  proteger:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      POLONI_BACKUP_PASSPHRASE: ${{ secrets.POLONI_BACKUP_PASSPHRASE }}
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Confirmar a chave de recuperação
+        run: |
+          if [ ${#POLONI_BACKUP_PASSPHRASE} -lt 32 ]; then
+            echo "A chave POLONI_BACKUP_PASSPHRASE está ausente ou é curta demais."
+            exit 1
+          fi
+
+      - name: Baixar e verificar todas as mídias
+        run: |
+          mkdir -p backup-externo
+          node scripts/verificar-backup-remoto.js \
+            --saida backup-externo/poloni-backup.zip \
+            --recibo backup-externo/recibo.json
+
+      - name: Criptografar e conferir a restauração
+        run: |
+          node scripts/backup-criptografia.js criptografar \
+            --entrada backup-externo/poloni-backup.zip \
+            --saida backup-externo/poloni-backup.poloni.enc \
+            --recibo backup-externo/recibo.json
+          rm -f backup-externo/poloni-backup.zip
+
+      # Esta etapa precisa concluir antes de qualquer exclusão no Supabase.
+      - name: Guardar a cópia externa por 30 dias
+        id: copia-externa
+        uses: actions/upload-artifact@v4
+        with:
+          name: poloni-backup-externo-${{ github.run_number }}-${{ github.run_attempt }}
+          path: |
+            backup-externo/poloni-backup.poloni.enc
+            backup-externo/recibo.json
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
+
+      - name: Limpar somente gerações antigas já protegidas
+        run: |
+          node scripts/limpar-geracoes-supabase.js \
+            --recibo backup-externo/recibo.json \
+            --arquivo-criptografado backup-externo/poloni-backup.poloni.enc
