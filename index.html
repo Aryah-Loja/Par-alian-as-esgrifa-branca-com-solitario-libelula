@@ -44,9 +44,9 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=20261008120101">
+    <link rel="stylesheet" href="css/style.css?v=20261008134241">
     <!-- CSS exclusivo do sistema de Códigos Secretos (isolado, ver /secret/) -->
-    <link rel="stylesheet" href="secret/secret.css?v=20261008120101">
+    <link rel="stylesheet" href="secret/secret.css?v=20261008134241">
 
     <!-- Bibliotecas de terceiros via CDN. `defer` baixa sem travar a leitura
          do resto do HTML, mantendo a ordem de execução. -->
@@ -877,25 +877,7 @@
             <div id="registroAniversariosLista" class="registro-aniversarios-lista"></div>
         </div>
 
-        <section id="secaoMesversariosHistoria" class="mt-5 mesversarios-secao" aria-labelledby="mesversariosTitulo">
-            <h2 id="mesversariosTitulo" class="romance-section-title"><i class="bi bi-envelope-heart me-2" aria-hidden="true"></i>Nossos mesversários</h2>
-            <p class="primeiras-vezes-intro">Poloni, cada mês ao seu lado merece uma carta. Guarde aqui suas palavras, do seu jeito, para a gente reler a nossa história.</p>
-            <button type="button" id="btnNovoMesversario" class="btn btn-outline-light rounded-pill" aria-expanded="false" aria-controls="mesversarioFormulario"><i class="bi bi-pen me-1" aria-hidden="true"></i>Escrever um texto</button>
-            <form id="mesversarioFormulario" class="mesversario-form d-none mt-3">
-                <h3 id="mesversarioFormTitulo">Uma carta para este mês</h3>
-                <div class="mesversario-campos">
-                    <div><label for="mesversarioMes">Quantos meses de namoro?</label><input id="mesversarioMes" type="number" min="1" max="1200" step="1" required inputmode="numeric"></div>
-                    <div><label for="mesversarioData">Data da carta</label><input id="mesversarioData" type="date" required></div>
-                </div>
-                <label for="mesversarioTitulo">Título <span>(opcional)</span></label><input id="mesversarioTitulo" type="text" maxlength="120" placeholder="Mais um capítulo nosso">
-                <label for="mesversarioTexto">Suas palavras</label><textarea id="mesversarioTexto" rows="9" maxlength="20000" required placeholder="Meu amor, neste mês..."></textarea>
-                <p class="mesversario-rascunho">Ao fechar, seu rascunho fica neste aparelho. Toque em guardar para salvar a carta e enviá-la para sincronização.</p>
-                <div class="mesversario-acoes"><button type="submit" id="btnSalvarMesversario">Guardar minha carta</button><button type="button" id="btnFecharMesversario">Fechar e continuar depois</button></div>
-            </form>
-            <p id="mesversarioStatus" class="save-status mt-2" role="status" aria-live="polite"></p>
-            <p id="mesversarioVazio" class="primeiras-vezes-vazio mt-3">A primeira carta pode começar com o que você sente hoje.</p>
-            <div id="mesversarioLista" class="mesversario-lista"></div>
-        </section>
+
         <div id="secaoPrimeirasVezesHistoria" class="mt-5 reveal-up" style="max-width: 440px; margin: 0 auto;">
             <p class="romance-section-title"><i class="bi bi-stars me-2"></i>Nossas primeiras vezes</p>
             <p class="primeiras-vezes-intro">Cada começo merece um lugar só dele: a primeira viagem, a primeira noite juntos, a primeira conquista e tudo que ainda vamos viver.</p>
@@ -1195,6 +1177,26 @@
         </div>
 
 
+        <section id="secaoMesversariosHistoria" class="mt-5 mesversarios-secao" aria-labelledby="mesversariosTitulo">
+            <h2 id="mesversariosTitulo" class="romance-section-title"><i class="bi bi-envelope-heart me-2" aria-hidden="true"></i>Nossos mesversários</h2>
+            <p class="primeiras-vezes-intro">Poloni, cada mês ao seu lado merece uma carta. Guarde aqui suas palavras, do seu jeito, para a gente reler a nossa história.</p>
+            <button type="button" id="btnNovoMesversario" class="btn btn-outline-light rounded-pill" aria-expanded="false" aria-controls="mesversarioFormulario"><i class="bi bi-pen me-1" aria-hidden="true"></i>Escrever um texto</button>
+            <form id="mesversarioFormulario" class="mesversario-form d-none mt-3">
+                <h3 id="mesversarioFormTitulo" tabindex="-1">Uma carta para este mês</h3>
+                <div class="mesversario-campos">
+                    <div><label for="mesversarioMes">Quantos meses de namoro?</label><input id="mesversarioMes" type="number" min="1" max="1200" step="1" required inputmode="numeric"></div>
+                    <div><label for="mesversarioData">Data da carta</label><input id="mesversarioData" type="date" required></div>
+                </div>
+                <label for="mesversarioTitulo">Título <span>(opcional)</span></label><input id="mesversarioTitulo" type="text" maxlength="120" placeholder="Mais um capítulo nosso">
+                <label for="mesversarioTexto">Suas palavras</label><textarea id="mesversarioTexto" rows="9" maxlength="20000" required placeholder="Meu amor, neste mês..."></textarea>
+                <p class="mesversario-rascunho">Ao fechar, seu rascunho fica neste aparelho. Toque em guardar para salvar a carta e enviá-la para sincronização.</p>
+                <div class="mesversario-acoes"><button type="submit" id="btnSalvarMesversario">Guardar minha carta</button><button type="button" id="btnFecharMesversario">Fechar e continuar depois</button></div>
+            </form>
+            <p id="mesversarioStatus" class="save-status mt-2" role="status" aria-live="polite"></p>
+            <p id="mesversarioVazio" class="primeiras-vezes-vazio mt-3">A primeira carta pode começar com o que você sente hoje.</p>
+            <div id="mesversarioLista" class="mesversario-lista"></div>
+        </section>
+
         <!-- ===================== MURAL DA ANA =====================
              Botão que abre um overlay em estilo "livro" pra ela escrever
              pensamentos/poemas à vontade, com lista dos textos guardados
@@ -1258,6 +1260,7 @@ Se existe uma certeza que eu tenho, é esta: enquanto eu puder, vou continuar es
                 <br>
                 <button id="btnRestaurarBackup" class="btn btn-outline-light btn-sm rounded-pill mt-2"><i class="bi bi-cloud-arrow-up-fill me-1"></i>Restaurar Backup</button>
                 <input type="file" id="inputRestaurarBackup" accept="application/zip,.zip,application/json,.json" class="d-none">
+                <p id="backupStatus" class="save-status" role="status" aria-live="polite"></p>
                 <p id="restaurarStatus" class="save-status"></p>
             </div>
 
@@ -1642,25 +1645,26 @@ Se existe uma certeza que eu tenho, é esta: enquanto eu puder, vou continuar es
     </audio>
 
     <!-- ===================== SCRIPTS DO PROJETO (ordem importa) ===================== -->
-    <script defer src="js/config.js?v=20261008120101"></script>
-    <script defer src="js/db.js?v=20261008120101"></script>
-    <script defer src="js/preservacao.js?v=20261008120101"></script>
-    <script defer src="js/utils.js?v=20261008120101"></script>
-    <script defer src="js/desktop-block.js?v=20261008120101"></script>
-    <script defer src="js/store.js?v=20261008120101"></script>
-    <script defer src="js/futuro.js?v=20261008120101"></script>
-    <script defer src="js/romance.js?v=20261008120101"></script>
-    <script defer src="js/mapa-admin.js?v=20261008120101"></script>
-    <script defer src="js/export.js?v=20261008120101"></script>
-    <script defer src="js/sync.js?v=20261008120101"></script>
-    <script defer src="js/presenca.js?v=20261008120101"></script>
-    <script defer src="js/mesversarios.js?v=20261008120101"></script>
-    <script defer src="js/primeiras-vezes.js?v=20261008120101"></script>
-    <script defer src="js/suspense.js?v=20261008120101"></script>
-    <script defer src="js/main.js?v=20261008120101"></script>
+    <script defer src="js/config.js?v=20261008134241"></script>
+    <script defer src="js/db.js?v=20261008134241"></script>
+    <script defer src="js/preservacao.js?v=20261008134241"></script>
+    <script defer src="js/utils.js?v=20261008134241"></script>
+    <script defer src="js/desktop-block.js?v=20261008134241"></script>
+    <script defer src="js/store.js?v=20261008134241"></script>
+    <script defer src="js/futuro.js?v=20261008134241"></script>
+    <script defer src="js/romance.js?v=20261008134241"></script>
+    <script defer src="js/mapa-admin.js?v=20261008134241"></script>
+    <script defer src="js/backup-pacote.js?v=20261008134241"></script>
+    <script defer src="js/export.js?v=20261008134241"></script>
+    <script defer src="js/sync.js?v=20261008134241"></script>
+    <script defer src="js/presenca.js?v=20261008134241"></script>
+    <script defer src="js/mesversarios.js?v=20261008134241"></script>
+    <script defer src="js/primeiras-vezes.js?v=20261008134241"></script>
+    <script defer src="js/suspense.js?v=20261008134241"></script>
+    <script defer src="js/main.js?v=20261008134241"></script>
 
     <!-- Sistema de Códigos Secretos: 100% isolado, não depende de nenhum
          script acima nem é usado por eles. Ver /secret/secret.js. -->
-    <script defer src="secret/secret.js?v=20261008120101"></script>
+    <script defer src="secret/secret.js?v=20261008134241"></script>
 </body>
 </html>

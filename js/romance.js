@@ -1183,7 +1183,6 @@ function esconderLoadingRomance() {
  * de fato quando desbloqueados — o filtro abaixo garante que o menu só
  * lista o que existe na página nesse momento. */
 const HISTORIA_SECOES_NAV = [
-    { id: 'secaoMesversariosHistoria', emoji: '💌', nome: 'Nossos mesversários' },
     { id: 'secaoAniversariosHistoria', emoji: '🎂', nome: 'Seus aniversários' },
     { id: 'secaoPrimeirasVezesHistoria', emoji: '✨', nome: 'Nossas primeiras vezes' },
     { id: 'secaoTimelineHistoria', emoji: '🌌', nome: 'Nossa linha do tempo' },
@@ -1195,6 +1194,7 @@ const HISTORIA_SECOES_NAV = [
     { id: 'capsulaTempoWrap', emoji: '⏳', nome: 'Cápsula do tempo' },
     { id: 'previsoesWrap', emoji: '🔮', nome: 'Quadro de previsões' },
     { id: 'secaoMensagemFuturoHistoria', emoji: '💌', nome: 'Mensagem pro futuro' },
+    { id: 'secaoMesversariosHistoria', emoji: '💌', nome: 'Nossos mesversários' },
     { id: 'secaoMuralHistoria', emoji: '📓', nome: 'Seu mural' }
 ];
 

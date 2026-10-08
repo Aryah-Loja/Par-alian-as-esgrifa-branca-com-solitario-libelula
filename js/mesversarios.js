@@ -102,7 +102,9 @@ function abrirMesversario(item = null) {
     document.getElementById('btnNovoMesversario').setAttribute('aria-expanded', 'true');
     document.getElementById('mesversarioFormTitulo').textContent = mesversarioEditando ? 'Revisar sua carta' : 'Uma carta para este mês';
     mesversarioStatus(rascunho && !item ? 'Seu rascunho foi recuperado.' : '');
-    document.getElementById('mesversarioTexto').focus();
+    const tituloFormulario = document.getElementById('mesversarioFormTitulo');
+    tituloFormulario.focus({ preventScroll: true });
+    document.getElementById('mesversarioFormulario').scrollIntoView({ block: 'start', behavior: 'instant' });
 }
 function fecharMesversario(limpar = false) {
     if (!limpar) guardarRascunhoMesversario();

@@ -374,12 +374,13 @@ function chaveConfigEhTecnica(chave) {
         chave === 'aurora_sync_revision' || chave.startsWith('aurora_sync_') || chave.startsWith('aurora_galeria_cache_');
 }
 
-/** Gera o backup completo como um Blob .zip (usado tanto pelo botão "Backup" quanto pela sincronização — ver sync.js). */
-async function gerarBackupZipBlob() {
-    if (typeof JSZip === 'undefined') throw new Error('Não foi possível carregar o gerador de backup (JSZip). Verifique sua conexão.');
+// Guarda a versão do script para invalidar também o cache do worker.
+const POLONI_BACKUP_WORKER_URL = typeof document !== 'undefined' && document.currentScript?.src
+    ? new URL(`backup-worker.js${new URL(document.currentScript.src).search}`, document.currentScript.src).href : null;
 
-    const zip = new JSZip();
-    const pastaMedia = zip.folder('media');
+/** Gera o backup completo como um Blob .zip (usado tanto pelo botão "Backup" quanto pela sincronização — ver sync.js). */
+async function gerarBackupZipBlob(opcoes = {}) {
+    if (typeof JSZip === 'undefined') throw new Error('Não foi possível carregar o gerador de backup (JSZip). Verifique sua conexão.');
 
     const manifest = {
         formato: 'poloni-backup',
@@ -471,50 +472,27 @@ async function gerarBackupZipBlob() {
         throw new Error('Não foi possível ler todas as mídias para o backup. O backup anterior foi preservado.');
     }
 
-    for (const registro of todosRegistros) {
-        if (registro.tipo === 'diagnostico') continue; // arquivo de teste técnico, não faz parte da experiência
-
-        const entrada = { id: registro.id, tipo: registro.tipo, subtipo: registro.subtipo || null, criadoEm: registro.criadoEm || Date.now(), atualizadoEm: registro.atualizadoEm || registro.criadoEm || Date.now(), excluidoEm: registro.excluidoEm || null };
-
+    const progresso = typeof opcoes.progresso === 'function' ? opcoes.progresso : () => {};
+    if (typeof Worker !== 'undefined' && POLONI_BACKUP_WORKER_URL) {
         try {
-            if (registro.blob) {
-                if (!registro.blob.size) {
-                    await registrarDiagnosticoSeguro('backup.midia_vazia', new Error('Blob com zero bytes'), { id: registro.id, tipo: registro.tipo });
-                    throw new Error(`A mídia "${registro.id}" está vazia. O backup anterior foi preservado.`);
-                }
-                const nomeArquivo = `${registro.id}.${extensaoParaMime(registro.mimeType || registro.blob.type)}`;
-                const ambienteNode = typeof process !== 'undefined' && process.versions && process.versions.node;
-                const conteudoZip = ambienteNode ? new Uint8Array(await registro.blob.arrayBuffer()) : registro.blob;
-                pastaMedia.file(nomeArquivo, conteudoZip);
-                entrada.arquivo = nomeArquivo;
-                entrada.mimeType = registro.mimeType || registro.blob.type || null;
-                entrada.tamanho = registro.blob.size;
-                entrada.sha256 = await sha256BlobSeguro(registro.blob);
-                manifest.estatisticas.bytesMidia += registro.blob.size;
-            } else if (registro.texto) {
-                entrada.texto = registro.texto; // ex: assinatura (dataURL pequeno) ou mensagem de texto para o futuro
-                entrada.sha256Texto = await sha256BlobSeguro(new Blob([registro.texto], { type: 'text/plain' }));
-            } else {
-                continue;
-            }
-            manifest.medias.push(entrada);
-        } catch (e) {
-            await registrarDiagnosticoSeguro('backup.empacotar_midia', e, { id: registro.id, tipo: registro.tipo });
-            throw new Error(`Não foi possível incluir a mídia "${registro.id}" no backup. O backup anterior foi preservado.`);
+            return await new Promise((resolve, reject) => {
+                const worker = new Worker(POLONI_BACKUP_WORKER_URL);
+                worker.onmessage = ({ data }) => {
+                    if (data.progresso) { progresso(data.progresso); return; }
+                    worker.terminate();
+                    if (data.erro) reject(new Error(data.erro)); else resolve(data.blob);
+                };
+                worker.onerror = () => { worker.terminate(); reject(Object.assign(new Error('Worker indisponível'), { workerIndisponivel: true })); };
+                try { worker.postMessage({ manifest, registros: todosRegistros }); }
+                catch (erro) { worker.terminate(); reject(Object.assign(erro, { workerIndisponivel: true })); }
+            });
+        } catch (erro) {
+            if (!erro.workerIndisponivel && erro.name !== 'SecurityError') throw erro;
+            // Navegadores sem Worker continuam podendo baixar sua cópia.
         }
     }
-
-    manifest.estatisticas.medias = manifest.medias.length;
-
-    zip.file('manifest.json', JSON.stringify(manifest), { compression: 'DEFLATE', compressionOptions: { level: 6 } });
-    // Cabeçalhos estáveis: uma mensagem nova não altera os bytes das fotos/vídeos.
-    for (const arquivo of Object.values(zip.files)) arquivo.date = new Date('2000-01-01T00:00:00Z');
-    // Sem compressão adicional (STORE): mídia já vem comprimida (MP4/JPEG),
-    // recomprimir só gastaria processamento à toa.
-    const ambienteNode = typeof process !== 'undefined' && process.versions && process.versions.node;
-    const tipoSaida = ambienteNode ? 'uint8array' : 'blob';
-    const gerado = await zip.generateAsync({ type: tipoSaida, compression: 'STORE' });
-    return tipoSaida === 'blob' ? gerado : new Blob([gerado], { type: 'application/zip' });
+    const empacotar = typeof empacotarBackupSeguro === 'function' ? empacotarBackupSeguro : require('./backup-pacote.js').empacotarBackupSeguro;
+    return empacotar(manifest, todosRegistros, progresso);
 }
 
 /* ----------------------------------------------------------------------
@@ -562,13 +540,21 @@ async function adiarLembreteBackup() {
 
 async function baixarBackupCompleto() {
     const botao = document.getElementById('btnBackup');
+    if (botao.disabled) return;
     const textoOriginal = botao.innerHTML;
     botao.disabled = true;
     botao.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Preparando backup...';
 
     try {
-        const blob = await gerarBackupZipBlob();
-        await salvarOuCompartilharArquivo(blob, `backup-nossa-historia-${new Date().toISOString().slice(0, 10)}.zip`, 'application/zip');
+        const status = document.getElementById('backupStatus');
+        const blob = await gerarBackupZipBlob({ progresso: info => {
+            const texto = info.fase === 'midias' ? `Conferindo memórias: ${info.atual} de ${info.total}` : `Montando sua cópia: ${info.percentual}%`;
+            botao.textContent = texto;
+            if (status) status.textContent = texto;
+        } });
+        if (status) status.textContent = `Cópia pronta (${(blob.size / 1024 / 1024).toFixed(1)} MB). Escolha onde guardar.`;
+        const resultado = await salvarOuCompartilharArquivo(blob, `backup-nossa-historia-${new Date().toISOString().slice(0, 10)}.zip`, 'application/zip');
+        if (resultado === 'falhou') throw new Error('Não foi possível abrir o download.');
 
         // Registra quando o último backup manual foi feito — usado pelo
         // lembrete de backup (ver verificarLembreteBackup) pra não incomodar
@@ -577,6 +563,8 @@ async function baixarBackupCompleto() {
         esconderLembreteBackup();
     } catch (err) {
         console.error('Falha ao gerar backup completo', err);
+        const status = document.getElementById('backupStatus');
+        if (status) status.textContent = 'Não foi possível gerar a cópia agora. Seus dados continuam guardados.';
         alert('Não foi possível gerar o backup agora. Tente novamente.');
     } finally {
         botao.disabled = false;
@@ -737,7 +725,7 @@ async function validarEPrepararBackupZip(zipDados) {
     const registros = [];
     for (const entrada of manifest.medias) {
         if (!entrada || !entrada.id || !entrada.tipo) throw new Error('Backup inválido: mídia sem identidade persistente.');
-        const registro = { id: entrada.id, tipo: entrada.tipo, subtipo: entrada.subtipo || undefined, criadoEm: entrada.criadoEm || Date.now(), atualizadoEm: entrada.atualizadoEm || entrada.criadoEm || Date.now(), excluidoEm: entrada.excluidoEm || undefined };
+        const registro = { id: entrada.id, tipo: entrada.tipo, subtipo: entrada.subtipo || undefined, criadoEm: entrada.criadoEm || Date.now(), atualizadoEm: entrada.atualizadoEm || entrada.criadoEm || Date.now(), excluidoEm: entrada.excluidoEm || undefined, otimizacao: entrada.otimizacao || undefined };
         if (entrada.arquivo) {
             const arquivoZip = zip.file(`media/${entrada.arquivo}`);
             if (!arquivoZip) throw new Error(`Backup incompleto: mídia "${entrada.id}" ausente.`);
@@ -830,6 +818,19 @@ async function aplicarBackupDeZip(zipDados) {
         } else if (!local.blob && !remoto.blob && local.texto === remoto.texto) {
             continue;
         }
+        // Uma otimização conhecida pode substituir exatamente seus bytes de origem.
+        // Edições distintas continuam seguindo a preservação de conflitos abaixo.
+        const hashLocalOtimizacao = local.blob && remoto.blob && (remoto.otimizacao || local.otimizacao)
+            ? await sha256BlobSeguro(local.blob) : null;
+        const hashRemotoOtimizacao = hashLocalOtimizacao ? await sha256BlobSeguro(remoto.blob) : null;
+        if (remoto.otimizacao?.sha256Original === hashLocalOtimizacao &&
+            remoto.otimizacao?.sha256Otimizado === hashRemotoOtimizacao &&
+            timestampSeguro(remoto.atualizadoEm) >= timestampSeguro(local.atualizadoEm || local.criadoEm)) {
+            mediasParaGravar.push(remoto); continue;
+        }
+        if (local.otimizacao?.sha256Original === hashRemotoOtimizacao &&
+            local.otimizacao?.sha256Otimizado === hashLocalOtimizacao &&
+            timestampSeguro(local.atualizadoEm) >= timestampSeguro(remoto.atualizadoEm || remoto.criadoEm)) continue;
         const remotoEhMaisNovo = timestampSeguro(remoto.atualizadoEm || remoto.criadoEm || 0) > timestampSeguro(local.atualizadoEm || local.criadoEm || 0);
         const manterComoAlternativo = remotoEhMaisNovo ? local : remoto;
         const sufixo = manterComoAlternativo.blob ? (await sha256BlobSeguro(manterComoAlternativo.blob) || gerarIdUnico('hash')).slice(0, 10) : gerarIdUnico('texto').slice(-10);
