@@ -1183,6 +1183,7 @@ function esconderLoadingRomance() {
  * de fato quando desbloqueados — o filtro abaixo garante que o menu só
  * lista o que existe na página nesse momento. */
 const HISTORIA_SECOES_NAV = [
+    { id: 'secaoMesversariosHistoria', emoji: '💌', nome: 'Nossos mesversários' },
     { id: 'secaoAniversariosHistoria', emoji: '🎂', nome: 'Seus aniversários' },
     { id: 'secaoPrimeirasVezesHistoria', emoji: '✨', nome: 'Nossas primeiras vezes' },
     { id: 'secaoTimelineHistoria', emoji: '🌌', nome: 'Nossa linha do tempo' },
@@ -1427,6 +1428,7 @@ async function goToRomancePage(primeiraVez) {
      * tempo total passa a ser o da mais lenta (normalmente o vídeo do
      * pedido), não a soma de todas. */
     const tarefas = [
+        typeof renderizarMesversarios === 'function' ? renderizarMesversarios() : Promise.resolve(),
         prepararContrato(),
         iniciarContadorVivo(),
         renderizarLembrancas(),

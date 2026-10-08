@@ -2337,3 +2337,26 @@ button, .btn, a { touch-action: manipulation; }
     html { scroll-behavior: auto !important; }
     *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+/* Cartas mensais: mesmos materiais e cores da área Nossa História. */
+.mesversarios-secao { max-width: 600px; margin-inline: auto; padding-inline: 12px; }
+.mesversarios-secao h2 { font-size: inherit; }
+.mesversario-lista { display: grid; gap: 22px; margin-top: 24px; }
+.mesversario-carta, .mesversario-form { padding: clamp(20px, 5vw, 32px); border: 1px solid rgba(217,190,130,.28); border-radius: 22px; background: rgba(255,250,240,.96); color: var(--aurora-ink, #443238); text-align: left; }
+.mesversario-carta-topo { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-size: .85rem; margin-bottom: 16px; }
+.mesversario-mes { font-weight: 600; color: #793b4c; }
+.mesversario-carta h3, .mesversario-form h3 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.8rem; margin-bottom: 16px; }
+.mesversario-texto { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.8; font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.3rem; }
+.mesversario-campos { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.mesversario-form label { display: block; margin-top: 14px; margin-bottom: 6px; font-size: .9rem; }
+.mesversario-form input, .mesversario-form textarea { width: 100%; min-width: 0; padding: 12px; border: 1px solid #b9a69e; border-radius: 10px; background: #fffaf3; color: #443238; font-size: 16px; }
+.mesversario-form textarea { resize: vertical; min-height: 210px; line-height: 1.6; }
+.mesversario-rascunho { margin-top: 12px; font-size: .85rem; line-height: 1.5; }
+.mesversario-acoes { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+.mesversario-acoes button { min-height: 44px; padding: 10px 16px; border-radius: 999px; border: 1px solid #96776e; background: transparent; color: #643445; font-size: .9rem; }
+#btnSalvarMesversario { background: #793b4c; color: #fffaf3; border-color: #793b4c; }
+.mesversarios-secao :focus-visible { outline: 3px solid #b77b33; outline-offset: 3px; }
+.mesversario-acoes button:disabled { opacity: .55; }
+@media (max-width: 380px) { .mesversario-campos { grid-template-columns: 1fr; } }
+
+#btnNovoMesversario { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 11px 20px; border: 1px solid rgba(217,190,130,.55); border-radius: 999px; background: rgba(255,255,255,.04); color: #fff5e8; font-size: 1rem; }

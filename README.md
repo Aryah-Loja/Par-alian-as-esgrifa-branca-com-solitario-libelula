@@ -420,3 +420,8 @@ do aparelho) e impede abrir o console do navegador e forçar a revelação
 direto, mas não impede alguém tecnicamente capaz de abrir os arquivos-
 fonte do site (`js/config.js`) de ler o texto antes da data — isso é uma
 limitação de qualquer site que roda 100% no navegador, sem exceção.
+
+## Adições de outubro de 2026
+
+- Nossos mesversários: cartas mensais editáveis, com rascunho local e inclusão automática das cartas salvas nos próximos backups. Consulte `docs/MESVERSARIOS.md`.
+- Verificação de atividade do Supabase: RPC leve ao banco três vezes ao dia e verificação do ponteiro de backup. Depende de aplicar a migração SQL e publicar/habilitar o workflow; não garante ausência de pausa no plano gratuito. Consulte `docs/ATIVIDADE-SUPABASE.md`.

@@ -173,11 +173,15 @@ teste('partes do backup ficam abaixo do limite recomendado para upload padrão',
     assert.ok(Number(correspondencia[1]) < 6, 'parte deve ter menos de 6 MB');
 });
 
-teste('automação diária falha em HTTP ruim e valida uma geração real', () => {
+teste('automação consulta o banco sem duplicar chave pública no workflow', () => {
     const workflow = fs.readFileSync(path.join(raiz, '.github/workflows/manter-supabase-ativo.yml'), 'utf8');
-    assert.ok(workflow.includes('--fail-with-body'), 'curl precisa falhar em HTTP 4xx/5xx');
-    assert.ok(workflow.includes('geracaoAtual') && workflow.includes('revisao'), 'workflow precisa validar o meta do backup');
-    assert.equal(workflow.includes('SUPABASE_ANON_KEY'), false, 'chave pública duplicada não é necessária no keepalive');
+    const script = fs.readFileSync(path.join(raiz, 'scripts/verificar-atividade-supabase.js'), 'utf8');
+    assert.ok(workflow.includes('17 3,11,19 * * *'));
+    assert.ok(workflow.includes('node scripts/verificar-atividade-supabase.js'));
+    assert.ok(script.includes('/rest/v1/rpc/poloni_verificar_atividade'));
+    assert.ok(script.includes('if (!resposta.ok)') && script.includes('AbortSignal.timeout'));
+    assert.ok(script.includes('geracaoAtual') && script.includes('revisao'));
+    assert.equal(workflow.includes('SUPABASE_ANON_KEY'), false);
 });
 
 teste('páginas móveis permitem zoom e evitam carregar o áudio grande antes da hora', () => {

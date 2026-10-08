@@ -1,31 +1,29 @@
-name: Manter projeto Supabase ativo
+name: Verificar atividade e saúde do Supabase
 
-# O plano gratuito do Supabase pausa projetos depois de um tempo sem
-# nenhuma atividade real na API. Este workflow roda sozinho a cada 5 dias
-# e faz uma chamada leve e real (lê o arquivo de controle do backup),
-# só pra contar como atividade e evitar a pausa automática.
+# Três consultas leves ao banco por dia. Não substitui backup nem plano pago.
+# Agendamento depende do GitHub Actions e da migração SQL indicada em docs.
 on:
   schedule:
-    # Roda às 09:00 (horário de Brasília, UTC-3 -> 12:00 UTC) a cada 5 dias.
-    # Cron não tem "a cada N dias" direto, então isso roda TODO dia às
-    # 12:00 UTC — o Supabase só precisa de UMA chamada dentro da janela
-    # de inatividade dele (bem maior que 5 dias), então rodar todo dia é
-    # mais simples de manter e ainda mais seguro que rodar só 1x/semana.
-    - cron: "0 12 * * *"
+    - cron: "17 3,11,19 * * *"
   workflow_dispatch:
-
+permissions:
+  contents: read
+concurrency:
+  group: poloni-verificar-atividade
+  cancel-in-progress: false
 jobs:
   ping-supabase:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - name: Confirmar que o backup do Supabase responde
-        env:
-          SUPABASE_URL: "https://mdiohswwximmsggmrzue.supabase.co"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Consultar banco e validar backup
+        run: node scripts/verificar-atividade-supabase.js --permitir-rpc-pendente
+      - name: Registrar orientação em caso de falha
+        if: failure()
         run: |
-          set -euo pipefail
-          ARQUIVO_META="$SUPABASE_URL/storage/v1/object/public/aurora-backups/aurora-ana-gabriel-namoro-meta.json?keepalive=$(date +%s)"
-          curl --fail-with-body --show-error --silent \
-            --retry 3 --retry-all-errors \
-            --connect-timeout 15 --max-time 60 \
-            "$ARQUIVO_META" -o /tmp/aurora-meta.json
-          node -e 'const m=require("/tmp/aurora-meta.json"); if (!Number.isFinite(Number(m.revisao)) || !m.geracaoAtual?.id) { throw new Error("Metadados do backup inválidos"); } console.log(`Supabase respondeu com backup na revisão ${m.revisao}.`);'
+          echo "## A verificação do Supabase falhou" >> "$GITHUB_STEP_SUMMARY"
+          echo "Confira o projeto no painel, a migração SQL e o último backup independente. O workflow não exclui nem restaura dados." >> "$GITHUB_STEP_SUMMARY"
